@@ -1,5 +1,5 @@
 
-import { useRouter } from 'next/router'
+
 const stream = require('youtube-audio-stream')
 
 export default async function (req, res) {
@@ -30,5 +30,6 @@ export default async function (req, res) {
 export const config = {
     api: {
         responseLimit: false,
+        bodyParser: false,
     },
 }
