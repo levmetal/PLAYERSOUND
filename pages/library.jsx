@@ -1,4 +1,4 @@
-
+import { v4 as uuidv4 } from 'uuid';
 import { useSoundContext } from "../context/libraryContext/libraryContext";
 import Layout from '../components/layout'
 import styles from '../styles/library.module.css'
@@ -28,6 +28,7 @@ const Library = () => {
                         sounds.map(sound => {
                             return (
                                 <SoundItem
+                                    key={uuidv4()}
                                     item={sound}
                                     triggerModal={triggerModal}
                                 />

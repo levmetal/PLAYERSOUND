@@ -49,7 +49,7 @@ const SoundList = ({ dataSearch }) => {
 
             return (
 
-              <Suspense fallback={`Loading`} >
+              <Suspense fallback={`Loading`} key={uuidv4()} >
 
                 <SoundItem
                   key={uuidv4()}
@@ -84,7 +84,7 @@ const SoundList = ({ dataSearch }) => {
           {
             library.map((item) => {
               return (
-                <Suspense fallback={`Loading`}>
+                <Suspense fallback={`Loading`} key={uuidv4()}>
                   <SoundItem
                     key={uuidv4()}
                     item={item}
