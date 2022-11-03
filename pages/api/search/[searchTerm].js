@@ -10,7 +10,6 @@ export default async function (req, res) {
 
 
     await youtube.search(searchTerm).then(value => {
-
       res.status(200).json(value.videos)
     })
 

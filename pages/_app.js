@@ -32,6 +32,7 @@ function MyApp({ Component, pageProps }) {
     <Head>
       <title>PlayerSound</title>
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+      <meta name="keywords" content="music, streaming, without ads"></meta>
     </Head>
     <SoundProvider >
       <Loading />
