@@ -43,7 +43,7 @@ export async function getServerSideProps(context) {
   const { query } = context
   const { search } = query
   try {
-    const response = await fetch(`http://localhost:3000/api/search/${search}`)
+    const response = await fetch(`https://playersound.vercel.app/api/search/${search}`)
     const data = await response.json()
 
     return {
