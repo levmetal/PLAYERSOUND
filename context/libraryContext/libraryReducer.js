@@ -14,7 +14,8 @@ export default function soundReducer(state, action) {
                 title: action.payload.title,
                 link: action.payload.link,
                 thumbnail: action.payload.thumbnail,
-                channel:action.payload.channel
+                channel:action.payload.channel,
+                duration:action.payload.duration
             }]
 
         }
