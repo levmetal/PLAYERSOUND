@@ -18,9 +18,9 @@ You can use the complete functions in local server as follows
 
                 --second-- 
                     
-                  * run the development server:
-                   
-                  * npm run start 
+                 *  run the development server:
+                
+                   In terminal located into the cloned proyect type:    npm run start 
 
-                  Open [http://localhost:3000] with your browser to see the result.
+                *  Open [http://localhost:3000] with your browser to see the result.
 
