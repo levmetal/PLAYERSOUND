@@ -161,8 +161,8 @@ const Player = ({ item }) => {
               <button onClick={verificationSaved ? delHandle : saveHandle} className={styles.button}>{verificationSaved ? < FaHeart /> : < FaRegHeart />}</button>
 
             </div>
-            <div className={styles.button__group}>
-              <audio onEnded={endendFunction}  ref={player} src={`testsound.onrender.com/song?search_query=${item.id}`} />
+            <div className={styles.button__group}> 
+              <audio onEnded={endendFunction}  ref={player} src={`https://testsound.onrender.com/song?search_query=${item.id}`} />
 
               <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
 
