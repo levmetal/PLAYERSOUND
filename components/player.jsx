@@ -162,7 +162,7 @@ const Player = ({ item }) => {
 
             </div>
             <div className={styles.button__group}>
-              <audio onEnded={endendFunction}  ref={player} src={`/api/soundplayer/${item.id}`} />
+              <audio onEnded={endendFunction}  ref={player} src={`testsound.onrender.com/song?search_query=${item.id}`} />
 
               <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
 
