@@ -34,9 +34,9 @@ export default function Home() {
             <div className={styles.infoHero}>
               <div className={styles.mainTitle}>
                 <h1 className={styles.container__title}>Music,Podcast or whatever you want</h1>
-                <h3 className={styles.container__subtitle}>Search every sound from this app to
+                <h2 className={styles.container__subtitle}>Search every sound from this app to
                   enjoy your favorites podcasts, web show or music whitout ads
-                </h3>
+                </h2>
               </div>
 
               <form className={styles.container__form} onSubmit={handleSubmit} >
