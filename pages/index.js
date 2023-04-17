@@ -23,6 +23,8 @@ export default function Home() {
     <>
       <Layout>
     <Head>
+       <meta name="description" content="Find any YouTube audio without ads using our easy-to-use search app. Enjoy your favorite songs and create custom playlists uninterrupted. Try our app today and enjoy an uninterrupted online audio experience!">
+       <meta name="description" content="Encuentra cualquier audio de YouTube sin publicidad con nuestra aplicación de búsqueda fácil de usar. Disfruta de tus canciones favoritas y crea listas de reproducción personalizadas sin interrupciones publicitarias. ¡Prueba nuestra aplicación hoy mismo y disfruta de una experiencia de audio en línea sin interrupciones!">
        <meta name="google-site-verification" content="_Y-WmLWOjBhsxYjfH08TLdnHZ0-SoiKZmeJ9IelQI0g" />
       </Head>
         <main className={styles.container}>
