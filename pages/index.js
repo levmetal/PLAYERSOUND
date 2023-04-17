@@ -45,7 +45,7 @@ export default function Home() {
                 <button className={styles.form__button} type="submit" >Search</button>
               </form>
             </div>
-            <img className={styles.imghero} src='discHero.png' />
+            <img className={styles.imghero} src='discHero.png' alt="Mano sosteniendo un disco de vinilo" />
 
           </>
         </main>
