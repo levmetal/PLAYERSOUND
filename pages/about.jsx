@@ -23,7 +23,7 @@ const About = () => {
 
                     </footer>
                 </article>
-                <img src='youngBoy.jpg' className={styles.img__about} />
+                <img src='youngBoy.webp' className={styles.img__about} />
 
             </div>
         </Layout>
