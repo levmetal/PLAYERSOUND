@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp } from 'react-icons/fa';
+import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp, FaSpinner } from 'react-icons/fa'; // Agregar FaSpinner para la señal de carga
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import { RemoveSpecialChar } from "../utils/removeSpecialChar";
 import styles from '../styles/player.module.css';
@@ -11,7 +11,9 @@ const Player = ({ item }) => {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volVisible, setVisible] = useState(false);
-  const [audioUrl, setAudioUrl] = useState(null); // Estado para guardar la URL del audio
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioReady, setAudioReady] = useState(false); // Para indicar si el audio está listo
+  const [loading, setLoading] = useState(true); // Estado de carga
   const player = useRef();
   const bar = useRef();
   const animationRef = useRef();
@@ -20,26 +22,34 @@ const Player = ({ item }) => {
   const duration = ConvertSecToMin(item.duration);
   const sounds = useSoundContext();
   const dispatch = useDispatchContext();
+  const hasFetched = useRef(false);
 
   // Solicitar la URL del audio al servidor local
   useEffect(() => {
     const fetchAudioUrl = async () => {
+      if (hasFetched.current) return;  // Evitar la segunda solicitud
+      setLoading(true); // Establecer el estado de carga a true cuando comienza la solicitud
+
       try {
-        const response = await axios.get(`http://localhost:4000/audio?id=${item.id}`);
-        console.log(response.data.audioUrl);
+        const response = await axios.get(`https://sever-playersound.onrender.com/audio?id=${item.id}`);
         setAudioUrl(response.data.audioUrl);
-         // Guardamos la URL en el estado
+        hasFetched.current = true;
       } catch (error) {
         console.error('Error fetching audio URL:', error);
+      } finally {
+        setLoading(false); // Establecer el estado de carga a false cuando la solicitud termine
       }
     };
-    
-    fetchAudioUrl();
-  }, [item.id]); // Dependemos del id del video para hacer la solicitud
 
+    fetchAudioUrl();
+  }, [item.id]);
+
+  // Asegurar que la barra de progreso refleje la duración del audio
   useEffect(() => {
-    bar.current.max = item.duration;
-  }, [player?.current?.loadedmetadata, player?.current?.readyState]);
+    if (player.current && player.current.duration) {
+      bar.current.max = player.current.duration;
+    }
+  }, [audioUrl]);
 
   const whileIsPlaying = () => {
     try {
@@ -47,7 +57,7 @@ const Player = ({ item }) => {
       setCurrentTime(bar.current.value);
       animationRef.current = requestAnimationFrame(whileIsPlaying);
     } catch (error) {
-      animationRef.current = cancelAnimationFrame(animationRef.current);
+      cancelAnimationFrame(animationRef.current);
     }
   };
 
@@ -57,22 +67,20 @@ const Player = ({ item }) => {
   };
 
   const HandlePlaying = () => {
-    const preValue = playing;
-    setPlaying(!preValue);
-  
-    // Verificar si el ref 'player' está disponible y si hay una URL cargada
-    if (!player.current || !audioUrl) {
-      console.error('El reproductor de audio no está disponible o la URL del audio no se ha cargado.');
+    if (!audioReady || !audioUrl) {
+      console.error('Audio not ready yet');
       return;
     }
-  
+
+    const preValue = playing;
+    setPlaying(!preValue);
+
     if (!preValue) {
-      // Asegurarse de que el reproductor pueda reproducir
-      player.current.play().catch(error => console.error('Error al intentar reproducir:', error));
+      player.current.play().catch(error => console.error('Error playing audio:', error));
       animationRef.current = requestAnimationFrame(whileIsPlaying);
     } else {
       player.current.pause();
-      animationRef.current = cancelAnimationFrame(animationRef.current);
+      cancelAnimationFrame(animationRef.current);
     }
   };
 
@@ -100,7 +108,7 @@ const Player = ({ item }) => {
 
   const saveHandle = () => {
     if (verificationSaved) {
-      return alert("The sound is already saved in the library ");
+      return alert("The sound is already saved in the library");
     } else {
       dispatch({
         type: "addLibrary",
@@ -118,8 +126,6 @@ const Player = ({ item }) => {
       return alert("The sound is deleted from library");
     }
   };
-
-  const handelPause = () => player.current.pause();
 
   const even = (element) => element.id === item.id;
   const verificationSaved = sounds.some(even);
@@ -143,15 +149,29 @@ const Player = ({ item }) => {
               </button>
             </div>
             <div className={styles.button__group}>
-              {/* Aquí cargamos la URL del audio cuando está disponible */}
-              {audioUrl && <audio onEnded={endendFunction} ref={player} src={audioUrl} />}
+              {audioUrl && (
+                <audio
+                  onLoadedData={() => {
+                    setAudioReady(true); // Indicar que el audio está listo
+                    setLoading(false); // Detener la carga
+                  }}
+                  onEnded={endendFunction}
+                  ref={player}
+                  src={audioUrl}
+                />
+              )}
 
               <button className={styles.button} onClick={BackTime}>
                 <FaBackward className={styles.backward} />
               </button>
 
-              <button className={styles.button} onClick={HandlePlaying}>
-                {playing ? <FaPause className={styles.pause} /> : <FaPlay className={styles.play} />}
+              <button className={styles.button} onClick={HandlePlaying} disabled={loading}>
+                {/* Mostrar spinner si está cargando */}
+                {loading ? (
+                  <FaSpinner className={styles.spinner} />
+                ) : (
+                  playing ? <FaPause className={styles.pause} /> : <FaPlay className={styles.play} />
+                )}
               </button>
 
               <button className={styles.button}>
