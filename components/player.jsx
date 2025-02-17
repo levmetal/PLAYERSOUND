@@ -152,7 +152,6 @@ const Player = ({ item }) => {
                 {verificationSaved ? <FaHeart /> : <FaRegHeart />}
               </button>
             </div>
-<<<<<<< HEAD
             <div className={styles.button__group}>
               {audioUrl && (
                 <audio
@@ -166,18 +165,6 @@ const Player = ({ item }) => {
                   src={audioUrl}
                 />
               )}
-=======
-            <div className={styles.button__group}> 
-                <audio onEnded={endendFunction}  ref={player}>
-                  <source  src={`https://sever-playersound.vercel.app/audio?id=${item.id}`} type="audio/webm" />
-                </audio>
-              <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
-
-              <button className={styles.button} onClick={HandlePlaying}>{playing ? <FaPause className={styles.pause} /> : <FaPlay className={styles.play} />}</button>
-
-
-              <button className={styles.button}><FaForward onClick={ForwardTime} className={styles.forward} /></button>
->>>>>>> 342e938ac675b43b298138c0a7e7f83e3d93bce1
 
               <button className={styles.button} onClick={BackTime}>
                 <FaBackward className={styles.backward} />
