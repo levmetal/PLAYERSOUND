@@ -31,7 +31,7 @@ const Player = ({ item }) => {
       setLoading(true); // Establecer el estado de carga a true cuando comienza la solicitud
 
       try {
-        const response = await axios.get(`https://sever-playersound.onrender.com/audio?id=${item.id}`);
+        const response = await axios.get(`https://sever-playersound.vercel.app/audio?id=${item.id}`);
         setAudioUrl(response.data.audioUrl);
         hasFetched.current = true;
       } catch (error) {
@@ -66,7 +66,7 @@ const Player = ({ item }) => {
     setCurrentTime(player.current.currentTime);
   };
 
-  const HandlePlaying = () => {
+  const HandlePlaying = async () => {
     if (!audioReady || !audioUrl) {
       console.error('Audio not ready yet');
       return;
@@ -76,7 +76,11 @@ const Player = ({ item }) => {
     setPlaying(!preValue);
 
     if (!preValue) {
-      player.current.play().catch(error => console.error('Error playing audio:', error));
+      try {
+        await player.current.play();
+      } catch (error) {
+        console.error('Error playing audio:', error);
+      }
       animationRef.current = requestAnimationFrame(whileIsPlaying);
     } else {
       player.current.pause();
@@ -92,7 +96,8 @@ const Player = ({ item }) => {
   const ForwardTime = () => {
     bar.current.value = Number(bar.current.value) + 10;
     onChangeBar();
-  };
+      setPlaying(false);
+    };
 
   const endendFunction = () => {
     player.current.load();
@@ -127,8 +132,7 @@ const Player = ({ item }) => {
     }
   };
 
-  const even = (element) => element.id === item.id;
-  const verificationSaved = sounds.some(even);
+  const verificationSaved = sounds.some((element) => element.id === item.id);
 
   return (
     <>
@@ -151,6 +155,7 @@ const Player = ({ item }) => {
             <div className={styles.button__group}>
               {audioUrl && (
                 <audio
+                  type='audio/webm'
                   onLoadedData={() => {
                     setAudioReady(true); // Indicar que el audio está listo
                     setLoading(false); // Detener la carga
@@ -169,8 +174,10 @@ const Player = ({ item }) => {
                 {/* Mostrar spinner si está cargando */}
                 {loading ? (
                   <FaSpinner className={styles.spinner} />
+                ) : playing ? (
+                  <FaPause className={styles.pause} />
                 ) : (
-                  playing ? <FaPause className={styles.pause} /> : <FaPlay className={styles.play} />
+                  <FaPlay className={styles.play} />
                 )}
               </button>
 
