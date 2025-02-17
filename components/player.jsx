@@ -162,7 +162,7 @@ const Player = ({ item }) => {
 
             </div>
             <div className={styles.button__group}> 
-              <audio onEnded={endendFunction}  ref={player} src={`https://sever-playersound.onrender.com/audio?id=${item.id}`} />
+              <audio onEnded={endendFunction}  ref={player} src={`https://sever-playersound-15yal85w1-levmetals-projects.vercel.app/audio?id=${item.id}`} />
 
               <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
 
