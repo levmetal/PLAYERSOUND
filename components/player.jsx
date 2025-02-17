@@ -162,8 +162,10 @@ const Player = ({ item }) => {
 
             </div>
             <div className={styles.button__group}> 
-              <audio typw='audio/webm' onEnded={endendFunction}  ref={player} src={`https://sever-playersound-15yal85w1-levmetals-projects.vercel.app/audio?id=${item.id}`} />
-
+                <audio onEnded={endendFunction}  ref={player}>
+                  <source  src={`https://sever-playersound-15yal85w1-levmetals-projects.vercel.app/audio?id=${item.id}`} type="audio/webm">
+              <audio/>
+                </audio>
               <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
 
               <button className={styles.button} onClick={HandlePlaying}>{playing ? <FaPause className={styles.pause} /> : <FaPlay className={styles.play} />}</button>
