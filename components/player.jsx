@@ -163,8 +163,7 @@ const Player = ({ item }) => {
             </div>
             <div className={styles.button__group}> 
                 <audio onEnded={endendFunction}  ref={player}>
-                  <source  src={`https://sever-playersound-15yal85w1-levmetals-projects.vercel.app/audio?id=${item.id}`} type="audio/webm" />
-            
+                  <source  src={`https://sever-playersound.vercel.app/audio?id=${item.id}`} type="audio/webm" />
                 </audio>
               <button className={styles.button} onClick={BackTime}><FaBackward className={styles.backward} /></button>
 
