@@ -27,20 +27,26 @@ const Player = ({ item }) => {
         const fetchAudioUrl = async () => {
             if (hasFetched.current) return;
             setLoading(true);
-
+    
             try {
                 const response = await axios.get(`https://yt-audio-l01p.onrender.com/audio/${item.id}`, {
-                    timeout: 600000 // Increased timeout to 10 minutes (in milliseconds)
+                    timeout: 600000,
+                    responseType: 'blob' // Request response as Blob
                 });
-                setAudioUrl(response.data); // Assuming backend now sends audio stream directly as response.data
+    
+                // Convert Blob to Data URL
+                const blob = new Blob([response.data], { type: 'audio/mpeg' });
+                const dataUrl = URL.createObjectURL(blob);
+                setAudioUrl(dataUrl); // Set Data URL as audioUrl
                 hasFetched.current = true;
+    
             } catch (error) {
                 console.error('Error fetching audio URL:', error);
             } finally {
                 setLoading(false);
             }
         };
-
+    
         fetchAudioUrl();
     }, [item.id]);
 
