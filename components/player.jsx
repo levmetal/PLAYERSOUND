@@ -24,14 +24,14 @@ const Player = ({ item }) => {
   const dispatch = useDispatchContext();
   const hasFetched = useRef(false);
 
-  // Solicitar la URL del audio al servidor local
+  // Solicitar la URL del audio al servidor desplegado en Render
   useEffect(() => {
     const fetchAudioUrl = async () => {
       if (hasFetched.current) return;  // Evitar la segunda solicitud
       setLoading(true); // Establecer el estado de carga a true cuando comienza la solicitud
 
       try {
-        const response = await axios.get(`https://sever-playersound.vercel.app/audio?id=${item.id}`);
+        const response = await axios.get(`https://yt-audio-l01p.onrender.com/audio/${item.id}`);
         setAudioUrl(response.data.audioUrl);
         hasFetched.current = true;
       } catch (error) {
