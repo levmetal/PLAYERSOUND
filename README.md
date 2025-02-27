@@ -1,26 +1,77 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+# PlayerSound
 
+## Table of Contents
 
-DISCLAIMER
-The app PlayerSound deployed in http://playersound.vercel.app
-dont play audio for backend problem and polices of youtube about use audio from their videos
+- [Getting Started](#getting-started)
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Contributing](#contributing)
+- [License](#license)
 
-You can use the complete functions in local server as follows
+## Features
 
+- Search and play stream audio from youtube
+- Integration with libraries based on YOUTUBE API
+- User-friendly interface
 
+## Technologies Used
 
+- Next.js
+- React
+- Node.js
+- YouTube API
 
-    ====>>>>>  ## Getting Started
+## Contributing
 
-                --First--
-                  * clone the repo
+Contributions are welcome! Please fork the repository and submit a pull request.
 
-                --second-- 
-                    
-                 *  run the development server:
-                
-                   In terminal located into the cloned proyect type:    npm run start 
+## License
 
-                *  Open [http://localhost:3000] with your browser to see the result.
+This project is licensed under the MIT License.
 
+## Getting Started
+
+### Prerequisites
+
+Make sure you have the following installed on your machine:
+
+- Node.js
+- npm (Node Package Manager)
+
+### Installation
+
+**First:**
+
+Clone the repository:
+
+```bash
+git clone <https://github.com/levmetal/PLAYERSOUNDl>
+```
+
+**Second:**
+
+Navigate to the project directory:
+
+```bash
+cd PLAYERSOUND
+```
+
+**Third:**
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+**Fourth:**
+
+Run the development server:
+
+```bash
+npm run start
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **⚠️ WARNING:** The app PlayerSound deployed at [http://playersound.vercel.app](http://playersound.vercel.app) sometimes may have problems due to backend issues and YouTube's API policies. You can use the complete functions on a local server as described above.
