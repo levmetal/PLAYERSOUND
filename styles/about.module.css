@@ -6,10 +6,6 @@
     position: relative;
 }
 
-/* Deliberate exception to the monochrome-tinted-thumbnail rule, same
-   category as the player's cover art (see docs/design/DESIGN_SYSTEM.md):
-   this is an atmospheric photo, not a data thumbnail, so it keeps its own
-   neon color grade instead of being forced to the dominant phosphor hue. */
 .heroArt {
     position: absolute;
     overflow: hidden;
@@ -28,7 +24,13 @@
        the left edge of the source image. */
     object-position: 34% center;
     display: block;
-    filter: contrast(1.1) saturate(1.35) brightness(.78);
+    /* Same green-phosphor tint treatment as every other thumbnail/hero
+       image in the app (60/30/10 rule, docs/design/DESIGN_SYSTEM.md) —
+       grayscale first so the recolor is even, then sepia+hue-rotate to
+       land on the phosphor hue. The photo's own huge exposure range (dark
+       figure against blown-out signage) does the work of the "silhouette
+       vs. glowing city" contrast; the tint just keeps it on-palette. */
+    filter: grayscale(1) brightness(.6) contrast(1.3) sepia(1) hue-rotate(75deg) saturate(3.5);
 }
 
 /* Fades the photo into the page's black background instead of ending in a
@@ -159,7 +161,7 @@
         width: 60%;
     }
     .heroArt__img {
-        filter: contrast(1.1) saturate(1.1) brightness(.4) blur(4px);
+        filter: grayscale(1) brightness(.4) contrast(1.3) sepia(1) hue-rotate(75deg) saturate(3) blur(4px);
     }
     .info__about{
         margin-left: 20%;
@@ -184,7 +186,7 @@
         width: 100%;
     }
     .heroArt__img {
-        filter: contrast(1.1) saturate(1.1) brightness(.35) blur(5px);
+        filter: grayscale(1) brightness(.35) contrast(1.3) sepia(1) hue-rotate(75deg) saturate(3) blur(5px);
     }
     .info__about{
         margin-left: 20%;

@@ -177,18 +177,6 @@ art's real, boosted color (`contrast(1.2) saturate(1.6) brightness(.95)`, no `gr
 treatment on other thumbnails (list rows, hero art) — those stay monochrome on purpose, per the
 60/30/10 rule; this is a one-off "hero screen," not a new default for images.
 
-## About Page Hero Photo
-
-The Tokyo street photo in the about page (`.heroArt__img`, `about.module.css`) is a second
-deliberate exception to the monochrome-tinted-thumbnail rule, same category as the player cover
-art above: it's an atmospheric, narrative photo (the "neon nostalgic city" mood), not a data
-thumbnail, so it keeps its own color grade (`contrast`/`saturate`/`brightness` only — no
-`grayscale`/`sepia`/`hue-rotate`) instead of being forced to the dominant phosphor hue. It uses
-`object-fit: cover` with `object-position` tuned to keep the silhouette in frame, and fades to
-`--crt-black` on its left/bottom edges (`.heroArt__fade`) rather than ending in a hard rectangle.
-Don't reuse this on other thumbnails (list rows, the home hero art) — those stay monochrome on
-purpose, per the 60/30/10 rule.
-
 ## Player Transport
 
 **Layout.** The console faceplate (`modal.jsx`) is two rows: a "windows row" (thumbnail, the
