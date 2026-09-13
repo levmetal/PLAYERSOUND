@@ -17,7 +17,13 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+
+# AI coding assistant tooling/config (local only, not shared project config)
+/.claude/
+/.agents/
+skills-lock.json
 
 # debug
 npm-debug.log*
@@ -27,6 +33,10 @@ yarn-error.log*
 
 # local env files
 .env*.local
+
+# leftover cache from youtube extraction libraries (ytdl-core/youtubei.js player.js cache)
+*-player-script.js
+/.cache
 
 # vercel
 .vercel
