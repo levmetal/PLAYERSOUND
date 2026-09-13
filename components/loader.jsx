@@ -31,8 +31,17 @@ const Loader = ({ closing = false }) => {
     }, [])
 
     return (
-        <div className={closing ? `${styles.overlay} ${styles.overlayClosing}` : styles.overlay}>
-            <div className={styles.box}>
+        <div
+            className={closing ? `${styles.overlay} ${styles.overlayClosing}` : styles.overlay}
+            role="status"
+            aria-live="polite"
+        >
+            {/* The single, stable announcement for assistive tech. The decorative
+                readout below (box) is aria-hidden — its frame/bar/telemetry text
+                changes every 200-700ms, which would otherwise spam a live region
+                with announcements no one asked for. */}
+            <span className="sr-only">Loading</span>
+            <div className={styles.box} aria-hidden="true">
                 <div className={styles.header}>SYSTEM INITIALIZING...</div>
                 <div className={styles.frame}>{FRAMES[frame]}</div>
                 <div className={styles.bar}>

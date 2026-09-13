@@ -5,7 +5,7 @@
     align-items: center;
     min-height: 100dvh;
     max-width: 100vw;
-    padding-left: 15rem;
+    padding-left: var(--rail-width);
     padding-right: 10rem;
     font-family: var(--font-body);
 }

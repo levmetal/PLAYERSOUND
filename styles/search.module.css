@@ -1,6 +1,15 @@
 .container {
     min-height: 100dvh;
     width: 100%;
+    /* Clears the fixed desktop rail (components/sideBar.jsx) — without this
+       the results list rendered underneath it (soundlist.module.css has no
+       left clearance of its own, only the mobile top-bar one). Below 768px
+       the rail becomes a top bar instead, so this isn't needed there. */
+    padding-left: var(--rail-width);
+}
 
-
+@media screen and (max-width: 768px) {
+    .container {
+        padding-left: 0;
+    }
 }

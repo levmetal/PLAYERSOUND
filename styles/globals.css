@@ -11,6 +11,26 @@
   --lowPrimaryColor: var(--phosphor-secondary);
   --accent: var(--rgb-cyan);
   font-family: var(--font-body);
+  /* Always-dark CRT theme (no light variant) — lets native form controls,
+     scrollbars, etc. render dark by default instead of the browser's light
+     UA styling clashing with the phosphor-on-black look. */
+  color-scheme: dark;
+}
+
+/* Visually hides content while keeping it in the accessible tree — for
+   <label>s that pair with an input's placeholder/visual context instead of
+   duplicating it on screen. Standard clip-based technique (not
+   display:none/visibility:hidden, which also remove it from screen readers). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .crt-vignette {

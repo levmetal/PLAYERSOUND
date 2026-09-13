@@ -57,6 +57,15 @@
      rather than introducing another breakpoint. */
   --mobile-nav-height: 3.5rem;
 
+  /* Above 768px, the rail (components/sideBar.jsx, styles/sidebar.module.css)
+     has no fixed width — it's sized by its own content (logo + row width),
+     not by this variable. This is only the shared, manually-kept-in-sync
+     estimate that full-bleed page containers use to clear it (e.g.
+     library.module.css's `padding-left`) — if the rail's content ever grows
+     meaningfully wider than this, bump it here rather than guessing a new
+     number in each page's own stylesheet. */
+  --rail-width: 15rem;
+
   /* HUD corner brackets — the ".hud-frame" utility in globals.css, backing
      the "corner-bracket boxes... like a targeting reticle" rule in
      docs/design/DESIGN_SYSTEM.md. Reuses --phosphor-primary so it re-tints
