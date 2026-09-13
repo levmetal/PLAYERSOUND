@@ -47,6 +47,16 @@
   /* chromatic aberration (title hover) */
   --chromatic-shadow: -2px 0 var(--rgb-cyan), 2px 0 var(--rgb-magenta);
 
+  /* Below this width the persistent nav (components/sideBar.jsx) switches
+     from a left-hand rail to a fixed top bar (logo + menu toggle) — see
+     docs/design/UX_FLOW.md. Every full-bleed page container reserves this
+     much top space at that same width instead of the rail's left-hand
+     clearance. Media query conditions can't read custom properties, so the
+     768px number itself is still repeated literally in each stylesheet's
+     `@media (max-width: 768px)` — keep new mobile rules at that same number
+     rather than introducing another breakpoint. */
+  --mobile-nav-height: 3.5rem;
+
   /* HUD corner brackets — the ".hud-frame" utility in globals.css, backing
      the "corner-bracket boxes... like a targeting reticle" rule in
      docs/design/DESIGN_SYSTEM.md. Reuses --phosphor-primary so it re-tints

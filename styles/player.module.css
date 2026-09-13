@@ -5,7 +5,7 @@
     justify-content: center;
     top: 0;
     left: 0;
-    min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     background: rgba(0, 0, 0, 0.65);
     z-index: 85;
@@ -33,7 +33,7 @@
        don't render underneath it. */
     margin-left: 5.5rem;
     width: calc(100% - 5.5rem);
-    max-height: 58vh;
+    max-height: 58dvh;
     background: var(--phosphor-box-bg);
     border-top: var(--border-crt);
     box-shadow: 0 -4px 24px rgba(var(--phosphor-primary-rgb), 0.2);
@@ -552,6 +552,15 @@
 
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* Below 768px the nav is a top bar, not a left rail (docs/design/UX_FLOW.md)
+   — this modal no longer needs to clear anything on its left. */
+@media screen and (max-width: 768px) {
+    .console {
+        margin-left: 0;
+        width: 100%;
     }
 }
 

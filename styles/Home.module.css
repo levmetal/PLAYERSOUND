@@ -4,7 +4,7 @@
     position: relative;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
     width: 100%;
     /* .heroFrame below shifts upward past this container's own top edge —
        clip that instead of letting it read as extra (empty) scrollable
@@ -86,7 +86,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
     width: 75%;
     z-index: 100;
     position: relative;
@@ -141,7 +141,7 @@
     position: absolute;
     top: -19vh;
     right: 3vw;
-    height: 100vh;
+    height: 100dvh;
     width: 45%;
     display: flex;
     align-items: center;
@@ -226,117 +226,75 @@
     box-shadow: var(--glow-box);
 }
 
-@media screen and (max-width: 960px) {
-    .heroFrame {
-        top: auto;
-        bottom: 1vh;
-        height: 26vh;
-        width: 38%;
-        right: 5%;
-        padding: 0;
+/* Below 768px (same threshold the nav switches to a top bar at, see
+   docs/design/UX_FLOW.md) the hero drops the desktop's absolute-position
+   layout entirely for a plain stacked flex flow — title/subtitle/form, then
+   the cassette art below — sized with clamp()/fluid units instead of a
+   second, smaller-phone tier on top. One consolidated breakpoint replaces
+   the old 960px/414px pair. */
+@media screen and (max-width: 768px) {
+    .container {
+        height: auto;
+        min-height: 100dvh;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: calc(var(--mobile-nav-height) + 1.5rem) 1.25rem 3rem;
+        gap: 2rem;
+        overflow: visible;
+        box-sizing: border-box;
+    }
+
+    .infoHero {
+        height: auto;
+        width: 100%;
     }
 
     .mainTitle {
-
+        position: static;
         width: 100%;
-        transform: translateX(8%);
     }
 
     .container__title {
-        font-size: 8vw;
+        font-size: clamp(1.9rem, 8vw, 2.6rem);
     }
 
     .container__subtitle {
-        font-size:3vw;
+        font-size: clamp(.95rem, 4vw, 1.05rem);
     }
 
     .container__form {
+        position: static;
         display: flex;
         flex-wrap: wrap;
-        bottom: 0;
-        width: 80vw;
-        max-width: 460px;
-        transform: translateX(8%);
-        bottom: 32vh;
-    }
-
-    .form__input {
-        flex: 1;
-        margin: 0;
-        order: 1;
-    }
-
-    .form__button {
-        flex: 1;
-        order: 2;
-    }
-
-}
-
-@media screen and (max-width: 414px) {
-    .heroFrame {
-        top: auto;
-        bottom: 1vh;
-        height: 22vh;
-        width: 55%;
-        right: 5%;
-        padding: 0;
-        transform: none;
-    }
-
-
-    /* No horizontal transform here — .infoHero is already centered by
-       .container's flex (justify-content: center) at this width. Stacking a
-       translateX on top of that centering pushed the whole hero (headline,
-       subtitle, search form) off the right edge of the viewport on phones;
-       the mainTitle/container__form below carry their own small nudges
-       instead. */
-    .infoHero {
-        width: 85%;
-    }
-
-    /* translateX needs to clear the collapsed sidebar rail (a fixed,
-       opaque ~85px-wide strip at the left edge on phones — see
-       sidebar.module.css's .sidebar__collapsed) rather than the small 5%
-       nudge used at the 960px breakpoint above; without this the headline's
-       first few characters render underneath the rail and get clipped. */
-    .mainTitle {
-        position: absolute;
-        width: 85%;
-        left: 0;
-        margin: 0;
-        transform: translateX(24%);
-    }
-
-    .container__title {
-        font-size: 8vw;
-       
-    }
-
-    .container__subtitle {
-        margin-top: 1rem;
-        font-size: 3.5vw;
-    }
-
-    .container__form {
-       display: grid;
-        bottom: 30vh;
-        width: 85%;
-        transform: translateX(24%);
-        margin: 0;
-
-    }
-
-    .form__input {
-       width: 100%;
-        margin: 0;
-        order: 1;
-        padding: 0;
-    }
-
-    .form__button {
         width: 100%;
-        order: 2;
+        max-width: 26rem;
+        margin-top: 2rem;
     }
 
+    .form__input {
+        flex: 1 1 100%;
+        width: 100%;
+        margin: 0;
+    }
+
+    .form__button {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .heroFrame {
+        /* relative, not static: DataPixelArc's canvas (styles/dataPixelArc.module.css)
+           is `position: absolute; inset: 0` and needs this as its positioned
+           ancestor, even though it no longer carries an offset of its own here.
+           top/right must be reset too — relative (unlike static) still
+           honors the desktop rule's -19vh/3vw offset otherwise. */
+        position: relative;
+        top: auto;
+        right: auto;
+        width: min(70%, 20rem);
+        height: auto;
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+        padding: 0;
+    }
 }

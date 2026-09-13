@@ -87,6 +87,19 @@ Sidebar stays 3 items, renamed/repurposed:
   playlist switcher + selected playlist's tracks
 - About (`/about`) — unchanged
 
+### Responsive nav: rail vs. top bar
+
+Below 768px (`components/sideBar.jsx`, `styles/sidebar.module.css`) the same 3-item nav stops
+being a left-hand rail and becomes a fixed top bar — logo + a menu toggle button, opening a
+dropdown (dim scrim behind it, tap-outside/Escape/nav-link-click all close it). A vertical sliver
+rail doesn't give a usable "logo + menu button" navbar at phone widths, which is the point of the
+switch; the desktop collapsed/expanded rail behavior above 768px is unchanged. Every full-bleed
+page reserves `--mobile-nav-height` (`styles/tokens.css`) of top padding at that same width instead
+of the rail's ~85px left-hand clearance — keep new mobile-only rules on this one shared breakpoint
+rather than adding another. Height-based layout (page containers, the player modal's max-height)
+uses `dvh`, not `vh`, so a mobile browser's address bar collapsing/expanding or the keyboard opening
+doesn't leave stale dead space or clip content.
+
 ## Out of scope for this pass
 
 - Any backend/account system.

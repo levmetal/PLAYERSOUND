@@ -10,10 +10,12 @@
     display: flex;
     flex-direction: column;
     border-right: var(--border-crt);
-    height: 100vh;
+    height: 100dvh;
     transform: translateX(0%);
     z-index: 150;
     position: fixed;
+    top: 0;
+    left: 0;
     transition: transform 200ms;
 
 }
@@ -25,10 +27,12 @@
     display: flex;
     flex-direction: column;
     border-right: var(--border-crt);
-    height: 100vh;
+    height: 100dvh;
 
     z-index: 150;
     position: fixed;
+    top: 0;
+    left: 0;
     transition: transform 200ms;
     transform: translateX(-70%);
 }
@@ -40,28 +44,39 @@
     border-bottom: var(--border-crt);
 }
 
-/* The hamburger/outdent toggle is the sidebar's primary control — give it its
-   own hover/press feedback instead of relying only on the icon swap; a bare
-   onClick SVG has no built-in affordance or cursor. Subtle deformation
-   (0.96, inside the 0.95-1.05 range) rather than a translate/lift, since this
-   isn't a bordered "pixel-depth" box. */
-.sideBarIcon {
-    color: var(--primarycolor);
+/* Hit target (~44px, touch-target guidance) wrapping the toggle icon — a
+   real <button> instead of a bare onClick'd svg, so it's keyboard-focusable
+   and reads correctly to a screen reader (aria-label/aria-expanded below in
+   sideBar.jsx). Reset to plain chrome since this composes visually with
+   .sideBarIcon below, not a bordered control. */
+.navToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
     cursor: pointer;
-
     margin-left: auto;
-    margin-right: 2rem;
-    width: 1.2rem;
-    height: 1.2rem;
-    transition: color 150ms, transform 80ms;
+    margin-right: 1.2rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--primarycolor);
 }
 
-.sideBarIcon:hover {
+/* Subtle deformation (0.96, inside the 0.95-1.05 range) rather than a
+   translate/lift, since this isn't a bordered "pixel-depth" box. */
+.navToggle:hover .sideBarIcon {
     color: var(--phosphor-primary-alt);
 }
 
-.sideBarIcon:active {
+.navToggle:active {
     transform: scale(0.96);
+}
+
+.sideBarIcon {
+    width: 1.2rem;
+    height: 1.2rem;
+    transition: color 150ms;
 }
 
 .sideIcon {
@@ -71,15 +86,16 @@
     height: 1.2rem;
 }
 
-
-
-.sidebar__expanded h2 {
+.logo {
     color: var(--primarycolor);
     margin: 2rem 2rem 2rem 3rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     text-shadow: var(--glow-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .listbar {
@@ -137,24 +153,101 @@
     transform: scale(0.97);
 }
 
-@media screen and (max-width: 525px) {
+/* Mobile-only dim scrim behind the open dropdown — tap it to close. Kept
+   `display:none` above 768px: desktop's collapsed->expanded rail is already
+   its own kind of overlay and has never dimmed the page behind it, and
+   this shouldn't change that established look. */
+.navScrim {
+    display: none;
+}
+
+/* Below 768px the persistent nav stops being a left-hand rail and becomes a
+   fixed top bar (logo + menu toggle) with a dropdown, per
+   docs/design/UX_FLOW.md — a vertical sliver rail doesn't give a usable
+   "logo + menu button" navbar, which is the point of this switch. Every
+   full-bleed page reserves `--mobile-nav-height` of top padding at this
+   same width instead of the rail's left-hand clearance. */
+@media screen and (max-width: 768px) {
+    .sidebar__expanded,
+    .sidebar__collapsed {
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: auto;
+        max-height: 100dvh;
+        overflow-y: auto;
+        border-right: none;
+        border-bottom: var(--border-crt);
+        transform: none;
+    }
+
+    .sideHeader {
+        height: var(--mobile-nav-height);
+        flex: none;
+    }
+
+    .logo {
+        margin: 0 0 0 1.2rem;
+        font-size: 1rem;
+    }
+
+    .navScrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        top: var(--mobile-nav-height);
+        z-index: 140;
+        background: rgba(0, 0, 0, 0.6);
+        animation: nav-scrim-in 200ms ease-out;
+    }
+
+    /* Collapsed = the resting/exit state, so its own transition (used when
+       .listbarOpen is removed) is the ease-in "exit" curve per the timing
+       rules; .listbarOpen below carries the ease-out "entrance" curve for
+       when it's added. Both under 300ms. */
     .listbar {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        font-size: 20px;
+        gap: .3rem;
+        max-height: 0;
+        opacity: 0;
+        margin: 0;
+        padding: 0 1rem;
+        overflow: hidden;
+        transition: max-height 220ms ease-in, opacity 160ms ease-in;
+    }
+
+    .listbarOpen {
+        max-height: 18rem;
+        opacity: 1;
+        padding: .5rem 1rem 1rem;
+        transition: max-height 240ms ease-out, opacity 200ms ease-out;
+    }
+
+    .listbar__option a {
+        width: 100%;
+        height: 3.2rem;
+        font-size: .95rem;
     }
 
     .sideIcon {
+        width: 1.4rem;
+        height: 1.4rem;
+    }
+}
 
-        width: 1.8rem;
-        height: 1.8rem;
+@keyframes nav-scrim-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
+@media (prefers-reduced-motion: reduce) {
+    .listbar,
+    .listbarOpen {
+        transition: none;
     }
 
-    .sideBarIcon {
-        width: 1.8rem;
-        height: 1.8rem;
+    .navScrim {
+        animation: none;
     }
-
 }

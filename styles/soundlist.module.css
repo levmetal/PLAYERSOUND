@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
+    min-height: 100dvh;
     background: var(--bg-grid);
     font-family: var(--font-body);
     padding-bottom: 3rem;
@@ -334,7 +334,15 @@
     }
 }
 
-@media screen and (max-width:650px) {
+/* Below 768px the nav is a top bar, not a left rail
+   (docs/design/UX_FLOW.md) — reserve its height so the first row of
+   results/controls doesn't render underneath it. Consolidated with the
+   duration-badge tweak that used to sit at its own 650px breakpoint. */
+@media screen and (max-width: 768px) {
+    .soundlist__container {
+        padding-top: var(--mobile-nav-height);
+    }
+
     .row__duration {
         display: none;
     }
