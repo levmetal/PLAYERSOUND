@@ -1,11 +1,7 @@
-import { useState, Suspense } from "react";
-import { v4 as uuidv4 } from 'uuid';
-import { handleScrollright, handleScrollLeft } from '../utils/handleScroll.js'
-import { HiArrowSmRight, HiArrowSmLeft } from 'react-icons/hi';
-import { useRef } from "react";
-import { useSoundContext } from "../context/libraryContext/libraryContext.js";
+import { useMemo, useState, Suspense } from "react";
 import dynamic from 'next/dynamic'
 import styles from "../styles/soundlist.module.css"
+import { SORT_OPTIONS, DURATION_FILTERS, applySort, applyDurationFilter, groupByChannel } from "../utils/sortSearchResults";
 const SoundItem = dynamic(() => import('./soundItem'), { Suspense: true })
 
 
@@ -13,103 +9,85 @@ const Modal = dynamic(() => import('../components/modal'), { Suspense: true })
 
 const SoundList = ({ dataSearch }) => {
 
-  const library = useSoundContext()
-  const scrollSearchList = useRef()
   const [openModal, setOpenModal] = useState(false)
   const [itemModal, setItemModal] = useState(null)
+  const [sortKey, setSortKey] = useState("relevance")
+  const [durationKey, setDurationKey] = useState("all")
+  const [groupByChannelOn, setGroupByChannelOn] = useState(false)
 
   const triggerModal = (itemModal) => {
     setOpenModal(!openModal)
     setItemModal(itemModal)
   }
 
+  const results = dataSearch[0]
+
+  const processedResults = useMemo(
+    () => applySort(applyDurationFilter(results, durationKey), sortKey),
+    [results, sortKey, durationKey]
+  )
+
+  const grouped = useMemo(
+    () => (groupByChannelOn ? groupByChannel(processedResults) : null),
+    [groupByChannelOn, processedResults]
+  )
+
   return (
     <div className={styles.soundlist__container}>
 
-
       {openModal && <Suspense fallback={`Loading`}> <Modal item={itemModal} triggerModal={triggerModal} /> </Suspense>}
 
-      <ul ref={scrollSearchList} className={styles.searchlist}>
+      <div className={`${styles.controls} hud-frame`}>
+        <label>
+          Sort by
+          <select value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+            {Object.entries(SORT_OPTIONS).map(([key, option]) => (
+              <option key={key} value={key}>{option.label}</option>
+            ))}
+          </select>
+        </label>
 
-        <button
-          key={uuidv4()}
-          onClick={() => handleScrollLeft(scrollSearchList)}
-          className={styles.sliderleft} >
+        <label>
+          Length
+          <select value={durationKey} onChange={(e) => setDurationKey(e.target.value)}>
+            {Object.entries(DURATION_FILTERS).map(([key, filter]) => (
+              <option key={key} value={key}>{filter.label}</option>
+            ))}
+          </select>
+        </label>
 
-          <HiArrowSmLeft
-            key={uuidv4()}
-            style={{ width: "1.5rem", height: "1.5rem", alignSelf: "center" }}
+        <label className={styles.groupToggle}>
+          <input
+            type="checkbox"
+            checked={groupByChannelOn}
+            onChange={(e) => setGroupByChannelOn(e.target.checked)}
           />
-
-        </button>
-
-
-        {
-          dataSearch[0].map(item => {
-
-            return (
-
-              <Suspense fallback={`Loading`} key={uuidv4()} >
-
-                <SoundItem
-                  key={uuidv4()}
-                  item={item}
-                  triggerModal={triggerModal}
-                />
-
-              </Suspense>
-
-            )
-          })
-
-        }
-
-        <button
-          key={uuidv4()}
-          onClick={() => handleScrollright(scrollSearchList)}
-          className={styles.slideright}>
-          <HiArrowSmRight
-            key={uuidv4()}
-            style={{ width: "1.5rem", height: "1.5rem", alignSelf: "center" }}
-          />
-        </button>
-      </ul>
-
-
-      <div className={styles.itemlibrary__categories}>
-
-
-        <h2 className={styles.titleLibrary}>Library sounds </h2>
-        <ul className={styles.soundlist__library}>
-          {
-            library.map((item) => {
-              return (
-                <Suspense fallback={`Loading`} key={uuidv4()}>
-                  <SoundItem
-                    key={uuidv4()}
-                    item={item}
-                    triggerModal={triggerModal}
-                  />
-                </Suspense>
-              )
-
-            })
-
-          }
-        </ul>
-        <h2 className={styles.titleCategories}>Categories </h2>
-
-        <ul className={styles.categories__container}>
-
-          <li title="Will be implemented soon" key={uuidv4()} ><span>Rock</span></li>
-          <li title="Will be implemented soon" key={uuidv4()}><span>Pop</span></li>
-          <li title="Will be implemented soon" key={uuidv4()}><span>Rap</span></li>
-          <li title="Will be implemented soon" key={uuidv4()}><span>{`R&B`}</span></li>
-
-
-        </ul>
-
+          Group by channel
+        </label>
       </div>
+
+      {grouped ? (
+        grouped.map((group) => (
+          <div key={group.channel} className={styles.channelGroup}>
+            <h3 className={styles.channelGroup__title}>{group.channel}</h3>
+            <ul className={styles.searchlist}>
+              {group.items.map((item) => (
+                <Suspense fallback={`Loading`} key={item.id}>
+                  <SoundItem item={item} triggerModal={triggerModal} />
+                </Suspense>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <ul className={styles.searchlist}>
+          {processedResults.map(item => (
+            <Suspense fallback={`Loading`} key={item.id}>
+              <SoundItem item={item} triggerModal={triggerModal} />
+            </Suspense>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

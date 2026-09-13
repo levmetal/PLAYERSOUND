@@ -1,0 +1,120 @@
+/* Retro-Cyberpunk CRT / Terminal design tokens. See docs/design/DESIGN_SYSTEM.md. */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Press+Start+2P&family=Doto:wght@700&display=swap');
+
+:root {
+  /* base */
+  --crt-black: #000000;
+  --crt-black-tint: #050B05;
+
+  /* green phosphor (default variant) */
+  --phosphor-primary: #00FF66;
+  --phosphor-primary-alt: #39FF14;
+  --phosphor-secondary: #008F39;
+  --phosphor-secondary-alt: #00A859;
+  --phosphor-box-bg: #00220A;
+  --phosphor-primary-rgb: 0, 255, 102;
+  --thumb-hue-rotate: 70deg;
+
+  /* rgb split accents */
+  --rgb-cyan: #00FFFF;
+  --rgb-magenta: #FF0055;
+
+  /* type */
+  --font-body: 'Share Tech Mono', 'VT323', monospace;
+  --font-display: 'Press Start 2P', 'Share Tech Mono', monospace;
+  /* Dot-matrix LED look for standalone numeric readouts (timers, duration
+     badges) — not for prose/labels. See docs/design/DESIGN_SYSTEM.md. */
+  --font-digits: 'Doto', 'Share Tech Mono', monospace;
+  --letter-spacing-wide: 1.5px;
+
+  /* borders */
+  --border-crt: 1px solid var(--phosphor-primary);
+
+  /* glow */
+  --glow-text: 0 0 8px rgba(0, 255, 102, 0.7);
+  --glow-box: 0 0 12px rgba(0, 255, 102, 0.25);
+  /* cyan accent glow — shared by every "state, not property" accent use
+     (favorited/saved indicators, current-nav-position markers); see
+     docs/design/DESIGN_SYSTEM.md's 60/30/10 rule. */
+  --glow-accent: 0 0 12px rgba(0, 255, 255, 0.35);
+  /* Tighter, less-diffuse cyan glow for the one small-text LED readout that
+     is itself cyan (the player's track-info box) — legibility at small text
+     sizes over a wider blur radius. A separate, deliberate exception from
+     the 60/30/10 rule; see docs/design/DESIGN_SYSTEM.md. */
+  --glow-text-accent: 0 0 4px rgba(0, 255, 255, 0.8), 0 0 1px rgba(0, 255, 255, 0.9);
+
+  /* chromatic aberration (title hover) */
+  --chromatic-shadow: -2px 0 var(--rgb-cyan), 2px 0 var(--rgb-magenta);
+
+  /* HUD corner brackets — the ".hud-frame" utility in globals.css, backing
+     the "corner-bracket boxes... like a targeting reticle" rule in
+     docs/design/DESIGN_SYSTEM.md. Reuses --phosphor-primary so it re-tints
+     automatically under [data-theme="amber"]. */
+  --bracket-size: 14px;
+  --bracket-thickness: 2px;
+
+  /* Blueprint/graph-paper grid — the "operator console" backdrop for
+     full-bleed page containers (see docs/design/DESIGN_SYSTEM.md). Applied
+     via `background: var(--bg-grid)` instead of `var(--bg)` on a handful of
+     top-level page containers; --grid-line re-tints per phosphor variant. */
+  --grid-size: 42px;
+  --grid-line: rgba(0, 143, 57, 0.07);
+  --bg-grid:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / var(--grid-size) var(--grid-size),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / var(--grid-size) var(--grid-size),
+    var(--crt-black);
+
+  /* Pixel-art hard shadow — the ".pixel-depth"/".pixel-depth-static"
+     utilities in globals.css. A flat 1px-outline box reads as neither
+     brutalism (too thin/no weight) nor pixel art (no bevel) — this gives
+     boxes/buttons/items real depth via a crisp, unblurred offset shadow.
+     Uses `box-shadow` syntax (offsetX offsetY blur spread color), NOT
+     `filter: drop-shadow()` — drop-shadow rasterizes the element's actual
+     rendered pixels (including any text/icon inside), so on a box with
+     visible text it produced a legible offset *duplicate of the letters*,
+     not a clean shadow. box-shadow only follows the box's own geometry, so
+     it can't do that. Reuses phosphor-secondary so it re-tints under
+     [data-theme="amber"]. */
+  --depth-offset: 4px;
+  --pixel-shadow-rest: var(--depth-offset) var(--depth-offset) 0 0 var(--phosphor-secondary);
+  /* Hover "lift": the box shifts up-left by --depth-lift while its shadow
+     grows by the same amount, so the shadow's actual screen position stays
+     anchored (like the box lifting away from a fixed surface) — mouse-only,
+     see the `(hover: hover)` guard in globals.css. */
+  --depth-lift: 2px;
+  --pixel-shadow-hover: calc(var(--depth-offset) + var(--depth-lift)) calc(var(--depth-offset) + var(--depth-lift)) 0 0 var(--phosphor-secondary);
+}
+
+/* amber / alert variant, opt-in via [data-theme="amber"] on a container */
+[data-theme="amber"] {
+  --phosphor-primary: #FF7700;
+  --phosphor-primary-alt: #FF5500;
+  --phosphor-secondary: #8A2E00;
+  --phosphor-secondary-alt: #8A2E00;
+  --phosphor-box-bg: #1A0A00;
+  --phosphor-primary-rgb: 255, 119, 0;
+  --thumb-hue-rotate: 0deg;
+
+  --border-crt: 1px solid var(--phosphor-primary);
+  --glow-text: 0 0 8px rgba(255, 119, 0, 0.7);
+  --glow-box: 0 0 12px rgba(255, 119, 0, 0.25);
+  --grid-line: rgba(138, 46, 0, 0.08);
+}
+
+/* Scanline overlay utility. Not wired into any layout yet — apply
+   `.crt-scanlines` (position: relative) to a container to opt in. */
+.crt-scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0px,
+    rgba(0, 0, 0, 0.35) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  z-index: 9999;
+}

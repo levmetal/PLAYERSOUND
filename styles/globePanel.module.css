@@ -1,0 +1,6 @@
+.container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--crt-black-tint);
+}

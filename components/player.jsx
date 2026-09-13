@@ -1,60 +1,40 @@
 import { useEffect, useRef, useState } from "react";
 import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp, FaSpinner } from 'react-icons/fa';
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
-import { RemoveSpecialChar } from "../utils/removeSpecialChar";
 import styles from '../styles/player.module.css';
 import { useSoundContext, useDispatchContext } from "../context/libraryContext/libraryContext";
-import axios from 'axios';
+
+const audioApiBase = process.env.NEXT_PUBLIC_AUDIO_API_BASE || '';
+
+// Purely decorative — a neon VU-meter bar-graph above the seek bar, staggered
+// via --vu-i so the bars don't bounce in lockstep. Not driven by real audio
+// analysis, same spirit as the loader's fake telemetry readouts.
+const VU_BARS = Array.from({ length: 20 });
 
 const Player = ({ item }) => {
     const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
-    const [audioUrl, setAudioUrl] = useState(null);
     const [audioReady, setAudioReady] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const player = useRef();
     const bar = useRef();
     const animationRef = useRef();
     const volumeControl = useRef();
-    const titlefix = RemoveSpecialChar(item.title);
     const duration = ConvertSecToMin(item.duration);
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
-    const hasFetched = useRef(false);
+
+    // The <audio> element streams progressively straight from the resolver
+    // endpoint (Range/206 aware) instead of buffering the whole file first.
+    const audioUrl = `${audioApiBase}/api/soundplayer/${item.id}`;
 
     useEffect(() => {
-        const fetchAudioUrl = async () => {
-            if (hasFetched.current) return;
-            setLoading(true);
-    
-            try {
-                const response = await axios.get(`https://yt-audio-l01p.onrender.com/audio/${item.id}`, {
-                    timeout: 600000,
-                    responseType: 'blob' // Request response as Blob
-                });
-    
-                // Convert Blob to Data URL
-                const blob = new Blob([response.data], { type: 'audio/mpeg' });
-                const dataUrl = URL.createObjectURL(blob);
-                setAudioUrl(dataUrl); // Set Data URL as audioUrl
-                hasFetched.current = true;
-    
-            } catch (error) {
-                console.error('Error fetching audio URL:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-    
-        fetchAudioUrl();
+        setLoading(true);
+        setAudioReady(false);
+        setError(null);
     }, [item.id]);
-
-    useEffect(() => {
-        if (player.current && player.current.duration) {
-            bar.current.max = player.current.duration;
-        }
-    }, [audioUrl]);
 
     const whileIsPlaying = () => {
         try {
@@ -67,8 +47,14 @@ const Player = ({ item }) => {
     };
 
     const onChangeBar = () => {
-        player.current.currentTime = bar.current.value;
-        setCurrentTime(player.current.currentTime);
+        // Read back from bar.current.value (the position we just asked for),
+        // not player.current.currentTime — the <audio> element's currentTime
+        // can lag behind a requested seek by a frame or more, which desynced
+        // the filled portion of the bar (driven by this state) from the seek
+        // thumb (driven directly by the input's own value).
+        const seekTime = Number(bar.current.value);
+        player.current.currentTime = seekTime;
+        setCurrentTime(seekTime);
     };
 
     const HandlePlaying = async () => {
@@ -101,7 +87,6 @@ const Player = ({ item }) => {
     const ForwardTime = () => {
         bar.current.value = Number(bar.current.value) + 10;
         onChangeBar();
-        setPlaying(false); // Pause after forward, adjust as needed
     };
 
     const endendFunction = () => {
@@ -117,93 +102,129 @@ const Player = ({ item }) => {
     };
 
     const saveHandle = () => {
-        if (verificationSaved) {
-            return alert("The sound is already saved in the library");
-        } else {
-            dispatch({
-                type: "addLibrary",
-                payload: item,
-            });
-        }
+        if (verificationSaved) return;
+        dispatch({
+            type: "ADD_TO_FAVORITES",
+            payload: item,
+        });
     };
 
     const delHandle = () => {
-        if (verificationSaved) {
-            dispatch({
-                type: "delLibrary",
-                payload: item.id,
-            });
-            return alert("The sound is deleted from library");
-        }
+        if (!verificationSaved) return;
+        dispatch({
+            type: "REMOVE_FROM_FAVORITES",
+            payload: item.id,
+        });
     };
 
     const verificationSaved = sounds.some((element) => element.id === item.id);
 
     return (
-        <>
-            <div className={styles.player__container}>
-                <h2>{item.channel.verified ? item.channel.name : `No Oficial: ${item.channel.name}`}</h2>
-                <span>{titlefix}</span>
-                <div className={styles.player__panel}>
-                    <div className={styles.player__bar__container}>
-                        <div className={`${styles.time} ${styles.currentime}`}>{ConvertSecToMin(currentTime)}</div>
-                        <input ref={bar} type="range" className={styles.bar} defaultValue={0} onChange={onChangeBar} />
-                        <div className={`${styles.time} ${styles.durationTotal}`}>{duration}</div>
+        <div className={`${styles.player__panel} hud-frame`}>
+            <div
+                className={playing ? `${styles.vuMeter} ${styles.vuMeterActive}` : styles.vuMeter}
+                aria-hidden="true"
+            >
+                {VU_BARS.map((_, i) => (
+                    <span key={i} className={styles.vuMeter__bar} style={{ '--vu-i': i }} />
+                ))}
+            </div>
+            <div className={styles.player__bar__container}>
+                <div className={`${styles.time} ${styles.currentime}`}>{ConvertSecToMin(currentTime)}</div>
+                <input
+                    ref={bar}
+                    type="range"
+                    className={styles.bar}
+                    defaultValue={0}
+                    // Same source (item.duration) as --bar-progress below —
+                    // this used to be set imperatively from the <audio>
+                    // element's own .duration in an effect, but that reads as
+                    // NaN until the stream's metadata finishes loading
+                    // asynchronously, so it silently kept the native max=100
+                    // default. That desynced the thumb (native max-based
+                    // position) from the green fill (item.duration-based),
+                    // most visible after a seek moved the thumb far past
+                    // where the fill thought the track was.
+                    max={item.duration || 0}
+                    onChange={onChangeBar}
+                    style={{ '--bar-progress': item.duration ? (currentTime / item.duration) * 100 : 0 }}
+                />
+                <div className={`${styles.time} ${styles.durationTotal}`}>{duration}</div>
+            </div>
+
+            <div className={styles.player__controls__container}>
+                <div className={styles.controlUnit}>
+                    <button
+                        onClick={verificationSaved ? delHandle : saveHandle}
+                        className={verificationSaved ? `${styles.button} ${styles.buttonAccent}` : styles.button}
+                    >
+                        {verificationSaved ? <FaHeart /> : <FaRegHeart />}
+                    </button>
+                    <span className={styles.controlLabel}>Fav</span>
+                </div>
+                <div className={styles.button__group}>
+                    <audio
+                        onCanPlay={() => {
+                            setAudioReady(true);
+                            setLoading(false);
+                        }}
+                        onError={() => {
+                            setError('No se pudo cargar el audio de este video.');
+                            setLoading(false);
+                        }}
+                        onEnded={endendFunction}
+                        ref={player}
+                        src={audioUrl}
+                        preload="auto"
+                    />
+
+                    <div className={styles.controlUnit}>
+                        <button className={styles.button} onClick={BackTime}>
+                            <FaBackward className={styles.backward} />
+                        </button>
+                        <span className={styles.controlLabel}>Rew</span>
                     </div>
 
-                    <div className={styles.player__controls__container}>
-                        <div className={styles.fav}>
-                            <button onClick={verificationSaved ? delHandle : saveHandle} className={styles.button}>
-                                {verificationSaved ? <FaHeart /> : <FaRegHeart />}
-                            </button>
-                        </div>
-                        <div className={styles.button__group}>
-                            {audioUrl && (
-                                <audio
-                                    type='audio/mpeg' // Changed to audio/mpeg to match backend header
-                                    onLoadedData={() => {
-                                        setAudioReady(true);
-                                        setLoading(false);
-                                    }}
-                                    onEnded={endendFunction}
-                                    ref={player}
-                                    src={audioUrl}
-                                />
+                    <div className={playing ? `${styles.controlUnit} ${styles.controlUnitActive}` : styles.controlUnit}>
+                        <button className={styles.button} onClick={HandlePlaying} disabled={loading || !!error}>
+                            {error ? (
+                                <span title={error}>!</span>
+                            ) : loading ? (
+                                <FaSpinner className={styles.spinner} />
+                            ) : playing ? (
+                                <FaPause className={styles.pause} />
+                            ) : (
+                                <FaPlay className={styles.play} />
                             )}
+                        </button>
+                        <span className={styles.controlLabel}>{playing ? 'Pause' : 'Play'}</span>
+                    </div>
 
-                            <button className={styles.button} onClick={BackTime}>
-                                <FaBackward className={styles.backward} />
-                            </button>
+                    <div className={styles.controlUnit}>
+                        <button className={styles.button}>
+                            <FaForward onClick={ForwardTime} className={styles.forward} />
+                        </button>
+                        <span className={styles.controlLabel}>Fwd</span>
+                    </div>
+                </div>
 
-                            <button className={styles.button} onClick={HandlePlaying} disabled={loading}>
-                                {loading ? (
-                                    <FaSpinner className={styles.spinner} />
-                                ) : playing ? (
-                                    <FaPause className={styles.pause} />
-                                ) : (
-                                    <FaPlay className={styles.play} />
-                                )}
-                            </button>
-
-                            <button className={styles.button}>
-                                <FaForward onClick={ForwardTime} className={styles.forward} />
-                            </button>
-                        </div>
-
+                <div className={styles.volumeGroup}>
+                    <div className={styles.controlUnit}>
                         <button onClick={() => setVisible(!volVisible)} className={styles.btn__vol}>
                             <FaVolumeUp />
                         </button>
-                        <input
-                            onChange={volumeChange}
-                            ref={volumeControl}
-                            type="range"
-                            defaultValue={100}
-                            className={!volVisible ? `${styles.volHide}` : `${styles.volShow}`}
-                        />
+                        <span className={styles.controlLabel}>Vol</span>
                     </div>
+                    <input
+                        onChange={volumeChange}
+                        ref={volumeControl}
+                        type="range"
+                        defaultValue={100}
+                        className={!volVisible ? `${styles.volHide}` : `${styles.volShow}`}
+                    />
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

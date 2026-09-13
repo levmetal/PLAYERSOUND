@@ -1,11 +1,83 @@
 .container {
-    background: var(--bg);
+    background: var(--bg-grid);
     display: flex;
     position: relative;
     justify-content: center;
     align-items: center;
     height: 100vh;
     width: 100%;
+    /* .heroFrame below shifts upward past this container's own top edge —
+       clip that instead of letting it read as extra (empty) scrollable
+       space above the fold. */
+    overflow: hidden;
+}
+
+/* Experimental hero background — a phosphor-green scanline lattice + two
+   blurred glow layers, biased toward the headline (left) side via the
+   gradients' own positioning rather than a separate width-limited wrapper.
+   Self-contained: delete this block and the .heroAura* block below it, plus
+   the one <div className={styles.heroAura}> in pages/index.js, to remove it
+   cleanly if it doesn't work out. Kept monochrome (--phosphor-primary-rgb
+   only, no cyan) to stay inside the 60/30/10 rule in
+   docs/design/DESIGN_SYSTEM.md — cyan is reserved for the 3 state markers,
+   not decorative backgrounds. */
+.heroAura {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.heroAura__lattice {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(var(--phosphor-primary-rgb), 0.05) 0px,
+        rgba(var(--phosphor-primary-rgb), 0.05) 1px,
+        transparent 1px,
+        transparent 6px
+    );
+    opacity: .6;
+}
+
+.heroAura__band {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(var(--phosphor-primary-rgb), 0.12) 0%,
+        rgba(var(--phosphor-primary-rgb), 0.06) 30%,
+        transparent 60%
+    );
+    mix-blend-mode: screen;
+    filter: blur(88px);
+    opacity: .65;
+    transform: translateZ(0);
+}
+
+.heroAura__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 22% 45%,
+        rgba(var(--phosphor-primary-rgb), 0.16) 0%,
+        transparent 55%
+    );
+    mix-blend-mode: screen;
+    filter: blur(163px);
+    transform: translateZ(0);
+}
+
+@media screen and (min-width: 961px) {
+    .heroAura__band {
+        filter: blur(126px);
+    }
+
+    .heroAura__glow {
+        filter: blur(234px);
+    }
 }
 
 
@@ -32,7 +104,14 @@
 .container__title {
     font-size: 5vw;
     margin: 0;
-    color: var(--primarycolor)
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+}
+
+.container__title:hover {
+    text-shadow: var(--chromatic-shadow);
 }
 
 .container__subtitle {
@@ -42,11 +121,47 @@
     line-height: 140%;
 }
 
-.imghero {
+/* Shifts the whole frame up (and slightly left) as one rigid unit — height
+   stays 100vh (the image's own render size is capped by its natural pixel
+   size anyway, well under that budget, so it doesn't get squeezed) and
+   everything inside (cassette image, DataPixelArc glow behind it) moves
+   together by the same amount, so the glow stays exactly behind the
+   cassette instead of the two drifting apart. vh/vw, not rem, so the offset
+   stays proportional to the viewport instead of a fixed pixel amount that
+   would look right on one screen and wrong on the next. */
+.heroFrame {
     position: absolute;
+    top: -19vh;
+    right: 3vw;
     height: 100vh;
     width: 45%;
-    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Fades the pixel-arc glow out at the frame's own edges so it reads as an
+   emanation behind the cassette, not a hard-edged rectangle of canvas. */
+.heroArc {
+    -webkit-mask-image: radial-gradient(ellipse 65% 60% at 50% 55%, black 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 65% 60% at 50% 55%, black 45%, transparent 100%);
+    opacity: 0.85;
+}
+
+.imghero {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    /* Dissolves the image's own bottom edge (where the source PNG just
+       stops) into the page background instead of a hard silhouette cut. */
+    -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    filter: drop-shadow(0 0 20px rgba(0, 255, 102, 0.4));
 }
 
 .container__form {
@@ -55,7 +170,7 @@
     width: 35rem;
     height: auto;
     left: 0;
-    gap: 2rem;
+    gap: 1rem;
     bottom: 27vh;
 
 
@@ -63,15 +178,16 @@
 
 .form__input {
     order: 1;
-    border-radius: 15px;
     height: 3rem;
     width: 30rem;
     margin-right: 1rem;
-    font-family: inherit;
-    border: none;
-    background: #bdadff60;
+    font-family: var(--font-body);
+    border: var(--border-crt);
+    background: transparent;
     color: var(--primarycolor);
     padding-left: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .form__input::placeholder {
@@ -80,26 +196,36 @@
 }
 
 .form__button {
+    composes: pixel-depth from global;
     order: 2;
     font-weight: bold;
     height: 3rem;
     width: 10rem;
     padding: 0 .5rem;
-    border-radius: 15px;
     background: transparent;
     color: var(--primarycolor);
-    border: .15rem solid var(--primarycolor);
-    transition: 300ms;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: var(--border-crt);
+    /* Explicit list, not `200ms` shorthand — see .btn__close in
+       player.module.css for why that fights .pixel-depth's own transition. */
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
 }
 
 .form__button:hover {
     background: var(--primarycolor);
     color: var(--bg);
+    box-shadow: var(--glow-box);
 }
 
 @media screen and (max-width: 960px) {
-    .container {
-        overflow: hidden;
+    .heroFrame {
+        top: auto;
+        bottom: 1vh;
+        height: 26vh;
+        width: 38%;
+        right: 5%;
+        padding: 0;
     }
 
     .mainTitle {
@@ -140,28 +266,38 @@
 }
 
 @media screen and (max-width: 414px) {
-    .container {
-        overflow: hidden;
+    .heroFrame {
+        top: auto;
+        bottom: 1vh;
+        height: 22vh;
+        width: 55%;
+        right: 5%;
+        padding: 0;
+        transform: none;
     }
 
-    .imghero {
-        width: 100%;
-        filter: grayscale(.6);
-        transform: translateX(8%);
-    }
-    
 
+    /* No horizontal transform here — .infoHero is already centered by
+       .container's flex (justify-content: center) at this width. Stacking a
+       translateX on top of that centering pushed the whole hero (headline,
+       subtitle, search form) off the right edge of the viewport on phones;
+       the mainTitle/container__form below carry their own small nudges
+       instead. */
     .infoHero {
         width: 85%;
-        transform: translateX(15%);
     }
 
+    /* translateX needs to clear the collapsed sidebar rail (a fixed,
+       opaque ~85px-wide strip at the left edge on phones — see
+       sidebar.module.css's .sidebar__collapsed) rather than the small 5%
+       nudge used at the 960px breakpoint above; without this the headline's
+       first few characters render underneath the rail and get clipped. */
     .mainTitle {
         position: absolute;
         width: 85%;
         left: 0;
         margin: 0;
-        transform: translateX(5%);
+        transform: translateX(24%);
     }
 
     .container__title {
@@ -175,10 +311,10 @@
     }
 
     .container__form {
-       display: grid;   
+       display: grid;
         bottom: 30vh;
         width: 85%;
-        transform: translateX(5%);
+        transform: translateX(24%);
         margin: 0;
 
     }
@@ -194,11 +330,5 @@
         width: 100%;
         order: 2;
     }
-
-}
-@media screen and (max-width: 370px){
-.infoHero{
-    transform: translateX(3rem);
-}
 
 }

@@ -1,23 +1,51 @@
-import { motion } from 'framer-motion'
-import { FaMusic } from 'react-icons/fa'
+import { useEffect, useState } from 'react'
+import styles from '../styles/loader.module.css'
 
-const Loader =()=>{
-return( 
-  <div className="container">
+const FRAMES = ['◰', '◳', '◲', '◱']
+const TELEMETRY_LINES = [
+    'MEM_CHECK: 0x80F4A... OK',
+    'CALIBRATING SIGNAL...',
+    'BUFFER_SYNC: STABLE',
+    'PHOSPHOR_TEST: PASS',
+    'DECODING STREAM...',
+]
+const TOTAL_BLOCKS = 8
 
- <motion.div
-className='loader'
-initial={{ scale: 1, opacity: 0.25, rotate: 0, y: [0, 0, 0] }}
-animate={{ scale: 0.9, opacity: 0.75, rotate: 360, y: [-50, 0, 50] }}
-transition={{
-  duration: 2,
-  
-  repeat: Infinity,
-  repeatType: 'reverse'
-  
-}}
->
-<FaMusic style={{ color: "#beadff" }} size={64} /></motion.div>
-  </div>
-)}
+const Loader = ({ closing = false }) => {
+    const [frame, setFrame] = useState(0)
+    const [filled, setFilled] = useState(1)
+    const [telemetryIndex, setTelemetryIndex] = useState(0)
+
+    useEffect(() => {
+        const frameTimer = setInterval(() => setFrame((f) => (f + 1) % FRAMES.length), 200)
+        const barTimer = setInterval(() => setFilled((n) => (n >= TOTAL_BLOCKS ? 1 : n + 1)), 300)
+        const telemetryTimer = setInterval(
+            () => setTelemetryIndex((i) => (i + 1) % TELEMETRY_LINES.length),
+            700
+        )
+        return () => {
+            clearInterval(frameTimer)
+            clearInterval(barTimer)
+            clearInterval(telemetryTimer)
+        }
+    }, [])
+
+    return (
+        <div className={closing ? `${styles.overlay} ${styles.overlayClosing}` : styles.overlay}>
+            <div className={styles.box}>
+                <div className={styles.header}>SYSTEM INITIALIZING...</div>
+                <div className={styles.frame}>{FRAMES[frame]}</div>
+                <div className={styles.bar}>
+                    {Array.from({ length: TOTAL_BLOCKS }).map((_, i) => (
+                        <span
+                            key={i}
+                            className={`${styles.block} ${i < filled ? styles.blockFilled : ''}`}
+                        />
+                    ))}
+                </div>
+                <div className={styles.telemetry}>{TELEMETRY_LINES[telemetryIndex]}</div>
+            </div>
+        </div>
+    )
+}
 export default Loader

@@ -1,6 +1,6 @@
 .container {
     display: flex;
-    background: var(--bg);
+    background: var(--bg-grid);
     height: 100vh;
     width: 100vw;
     position: relative;
@@ -12,6 +12,7 @@
     width: 35%;
     height: 100vh;
     right: 0;
+    filter: grayscale(1) contrast(1.2) brightness(.5) sepia(1) hue-rotate(70deg) saturate(3);
 
 }
 
@@ -20,7 +21,7 @@
     position: relative;
     margin-left: 12%;
     height: 100vh;
-  
+
     width: 60%;
     z-index: 1;
 
@@ -29,8 +30,11 @@
 .title {
     margin-top: 4rem;
     font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
     color: var(--primarycolor);
-    border-bottom: .1rem solid var(--primarycolor);
+    text-shadow: var(--glow-text);
+    border-bottom: var(--border-crt);
 }
 
 .content {
@@ -55,19 +59,24 @@
 }
 
 .button {
+    composes: pixel-depth from global;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 300;
     height: 2.5rem;
-    width: 3.5rem;
+    width: 4rem;
     padding: 0 .5rem;
-    border-radius: 15px;
     background: transparent;
     color: var(--primarycolor);
+    text-transform: uppercase;
+    letter-spacing: 1px;
     list-style: none;
     text-decoration: none;
-    border: .15rem solid var(--primarycolor);
+    border: var(--border-crt);
+    /* Explicit list, not `200ms` shorthand — see .btn__close in
+       player.module.css for why that fights .pixel-depth's own transition. */
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
 
 }
 
@@ -75,7 +84,7 @@
 .button:hover {
     color: var(--bg);
     background-color: var(--primarycolor);
-    transition: 500ms;
+    box-shadow: var(--glow-box);
 }
 
 .footer img {

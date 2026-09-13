@@ -1,97 +1,131 @@
 
 import styles from "../styles/soundlist.module.css"
-import { FaPlus, FaPlay, FaCheckCircle, FaCheck } from 'react-icons/fa'
-import { useDispatchContext, useSoundContext } from "../context/libraryContext/libraryContext"
-import { useState, lazy, Suspense, useReducer } from "react";
+import { FaPlus, FaPlay, FaCheck, FaChevronDown } from 'react-icons/fa'
+import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
+import { useState } from "react";
 import { RemoveSpecialChar } from "../utils/removeSpecialChar";
-import { v4 as uuidv4 } from 'uuid';
+import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 
+// A context menu shouldn't animate on entrance, only on exit — this just
+// keeps it mounted long enough to play playlistMenuClosing's ease-in fade
+// (styles/soundlist.module.css) instead of vanishing instantly.
+const MENU_CLOSE_MS = 120
 
-const Modal = lazy(() => import('./modal'))
-
-
-const SoundItem = ({ item ,triggerModal}) => {
+const SoundItem = ({ item, triggerModal }) => {
 
     const dispatch = useDispatchContext()
-    const sounds = useSoundContext()
+    const playlists = usePlaylists()
 
-    const [play, setPlay] = useState(false)
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [menuClosing, setMenuClosing] = useState(false)
+    const [newPlaylistName, setNewPlaylistName] = useState("")
 
-
-    const handlePlay = () => {
-
-        setPlay(!play)
-      
+    const closeMenu = () => {
+        if (menuClosing) return
+        setMenuClosing(true)
+        setTimeout(() => {
+            setMenuOpen(false)
+            setMenuClosing(false)
+        }, MENU_CLOSE_MS)
     }
 
-
+    const toggleMenu = () => (menuOpen ? closeMenu() : setMenuOpen(true))
 
     const titlefix = RemoveSpecialChar(item.title)
 
-    const even = (element) => element.id === item.id
-    const verificationSaved = sounds.some(even)
+    const isInPlaylist = (playlistId) =>
+        playlists.find((playlist) => playlist.id === playlistId)?.tracks.some((track) => track.id === item.id) ?? false
 
-    const AddLibrary = (item) => {
+    const isFavorite = isInPlaylist(FAVORITES_ID)
 
-
-        if (verificationSaved) {
-            return alert("The sound is already saved in the library ")
-
-        } else {
-            dispatch({
-                type: "addLibrary",
-                payload: item
-            })
-
-        }
-
-    }
-    const delLibrary = (id) => {
-
-
-        if (verificationSaved) {
-            dispatch({
-                type: "delLibrary",
-                payload: id
-            })
-            return alert("The sound is deleted ")
-
-        } 
-
+    const toggleFavorite = () => {
+        dispatch({
+            type: isFavorite ? "REMOVE_FROM_FAVORITES" : "ADD_TO_FAVORITES",
+            payload: isFavorite ? item.id : item,
+        })
     }
 
+    const togglePlaylist = (playlistId) => {
+        const alreadyIn = isInPlaylist(playlistId)
+        dispatch({
+            type: alreadyIn ? "REMOVE_FROM_PLAYLIST" : "ADD_TO_PLAYLIST",
+            payload: alreadyIn
+                ? { playlistId, trackId: item.id }
+                : { playlistId, track: item },
+        })
+    }
+
+    const createPlaylistWithTrack = (e) => {
+        e.preventDefault()
+        const name = newPlaylistName.trim()
+        if (!name) return
+        dispatch({ type: "CREATE_PLAYLIST", payload: { name, track: item } })
+        setNewPlaylistName("")
+        closeMenu()
+    }
 
     return (
-        <>
-            <div key={item.id} className={styles.item}>
+        <li className={styles.row}>
+            <div className={styles.row__thumb} onClick={() => triggerModal(item)}>
+                <img src={item.thumbnail} alt="image-song" />
+                <FaPlay className={styles.row__playIcon} />
+            </div>
 
-                <div className={styles.img__container}>
-                    <div onClick={()=>triggerModal(item)} className={styles.img__coverPlay}><FaPlay key={uuidv4()} className={styles.coverPlay__icon} /></div>
-                    <img src={item.thumbnail} alt="image-song" />
+            <div className={styles.row__info}>
+                <span className={styles.row__title}>{titlefix}</span>
+                <span className={styles.row__channel}>
+                    {item.channel.verified ? item.channel.name : `No Oficial: ${item.channel.name}`}
+                </span>
+            </div>
+
+            {typeof item.duration === 'number' && (
+                <span className={styles.row__duration}>{ConvertSecToMin(item.duration)}</span>
+            )}
+
+            <div className={styles.saveControls}>
+                <div className={styles.saveControls__buttons}>
+                    <button
+                        className={isFavorite ? `${styles.addBtn} ${styles.addBtnActive}` : styles.addBtn}
+                        title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                        onClick={toggleFavorite}
+                    >{isFavorite ? <FaCheck /> : <FaPlus />}</button>
 
                     <button
-
-                        className={styles.addBtn}
-                        onClick={!verificationSaved ? () => AddLibrary(item):() => delLibrary(item.id)}
-                    >{verificationSaved ? <FaCheck /> : <FaPlus />}</button>
-
-
+                        className={styles.menuToggleBtn}
+                        title="Add to playlist"
+                        onClick={toggleMenu}
+                    ><FaChevronDown /></button>
                 </div>
 
-                <h2 >{item.channel.verified ? item.channel.name : `No Oficial: ${item.channel.name}`}</h2>
-
-                <li key={uuidv4()}>
-                    <span>{titlefix}</span>
-
-                </li>
-
-
-
-
+                {menuOpen && (
+                    <div className={`${styles.playlistMenu} hud-frame ${menuClosing ? styles.playlistMenuClosing : ''}`}>
+                        <ul className={styles.playlistMenu__list}>
+                            {playlists.map((playlist) => (
+                                <li key={playlist.id}>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={isInPlaylist(playlist.id)}
+                                            onChange={() => togglePlaylist(playlist.id)}
+                                        />
+                                        {playlist.name}
+                                    </label>
+                                </li>
+                            ))}
+                        </ul>
+                        <form className={styles.playlistMenu__create} onSubmit={createPlaylistWithTrack}>
+                            <input
+                                type="text"
+                                placeholder="New playlist"
+                                value={newPlaylistName}
+                                onChange={(e) => setNewPlaylistName(e.target.value)}
+                            />
+                            <button type="submit" className="pixel-depth">Add</button>
+                        </form>
+                    </div>
+                )}
             </div>
-           
-
-        </>
+        </li>
     )
 }
 export default SoundItem

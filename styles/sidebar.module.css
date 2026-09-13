@@ -1,32 +1,35 @@
-.sidebar__container {
+/* Both states share one z-index: the rail sits above the modal backdrop (85)
+   so nav stays reachable while a track is playing, but below the route-change
+   Loader (184) so a hard page transition still eclipses it. It used to jump
+   between 2000 (expanded) and 100 (collapsed) depending on state, which could
+   leave the collapsed rail rendering behind the loader — a layering bug, not
+   a deliberate effect. */
+.sidebar__expanded {
 
-    background: rgba(6, 0, 31, 0.7);
+    background: var(--crt-black);
     display: flex;
     flex-direction: column;
-    border-right: .1rem solid var(--bgbox);
+    border-right: var(--border-crt);
     height: 100vh;
     transform: translateX(0%);
-    z-index: 2000;
-    position: absolute;
-    transition: 500ms;
-    backdrop-filter: blur(8.3px);
-    -webkit-backdrop-filter: blur(8.3px);
+    z-index: 150;
     position: fixed;
+    transition: transform 200ms;
 
 }
 
 
-.sidebar__open {
+.sidebar__collapsed {
 
     background: var(--bg);
     display: flex;
     flex-direction: column;
-    border-right: .1rem solid var(--primarycolor);
+    border-right: var(--border-crt);
     height: 100vh;
 
-    z-index: 100;
+    z-index: 150;
     position: fixed;
-    transition: 500ms;
+    transition: transform 200ms;
     transform: translateX(-70%);
 }
 
@@ -34,16 +37,31 @@
     display: flex;
     align-items: center;
     height: 6.1rem;
-    border-bottom: 1px ridge var(--primarycolor);
+    border-bottom: var(--border-crt);
 }
 
+/* The hamburger/outdent toggle is the sidebar's primary control — give it its
+   own hover/press feedback instead of relying only on the icon swap; a bare
+   onClick SVG has no built-in affordance or cursor. Subtle deformation
+   (0.96, inside the 0.95-1.05 range) rather than a translate/lift, since this
+   isn't a bordered "pixel-depth" box. */
 .sideBarIcon {
     color: var(--primarycolor);
+    cursor: pointer;
 
     margin-left: auto;
     margin-right: 2rem;
     width: 1.2rem;
     height: 1.2rem;
+    transition: color 150ms, transform 80ms;
+}
+
+.sideBarIcon:hover {
+    color: var(--phosphor-primary-alt);
+}
+
+.sideBarIcon:active {
+    transform: scale(0.96);
 }
 
 .sideIcon {
@@ -55,13 +73,13 @@
 
 
 
-.sidebar__container h2 {
+.sidebar__expanded h2 {
     color: var(--primarycolor);
     margin: 2rem 2rem 2rem 3rem;
     font-weight: 700;
-
-
-
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    text-shadow: var(--glow-text);
 }
 
 .listbar {
@@ -75,12 +93,26 @@
 
 .listbar__option {
 
-    border-radius: 15px;
+    border: 1px solid transparent;
     padding-left: .5rem;
 }
 
 .listbar__option:hover {
-    background: var(--bgbox) !important;
+    border: var(--border-crt) !important;
+}
+
+/* The site's "you are here" state marker — cyan, not the dominant green,
+   per the 60/30/10 rule (docs/design/DESIGN_SYSTEM.md). Hover on other nav
+   items (.listbar__option:hover above) stays green, so exploring vs. being
+   on a page read as visually distinct. */
+.listbar__active {
+    border: 1px solid var(--accent) !important;
+    box-shadow: var(--glow-accent);
+}
+
+.listbar__active a {
+    background: var(--accent);
+    color: var(--bg) !important;
 }
 
 .listbar__option a {
@@ -89,10 +121,20 @@
     height: 3rem;
     width: 15rem;
     align-items: center;
-    border-radius: 1rem;
     color: var(--primarycolor);
     text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    font-size: .85rem;
+    transition: transform 80ms;
 
+}
+
+/* Nav items are <a> tags, not <button>s, so the global
+   `:where(button:not(:disabled)):active` press feedback (globals.css)
+   doesn't reach them — without this they had no press state at all. */
+.listbar__option a:active {
+    transform: scale(0.97);
 }
 
 @media screen and (max-width: 525px) {

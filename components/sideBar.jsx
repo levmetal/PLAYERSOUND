@@ -2,9 +2,8 @@
 import styles from "../styles/sidebar.module.css"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { FaBars, FaOutdent, FaHome, FaBook, FaListUl, FaInfoCircle } from "react-icons/fa"
+import { FaBars, FaOutdent, FaHome, FaBook, FaInfoCircle } from "react-icons/fa"
 import { useState } from "react"
-import { v4 as uuidv4 } from 'uuid';
 
 
 const SideBar = () => {
@@ -12,17 +11,18 @@ const SideBar = () => {
 
     const router = useRouter()
 
-
     const handleOpenMenu = () => {
-        const prevValue = menuOpen
-        setMenuOpen(!prevValue)
-
+        setMenuOpen(!menuOpen)
     }
 
+    const optionClass = (path) =>
+        router.asPath === path
+            ? `${styles.listbar__option} ${styles.listbar__active}`
+            : styles.listbar__option
 
     return (
 
-        <aside className={menuOpen ? styles.sidebar__container : styles.sidebar__open}>
+        <aside className={menuOpen ? styles.sidebar__expanded : styles.sidebar__collapsed}>
             <header className={styles.sideHeader}>
                 <h2  >PlayerSound</h2>
 
@@ -31,23 +31,23 @@ const SideBar = () => {
             </header>
 
             <ul className={styles.listbar}>
-                <li key={uuidv4()} className={styles.listbar__option} style={{ background: router.asPath === "/" ? "#0A0033" : "transparent" }}>
+                <li className={optionClass("/")}>
                     <Link href="/">
                         <a>Home
                             <FaHome className={styles.sideIcon} />
                         </a>
                     </Link>
                 </li>
-                <li key={uuidv4()} className={styles.listbar__option} style={{ background: router.asPath === "/library" ? "#0A0033" : "transparent" }}>
+                <li className={optionClass("/library")}>
                     <Link href="/library">
-                        <a >Library
+                        <a >Playlists
 
                             <FaBook className={styles.sideIcon} />
                         </a>
                     </Link>
                 </li>
 
-                <li key={uuidv4()} className={styles.listbar__option} style={{ background: router.asPath === "/about" ? "#0A0033" : "transparent" }}>
+                <li className={optionClass("/about")}>
                     <Link href="/about">
                         <a>About
                             <FaInfoCircle className={styles.sideIcon} />

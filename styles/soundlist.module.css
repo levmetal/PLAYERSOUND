@@ -1,16 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-
-
-
-
 .soundlist__container {
 
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    background: rgb(6, 0, 31);
-    font-family: inter;
+    background: var(--bg-grid);
+    font-family: var(--font-body);
+    padding-bottom: 3rem;
 
 }
 
@@ -18,306 +14,328 @@
 .soundlist__container .searchlist {
 
     display: flex;
-    gap: 2rem;
+    flex-direction: column;
+    gap: .6rem;
     margin: 1rem 0 0 0;
     width: 85%;
-    height: auto;
-    overflow-y: hidden;
-    overflow-x: scroll;
-    overscroll-behavior: contain;
-
-    align-items: baseline;
-    position: relative;
-
+    padding: 0;
 
 }
 
-.sliderleft {
-    position: sticky;
-    left: 0;
-    color: var(--bg);
-    z-index: 70;
+/* row item (search results / library / playlist tracks) */
+
+.row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transform: translate(1.5rem, -1rem);
-
-    margin-bottom: 3rem;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: none;
-    background: rgba(189, 173, 255, 0.4);
-    backdrop-filter: blur(8.3px);
-    -webkit-backdrop-filter: blur(8.3px);
-}
-
-.sliderleft:hover {
-    transition: 500ms;
-    background: rgb(6, 0, 31, 0.5);
-    backdrop-filter: blur(8.3px);
-    -webkit-backdrop-filter: blur(8.3px);
-    color: var(--primarycolor);
-}
-
-
-.slideright {
-    position: sticky;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-1rem);
-    color: var(--bg);
-    z-index: 60;
-    right: 0;
-    margin-bottom: 3rem;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: none;
-    background: rgba(189, 173, 255, 0.4);
-    backdrop-filter: blur(8.3px);
-    -webkit-backdrop-filter: blur(8.3px);
-}
-
-.slideright:hover {
-    transition: 800ms;
-    background: rgb(6, 0, 31, 0.5);
-    color: var(--primarycolor);
-}
-
-
-
-.item {
-
-    width: auto;
-    height: auto;
-    position: relative;
-
-
-}
-
-.img__container {
-    position: relative;
-    display: flex;
-    justify-content: center;
-}
-
-.img__container img {
-
-    width: 12rem;
-    height: auto;
-    object-fit: cover;
-
-    border-radius: 16px;
-
-
-}
-
-.img__coverPlay {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 12rem;
-    height: 100%;
-    position: absolute;
-    transform: translateY(-2px);
-    transition: 600ms;
+    gap: 1rem;
+    width: 100%;
+    padding: .5rem .8rem;
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--phosphor-secondary);
     background: transparent;
-    z-index: 50;
+    transition: 200ms;
+    position: relative;
 }
 
-.img__coverPlay:hover {
-    background: rgba(189, 173, 255, 0.1);
-    border-radius: 16px;
-    transition: 500ms;
+/* Depth only shows up on hover, not at rest — at rest the row has no
+   background (just the bottom divider), so there's no clean "card" shape to
+   shadow yet. Once hover gives it an opaque background, the box-shadow
+   reads as a proper raised card (combined in one declaration with the glow,
+   since box-shadow only accepts one value per rule). */
+.row:hover {
+    border: var(--border-crt);
+    box-shadow: var(--glow-box), var(--pixel-shadow-rest);
+    background: var(--bgbox);
 }
 
-.img__coverPlay .coverPlay__icon {
-    height: 2.5rem;
-    width: 2.5rem;
-    color: transparent;
-    transition: 500ms;
+.row__thumb {
+    position: relative;
+    flex: none;
+    width: 3.4rem;
+    height: 3.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--phosphor-secondary);
 }
 
-.img__coverPlay:hover .coverPlay__icon {
+.row__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(.4) contrast(1.1);
+}
+
+.row__playIcon {
+    position: absolute;
+    color: var(--phosphor-primary);
+    opacity: 0;
+    transition: 200ms;
+    text-shadow: var(--glow-text);
+}
+
+.row__thumb:hover .row__playIcon {
+    opacity: 1;
+}
+
+.row__thumb:hover img {
+    filter: grayscale(0) contrast(1) brightness(.5);
+}
+
+.row__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    gap: .2rem;
+}
+
+.row__title {
+    font-size: .95rem;
     color: var(--primarycolor);
-    transition: 500ms;
+    text-shadow: var(--glow-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row__channel {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row__duration {
+    flex: none;
+    font-family: var(--font-digits);
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    text-shadow: var(--glow-text-accent);
+    border: 1px solid var(--phosphor-secondary);
+    padding: .1rem .4rem;
+}
+
+.saveControls {
+    flex: none;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.saveControls__buttons {
+    display: flex;
+    gap: .3rem;
 }
 
 .addBtn {
-    border-radius: 25px;
-    position: absolute;
+    composes: pixel-depth from global;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(189, 173, 255, 0.4);
-    backdrop-filter: blur(8.3px);
-    -webkit-backdrop-filter: blur(8.3px);
-    border: none;
-    top: 0;
-    right: 0;
+    background: transparent;
+    border: var(--border-crt);
+    color: var(--phosphor-primary);
     height: 2rem;
     width: 2rem;
     padding: .1rem;
-    z-index: 80;
-    transition: 500ms;
-
+    /* Explicit list, not `200ms` shorthand — see .btn__close in
+       player.module.css for why that fights .pixel-depth's own transition. */
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
 }
 
-.addBtn:hover {
-    background: rgb(6, 0, 31, 0.5);
-    color: var(--primarycolor);
-    border: 1px solid var(--primarycolor);
-    ;
-}
-
-
-
-
-.item h2 {
-    font-family: inter;
-    font-size: 16px;
-    font-weight: 400;
-    color: var(--primarycolor);
-
-}
-
-.item span {
-    font-weight: 400;
-    font-size: 16px;
-    color: var(--lowPrimaryColor);
-}
-
-
-/* wraper*/
-.itemlibrary__categories {
-    display: grid;
-    margin-top: 3rem;
-    grid-template-columns: 1fr .5fr;
-    grid-template-rows: .1fr 1fr;
-    width: 100%;
-    min-height: 70vh;
-}
-
-/* sound list library */
-
-.titleLibrary {
-    order: 1;
-    margin-left: 8rem;
-    color: var(--primarycolor);
-
-}
-
-.soundlist__library {
-    order: 3;
-    display: grid;
-    justify-content: center;
-    position: relative;
-    grid-template-columns: repeat(auto-fill, 12rem);
-    grid-template-rows: repeat(auto-fill, 1fr);
-    grid-column-gap: 3rem;
-    grid-row-gap: 3rem;
-    height: 60vh;
-    width: 80%;
-    padding: 1rem;
-
-    transform: translateX(15%);
-    overflow: scroll;
-    margin: 0;
-}
-
-
-/* categories*/
-.titleCategories {
-    margin-left: 1rem;
-    order: 2;
-    color: var(--primarycolor);
-}
-
-
-.categories__container {
-    order: 4;
-    display: grid;
-    grid-template-columns: repeat(2, 10.25rem);
-    grid-template-rows: repeat(2, 3.3rem);
-    gap: 1rem;
-    justify-content: baseline;
-    margin-left: auto;
-    margin-right: 6rem;
-
-    padding: 0;
-    color: var(--primarycolor);
-    font-weight: 700;
-    font-size: 20px;
-
-
-}
-
-
-
-.categories__container li {
-    width: 10.25rem;
-    height: 3.3rem;
-
+.menuToggleBtn {
+    composes: pixel-depth from global;
     display: flex;
-    justify-content: center;
     align-items: center;
-    background: var(--bgbox);
-    border-radius: 1rem;
+    justify-content: center;
+    background: transparent;
+    border: var(--border-crt);
+    color: var(--phosphor-primary);
+    height: 2rem;
+    width: 2rem;
+    padding: .1rem;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
 }
 
-.categories__container li {
-    cursor: help;
+.addBtn:hover,
+.menuToggleBtn:hover {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+/* Accent variant: this track is already saved to Favorites. Solid cyan
+   fill instead of the plain green outline every other button uses — the
+   site's one "you saved this" state marker, same pattern as the player
+   modal's favorite button. Compound selector required to beat
+   .addBtn:hover's specificity. */
+.addBtn.addBtnActive {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: var(--glow-accent);
+}
+
+.addBtn.addBtnActive:hover {
+    background: transparent;
+    color: var(--accent);
+    box-shadow: none;
+}
+
+.playlistMenu {
+    composes: pixel-depth-static from global;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: .3rem;
+    z-index: 90;
+    background: var(--phosphor-box-bg);
+    border: var(--border-crt);
+    box-shadow: var(--glow-box);
+    padding: .6rem;
+    width: 12rem;
+    max-height: 14rem;
+    overflow-y: auto;
+}
+
+/* Context menus shouldn't animate on entrance (it just appears above), only
+   on exit — a quick ease-in fade instead of vanishing instantly. */
+.playlistMenuClosing {
+    animation: playlist-menu-out 120ms ease-in forwards;
+}
+
+@keyframes playlist-menu-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .playlistMenuClosing {
+        animation: none;
+    }
+}
+
+.playlistMenu__list {
+    list-style: none;
+    margin: 0 0 .5rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    color: var(--primarycolor);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.playlistMenu__list label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+}
+
+.playlistMenu__create {
+    display: flex;
+    gap: .3rem;
+}
+
+.playlistMenu__create input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    padding: .2rem .4rem;
+}
+
+.playlistMenu__create button {
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    padding: .2rem .6rem;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.playlistMenu__create button:hover {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+}
+
+
+/* search controls (sort / duration filter / group by channel) */
+.controls {
+    composes: pixel-depth-static from global;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    width: 85%;
+    margin: 1.5rem 0 0 0;
+    padding: .6rem .8rem;
+    border: var(--border-crt);
+    color: var(--primarycolor);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.controls label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.controls select {
+    background: var(--bg);
+    color: var(--primarycolor);
+    border: 1px solid var(--phosphor-secondary);
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    padding: .2rem .4rem;
+}
+
+.groupToggle {
+    cursor: pointer;
+}
+
+.channelGroup {
+    width: 85%;
+    margin-top: 2rem;
+}
+
+.channelGroup__title {
+    color: var(--primarycolor);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    text-shadow: var(--glow-text);
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--phosphor-secondary);
+    padding-bottom: .3rem;
+}
+
+.channelGroup .searchlist {
+    margin: 0;
+    width: 100%;
 }
 
 @media screen and (max-width: 1040px) {
-    .itemlibrary__categories {
-        display: flex;
-        flex-direction: column;
+    .controls {
         width: 100%;
-
-        margin-top: 2rem;
+        justify-content: center;
     }
-
-    .titleLibrary {
-        order: 1;
-        margin-left: 20%;
-    }
-
-    .titleCategories {
-        order: 3;
-        margin-right: auto;
-        margin-left: 20%;
-        margin-top: 2rem;
-    }
-
-    .soundlist__library {
-
-        height: 40vh;
-    }
-
-    .soundlist_img__container {
-        border: solid red;
-    }
-
-    .categories__container {
-        display: flex;
-        flex-direction: column;
-        margin: 0 0 0 10%;
-        align-items: center;
-
-
-    }
-
-    .categories__container li {
-        width: 80%;
-    }
-
 }
 
 @media screen and (max-width:650px) {
-    .item {
-        transform: translatex(20%);
+    .row__duration {
+        display: none;
     }
 }

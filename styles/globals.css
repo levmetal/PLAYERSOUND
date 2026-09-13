@@ -1,40 +1,113 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+@import './tokens.css';
 
 :root{
-  --bg:#06001F;
-  --bgbox:#0A0033;
-
-  --primarycolor:#beadff;
-  --lowPrimaryColor:#BEADFF99;
-  font-family: inter, 'san-serif';
+  /* Remapped onto the CRT phosphor tokens (styles/tokens.css) — every
+     component still reads these 4 names, so retinting here retints the
+     whole app. See docs/design/DESIGN_SYSTEM.md. */
+  --bg: var(--crt-black);
+  --bgbox: var(--phosphor-box-bg);
+  --primarycolor: var(--phosphor-primary);
+  --lowPrimaryColor: var(--phosphor-secondary);
+  --accent: var(--rgb-cyan);
+  font-family: var(--font-body);
 }
-.container{
-  position: fixed;
-    display: grid;
-    place-content: center;
-    top: 0;
-    left: 0;
-    min-height: 100vh;
-    width: 100%;
-   
-    background: var(--bg);
-    
-    overflow: hidden;
-    z-index: 184;
 
-}
-.loader{
+.crt-vignette {
   position: fixed;
-    display: grid;
-    place-content: center;
-    top: 0;
-    left: 0;
-    min-height: 100vh;
-    width: 100%;
-    background: #06001f00;
-    overflow: hidden;
-    z-index: 185;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* Targeting-reticle corner brackets called for in docs/design/DESIGN_SYSTEM.md
+   ("Prefer corner-bracket boxes... over a full continuous border"). Painted
+   entirely with background-image layers so it composes with an element's own
+   background-color/border instead of replacing them — add this class
+   alongside a component's own CSS-module class on "console/panel" boxes
+   (player faceplate, search controls bar, dropdown menus), not on ordinary
+   buttons or rows, which keep the plain-border treatment. */
+.hud-frame {
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary)),
+    linear-gradient(var(--phosphor-primary), var(--phosphor-primary));
+  background-size:
+    var(--bracket-size) var(--bracket-thickness),
+    var(--bracket-thickness) var(--bracket-size),
+    var(--bracket-size) var(--bracket-thickness),
+    var(--bracket-thickness) var(--bracket-size),
+    var(--bracket-size) var(--bracket-thickness),
+    var(--bracket-thickness) var(--bracket-size),
+    var(--bracket-size) var(--bracket-thickness),
+    var(--bracket-thickness) var(--bracket-size);
+  background-position:
+    top left, top left,
+    top right, top right,
+    bottom left, bottom left,
+    bottom right, bottom right;
+}
+
+/* Pixel-art hard shadow: gives a flat 1px-bordered box real visual weight —
+   a chunky beveled-button depth instead of a thin outline that reads as
+   neither brutalism nor pixel art. Use on things that are actually
+   actionable: buttons, tabs, dropdown-menu buttons, list rows on :hover.
+   NOT for passive panels/containers (a search-controls bar, a dropdown's
+   own box) — those want the fixed shadow with no hover/press motion, see
+   ".pixel-depth-static" below, or it reads as "the whole panel is one giant
+   button" reacting to hovering its own children.
+
+   The :hover rule is wrapped in :where() so it stays LOW-specificity and
+   loses to a component's own more-specific `:hover` rule for `box-shadow`
+   (e.g. `.button:hover { box-shadow: var(--glow-box) }`) — that component
+   still gets its own glow instead, while the `transform` lift (a property
+   the component's own rule doesn't touch) still applies from here
+   uncontested. `:active` is intentionally NOT low-specificity — a press
+   should win over a simultaneous hover everywhere.
+
+   Also wrapped in `@media (hover: hover) and (pointer: fine)` — real hover
+   doesn't exist on touch, and without that guard a tap can leave a button
+   visually "stuck" lifted until something else is tapped (a well-known
+   touch-device :hover quirk). Touch devices skip straight from resting to
+   the :active press below, which is the behavior that actually matters
+   there. See docs/design/DESIGN_SYSTEM.md. */
+.pixel-depth {
+  box-shadow: var(--pixel-shadow-rest);
+  transition: transform 80ms, box-shadow 80ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.pixel-depth):hover {
+    transform: translate(calc(var(--depth-lift) * -1), calc(var(--depth-lift) * -1));
+    box-shadow: var(--pixel-shadow-hover);
+  }
+}
+
+.pixel-depth:active {
+  transform: translate(var(--depth-offset), var(--depth-offset));
+  box-shadow: none;
+}
+
+/* Same hard shadow, always on, never moves or changes on hover/press — for
+   panels/containers that hold their own interactive children (the search
+   controls bar, a dropdown menu's own box) rather than being a single
+   button themselves. */
+.pixel-depth-static {
+  box-shadow: var(--pixel-shadow-rest);
+}
+
+/* Tactile press feedback for any button NOT using .pixel-depth — wrapped in
+   :where() so it stays a low-specificity fallback that never outranks
+   .pixel-depth:active's own (larger, shadow-aware) press transform above. */
+:where(button:not(:disabled)):active {
+  transform: translateY(1px);
 }
 /* width */
 ::-webkit-scrollbar {
@@ -267,7 +340,10 @@ button::-moz-focus-inner,
  * Restore the focus styles unset by the previous rule.
  */
 
-
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 /**
  * Correct the padding in Firefox.

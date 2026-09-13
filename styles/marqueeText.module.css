@@ -1,0 +1,49 @@
+.marquee {
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 0;
+    width: 100%;
+}
+
+.measure {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+    left: 0;
+    top: 0;
+}
+
+.static {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll var(--marquee-duration, 8s) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .track {
+        animation: none;
+    }
+}
+
+.copy {
+    white-space: pre;
+    padding-right: 3rem;
+}
+
+@keyframes marquee-scroll {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(calc(-1 * (var(--marquee-distance) + 3rem)));
+    }
+}

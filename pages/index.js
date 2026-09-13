@@ -3,6 +3,7 @@ import styles from '../styles/Home.module.css'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '../components/layout'
+import DataPixelArc from '../components/dataPixelArc'
 import Head from 'next/head'
 
 export default function Home() {
@@ -31,6 +32,12 @@ export default function Home() {
 
           <>
 
+            <div className={styles.heroAura} aria-hidden="true">
+              <div className={styles.heroAura__lattice} />
+              <div className={styles.heroAura__band} />
+              <div className={styles.heroAura__glow} />
+            </div>
+
             <div className={styles.infoHero}>
               <div className={styles.mainTitle}>
                 <h1 className={styles.container__title}>Music,Podcast or whatever you want</h1>
@@ -45,7 +52,10 @@ export default function Home() {
                 <button className={styles.form__button} type="submit" >Search</button>
               </form>
             </div>
-            <img className={styles.imghero} src='discHero.webp' alt="Mano sosteniendo un disco de vinilo" />
+            <div className={styles.heroFrame}>
+              <DataPixelArc className={styles.heroArc} />
+              <img className={styles.imghero} src="/cassetteHero.png" alt="Mano sosteniendo un cassette de PlayerSound, estilo tramado verde fósforo" />
+            </div>
 
           </>
         </main>
