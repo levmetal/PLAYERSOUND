@@ -1,6 +1,8 @@
 import styles from '../styles/about.module.css'
 import Layout from '../components/layout'
 import Link from 'next/link'
+import { FaHome } from 'react-icons/fa'
+
 const About = () => {
     return (
         <Layout>
@@ -8,22 +10,35 @@ const About = () => {
             <div className={styles.container}>
                 <article className={styles.info__about}>
 
-                    <h2 className={styles.title}>About</h2>
-                    <p className={styles.content}> Search every sound from this app to
-                        enjoy your favorites podcasts, web show or music whitout ads
+                    <p className={styles.eyebrow}>SYSTEM_LOG // ABOUT</p>
+                    <h1 className={styles.title}>PlayerSound</h1>
 
-                        If you are looking for a way to enjoy your favorite podcasts, web shows or music without ads, then look no further than the Search every sound app. This great little app allows you to search for any sound you want, and then play it back without any annoying commercials.
-
-                        What is even better is that the app is totally free to use. So if you are tired of dealing with ad-filled streaming services, give Search every sound a try today  you wont be disappointed!
+                    <p className={styles.content}>
+                        Search any sound, stream it instantly, and save it to a playlist —
+                        no ad breaks, no catalog to browse first.
                     </p>
+
+                    <ul className={styles.specList}>
+                        <li><span>SEARCH</span> — pull tracks straight from the source, ad-free.</li>
+                        <li><span>PLAYLISTS</span> — save favorites and build custom playlists.</li>
+                        <li><span>ANONYMOUS</span> — no login. Everything stays in this browser.</li>
+                    </ul>
+
                     <footer className={styles.footer}>
-                        <img src='Arrow 1.svg' alt="ARROW_SVG" />
-
-                        <Link href='/'><a className={styles.button}>Home</a></Link>
-
+                        <Link href='/'>
+                            <a className={styles.button}>
+                                Home
+                                <FaHome className={styles.buttonIcon} aria-hidden="true" />
+                            </a>
+                        </Link>
                     </footer>
                 </article>
-                <img src='youngBoy.webp' className={styles.img__about} />
+
+                <img
+                    src='/youngBoy.webp'
+                    className={styles.img__about}
+                    alt="Person listening to music through headphones, green phosphor tint"
+                />
 
             </div>
         </Layout>

@@ -27,35 +27,64 @@
 
 }
 
-.title {
+.eyebrow {
     margin-top: 4rem;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+}
+
+.title {
+    margin-top: .5rem;
     font-size: 2rem;
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--primarycolor);
     text-shadow: var(--glow-text);
     border-bottom: var(--border-crt);
+    padding-bottom: 1rem;
+    width: fit-content;
 }
 
 .content {
     font-size: 1.5vw;
     color: var(--lowPrimaryColor);
     line-height: 150%;
-    margin-top: 3rem;
+    margin-top: 2rem;
     width: 40ch;
+}
+
+/* Compact "spec sheet" readout, not another paragraph of prose — matches
+   the technical-readout treatment used elsewhere (loader telemetry,
+   player track-info). */
+.specList {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: var(--border-crt);
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    width: 40ch;
+    font-size: .95rem;
+    line-height: 1.4;
+    color: var(--lowPrimaryColor);
+}
+
+.specList span {
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+    letter-spacing: 1px;
 }
 
 .footer {
     display: flex;
-   
     justify-content: flex-start;
-    margin-top: 5rem;
+    margin-top: 3rem;
     align-items: center;
     gap: 1rem;
     position: absolute;
     bottom: 10%;
-
-
 }
 
 .button {
@@ -63,10 +92,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: .5rem;
     font-weight: 300;
     height: 2.5rem;
-    width: 4rem;
-    padding: 0 .5rem;
+    width: auto;
+    padding: 0 1rem;
     background: transparent;
     color: var(--primarycolor);
     text-transform: uppercase;
@@ -80,15 +110,14 @@
 
 }
 
+.buttonIcon {
+    font-size: 1rem;
+}
 
 .button:hover {
     color: var(--bg);
     background-color: var(--primarycolor);
     box-shadow: var(--glow-box);
-}
-
-.footer img {
-    width: 10rem;
 }
 
 
@@ -103,6 +132,10 @@
     }
     .content{
         font-size: 2vw;
+        width: 55ch;
+    }
+    .specList {
+        font-size: .85rem;
         width: 55ch;
     }
     .info__about {
@@ -123,6 +156,10 @@
     }
     .content{
         font-size: 3vw;
+        width: 40ch;
+    }
+    .specList {
+        font-size: .85rem;
         width: 40ch;
     }
     .footer{
