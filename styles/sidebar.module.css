@@ -37,6 +37,15 @@
     transform: translateX(-70%);
 }
 
+/* Keyboard users tabbing into the collapsed rail would otherwise land focus
+   on a link whose label is cropped off-screen by the translateX above —
+   reveal the full rail while focus is inside it, same as a mouse click on
+   the toggle would. No JS/state change: this only affects the visual
+   transform, menuOpen stays false. */
+.sidebar__collapsed:focus-within {
+    transform: translateX(0%);
+}
+
 .sideHeader {
     display: flex;
     align-items: center;
@@ -86,6 +95,13 @@
     height: 1.2rem;
 }
 
+/* Collapsed rail only: extra clearance so the active-row dither band above
+   (1.75rem, anchored to the row's right edge) fades out before it reaches
+   the icon instead of speckling over it. */
+.sidebar__collapsed .sideIcon {
+    margin-right: 2.1rem;
+}
+
 .logo {
     color: var(--primarycolor);
     margin: 2rem 2rem 2rem 3rem;
@@ -101,8 +117,15 @@
 .listbar {
 
     color: var(--primarycolor);
-    align-self: baseline;
-    margin: 1rem 1rem;
+    /* Was `baseline`, which for a flex item behaves like flex-start on the
+       cross axis (no stretch) — the <ul> shrink-wrapped to its own row
+       width instead of filling the rail, leaving a growing dead gap between
+       the rows and the rail's real right border (width driven by the logo
+       header, which is usually wider than a single row). `stretch` makes
+       the rows always reach the rail's actual edge, whatever that is,
+       instead of hardcoding a width to match it. */
+    align-self: stretch;
+    margin: 1rem 0;
     padding: 0;
 
 }
@@ -110,7 +133,6 @@
 .listbar__option {
 
     border: 1px solid transparent;
-    padding-left: .5rem;
 }
 
 .listbar__option:hover {
@@ -131,11 +153,36 @@
     color: var(--bg) !important;
 }
 
+/* Collapsed rail only: dissolves the active box's real right edge (the
+   rail's own border, where it meets the content grid) into a pixel dither
+   instead of a flat cyan-to-black cut, per the CRT phosphor aesthetic
+   (docs/design/DESIGN_SYSTEM.md) — same mask-fade technique already used
+   for edges in Home.module.css. Lives on the row itself (not a sibling)
+   so it just rides along with the row's real border in both rail states,
+   no viewport-relative math needed. A checkerboard tile of --bg squares,
+   masked so it's dense at the border and fades out toward the icon. */
+.sidebar__collapsed .listbar__active a::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1.75rem;
+    height: 100%;
+    pointer-events: none;
+    background-image: repeating-conic-gradient(var(--bg) 0 25%, transparent 0 50%);
+    background-size: 4px 4px;
+    -webkit-mask-image: linear-gradient(to left, black, transparent);
+    mask-image: linear-gradient(to left, black, transparent);
+}
+
 .listbar__option a {
 
     display: flex;
+    position: relative;
+    box-sizing: border-box;
     height: 3rem;
-    width: 15rem;
+    width: 100%;
+    padding-left: .5rem;
     align-items: center;
     color: var(--primarycolor);
     text-decoration: none;
@@ -168,6 +215,7 @@
    full-bleed page reserves `--mobile-nav-height` of top padding at this
    same width instead of the rail's left-hand clearance. */
 @media screen and (max-width: 768px) {
+
     .sidebar__expanded,
     .sidebar__collapsed {
         left: 0;
@@ -208,6 +256,8 @@
     .listbar {
         display: flex;
         flex-direction: column;
+        align-self: stretch;
+        width: 100%;
         gap: .3rem;
         max-height: 0;
         opacity: 0;
@@ -215,6 +265,11 @@
         padding: 0 1rem;
         overflow: hidden;
         transition: max-height 220ms ease-in, opacity 160ms ease-in;
+        box-sizing: border-box;
+    }
+
+    .listbar__option {
+        width: 100%;
     }
 
     .listbarOpen {
@@ -237,11 +292,17 @@
 }
 
 @keyframes nav-scrim-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .listbar,
     .listbarOpen {
         transition: none;
@@ -249,5 +310,12 @@
 
     .navScrim {
         animation: none;
+    }
+
+    .sidebar__expanded,
+    .sidebar__collapsed,
+    .navToggle:active,
+    .listbar__option a:active {
+        transition: none;
     }
 }

@@ -1,12 +1,9 @@
 import styles from '../styles/about.module.css'
-import Layout from '../components/layout'
 import Link from 'next/link'
 import { FaHome } from 'react-icons/fa'
 
 const About = () => {
     return (
-        <Layout>
-
             <div className={styles.container}>
                 <article className={styles.info__about}>
 
@@ -37,6 +34,8 @@ const About = () => {
                 <div className={styles.heroArt}>
                     <img
                         src='/tokyo.png'
+                        width="1541"
+                        height="1021"
                         className={styles.heroArt__img}
                         alt="Silhouette of a person wearing headphones crossing a rain-lit Tokyo street at night, neon signs glowing overhead"
                     />
@@ -44,7 +43,6 @@ const About = () => {
                 </div>
 
             </div>
-        </Layout>
     )
 }
 export default About

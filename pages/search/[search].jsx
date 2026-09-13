@@ -1,7 +1,6 @@
 
 
 import Loader from '../../components/loader'
-import Layout from '../../components/layout'
 import { memo ,Suspense} from 'react'
 import dynamic from 'next/dynamic'
 import styles from '../../styles/search.module.css'
@@ -18,14 +17,10 @@ const Search = memo(function Search({ data }) {
 
       <div className={styles.container}>
 
-
-        <Layout>
           <Suspense fallback={<Loader/>}>
 
           <SoundList dataSearch={dataSearch} />
           </Suspense>
-      
-        </Layout>
 
       </div>
 

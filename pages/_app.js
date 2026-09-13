@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react'
 import { SoundProvider } from '../context/libraryContext/libraryContext'
 import Loader from '../components/loader';
+import Layout from '../components/layout';
 // Delay before showing the loader at all: most route changes here resolve in
 // well under this, so without the delay every navigation flashes a full-screen
 // overlay for a single frame. Once shown, closing plays its own ease-in fade
@@ -79,11 +80,14 @@ function MyApp({ Component, pageProps }) {
       <title>PlayerSound</title>
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       <meta name="keywords" content="music, streaming, without ads"></meta>
+      <meta name="theme-color" content="#050B05" />
     </Head>
     <SoundProvider >
       <Loading />
 
-      <Component {...pageProps} />
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
 
       <div className="crt-scanlines" aria-hidden="true" />
       <div className="crt-vignette" aria-hidden="true" />

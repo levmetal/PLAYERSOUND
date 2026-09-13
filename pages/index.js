@@ -2,7 +2,6 @@
 import styles from '../styles/Home.module.css'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
-import Layout from '../components/layout'
 import DataPixelArc from '../components/dataPixelArc'
 import Head from 'next/head'
 
@@ -10,19 +9,15 @@ export default function Home() {
 
   const router = useRouter()
   const [search, setSearch] = useState("")
-  const [submiting, setSubmit] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    setSubmit(!submiting)
     router.push(`/search/${search}`)
     setSearch("")
-    setSubmit(!submiting)
   }
 
   return (
     <>
-      <Layout>
     <Head>
        <meta name="description" content="Find any YouTube audio without ads using our easy-to-use search app. Enjoy your favorite songs and create custom playlists uninterrupted. Try our app today and enjoy an uninterrupted online audio experience!"/>
        <meta name="description" content="Encuentra cualquier audio de YouTube sin publicidad con nuestra aplicación de búsqueda fácil de usar. Disfruta de tus canciones favoritas y crea listas de reproducción personalizadas sin interrupciones publicitarias. ¡Prueba nuestra aplicación hoy mismo y disfruta de una experiencia de audio en línea sin interrupciones!"/>
@@ -49,18 +44,28 @@ export default function Home() {
 
               <form className={styles.container__form} onSubmit={handleSubmit} >
 
-                <input spellCheck="false" className={styles.form__input} value={search} type="text" placeholder='Lets Rock !' onChange={e => setSearch(e.target.value)} />
+                <label htmlFor="home-search" className="sr-only">Search for a sound</label>
+                <input
+                  id="home-search"
+                  name="search"
+                  autoComplete="off"
+                  spellCheck="false"
+                  className={styles.form__input}
+                  value={search}
+                  type="text"
+                  placeholder='Lets Rock !'
+                  onChange={e => setSearch(e.target.value)}
+                />
                 <button className={styles.form__button} type="submit" >Search</button>
               </form>
             </div>
             <div className={styles.heroFrame}>
               <DataPixelArc className={styles.heroArc} />
-              <img className={styles.imghero} src="/cassetteHero.png" alt="Mano sosteniendo un cassette de PlayerSound, estilo tramado verde fósforo" />
+              <img className={styles.imghero} src="/cassetteHero.png" width="853" height="1024" alt="Mano sosteniendo un cassette de PlayerSound, estilo tramado verde fósforo" />
             </div>
 
           </>
         </main>
-      </Layout>
     </>
   )
 }

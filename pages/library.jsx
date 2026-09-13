@@ -1,4 +1,3 @@
-import Layout from '../components/layout'
 import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
 import { useState, Suspense, lazy } from "react";
@@ -37,12 +36,10 @@ const Library = () => {
     }
 
     return (
-        <Layout>
-
             <div className={styles.container}>
                 {openModal && <Suspense> <Modal item={itemModal} triggerModal={triggerModal} /> </Suspense>}
                 <p className={styles.eyebrow}>SYSTEM_LOG // PLAYLISTS</p>
-                <h2 className={styles.library__title}>Playlists</h2>
+                <h1 className={styles.library__title}>Playlists</h1>
 
                 <div className={styles.playlistSwitcher}>
                     {playlists.map((playlist) => (
@@ -56,6 +53,7 @@ const Library = () => {
                             {playlist.id !== FAVORITES_ID && (
                                 <button
                                     className={styles.playlistDelete}
+                                    aria-label={`Delete playlist "${playlist.name}"`}
                                     title="Delete playlist"
                                     onClick={() => deletePlaylist(playlist.id)}
                                 >&times;</button>
@@ -64,7 +62,11 @@ const Library = () => {
                     ))}
 
                     <form className={styles.playlistCreate} onSubmit={createPlaylist}>
+                        <label htmlFor="new-playlist-name" className="sr-only">New playlist name</label>
                         <input
+                            id="new-playlist-name"
+                            name="playlistName"
+                            autoComplete="off"
                             type="text"
                             placeholder="New playlist name"
                             value={newPlaylistName}
@@ -88,7 +90,6 @@ const Library = () => {
                     )}
                 </ul>
             </div>
-        </Layout>
     )
 }
 export default Library
