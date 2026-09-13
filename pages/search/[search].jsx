@@ -9,7 +9,7 @@ const SoundList = dynamic(() => import('../../components/soundList'), {
   suspense: true,
 })
 
-const Search = memo(({ data }) => {
+const Search = memo(function Search({ data }) {
 
   let dataSearch = [data]
 
@@ -43,7 +43,11 @@ export async function getServerSideProps(context) {
   const { query } = context
   const { search } = query
   try {
-    const response = await fetch(`https://playersound.vercel.app/api/search/${search}`)
+    const searchApiBase =
+      process.env.NEXT_PUBLIC_SEARCH_API_BASE ||
+      (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
+      `http://localhost:${process.env.PORT || 3000}`
+    const response = await fetch(`${searchApiBase}/api/search/${search}`)
     const data = await response.json()
 
     return {

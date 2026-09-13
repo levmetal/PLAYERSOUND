@@ -14,8 +14,8 @@ export default async function (req, res) {
     })
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json(error)
+    console.error(`search error for "${searchTerm}":`, error);
+    res.status(500).json({ error: error.message })
 
   }
 
