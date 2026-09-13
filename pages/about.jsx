@@ -34,11 +34,14 @@ const About = () => {
                     </footer>
                 </article>
 
-                <img
-                    src='/youngBoy.webp'
-                    className={styles.img__about}
-                    alt="Person listening to music through headphones, green phosphor tint"
-                />
+                <div className={styles.heroArt}>
+                    <img
+                        src='/tokyo.png'
+                        className={styles.heroArt__img}
+                        alt="Silhouette of a person wearing headphones crossing a rain-lit Tokyo street at night, neon signs glowing overhead"
+                    />
+                    <div className={styles.heroArt__fade} aria-hidden="true" />
+                </div>
 
             </div>
         </Layout>

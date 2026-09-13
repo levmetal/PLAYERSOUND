@@ -6,14 +6,41 @@
     position: relative;
 }
 
-.img__about {
+/* Deliberate exception to the monochrome-tinted-thumbnail rule, same
+   category as the player's cover art (see docs/design/DESIGN_SYSTEM.md):
+   this is an atmospheric photo, not a data thumbnail, so it keeps its own
+   neon color grade instead of being forced to the dominant phosphor hue. */
+.heroArt {
     position: absolute;
+    overflow: hidden;
     background: var(--bgbox);
     width: 35%;
     height: 100vh;
     right: 0;
-    filter: grayscale(1) contrast(1.2) brightness(.5) sepia(1) hue-rotate(70deg) saturate(3);
+}
 
+.heroArt__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Keeps the silhouette in frame — cover crops this landscape photo down
+       to the container's tall/narrow strip, and the person is ~1/3 in from
+       the left edge of the source image. */
+    object-position: 34% center;
+    display: block;
+    filter: contrast(1.1) saturate(1.35) brightness(.78);
+}
+
+/* Fades the photo into the page's black background instead of ending in a
+   hard rectangle: left edge blends into the text column, bottom grounds
+   into the viewport edge. */
+.heroArt__fade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(to right, var(--crt-black) 0%, transparent 20%),
+        linear-gradient(to top, var(--crt-black) 0%, transparent 25%);
 }
 
 .info__about {
@@ -53,6 +80,7 @@
     line-height: 150%;
     margin-top: 2rem;
     width: 40ch;
+    max-width: 100%;
 }
 
 /* Compact "spec sheet" readout, not another paragraph of prose — matches
@@ -66,6 +94,7 @@
     flex-direction: column;
     gap: .9rem;
     width: 40ch;
+    max-width: 100%;
     font-size: .95rem;
     line-height: 1.4;
     color: var(--lowPrimaryColor);
@@ -122,10 +151,15 @@
 
 
 @media screen and (max-width:850px) {
-    .img__about {
+    /* Text now overlaps the art (.info__about goes absolute below), so the
+       photo shifts from "side panel" to dimmed/blurred full-bleed backdrop
+       for legibility — same technique as before, just moved onto the new
+       wrapper/img pair. */
+    .heroArt {
         width: 60%;
-        filter: blur(5px)
-        brightness(50%);
+    }
+    .heroArt__img {
+        filter: contrast(1.1) saturate(1.1) brightness(.4) blur(4px);
     }
     .info__about{
         margin-left: 20%;
@@ -146,10 +180,11 @@
     }
 }
 @media screen and (max-width:500px){
-    .img__about {
+    .heroArt {
         width: 100%;
-        filter: blur(5px)
-        brightness(50%);
+    }
+    .heroArt__img {
+        filter: contrast(1.1) saturate(1.1) brightness(.35) blur(5px);
     }
     .info__about{
         margin-left: 20%;
