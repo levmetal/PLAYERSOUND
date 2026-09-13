@@ -10,6 +10,15 @@
     font-family: var(--font-body);
 }
 
+.eyebrow {
+    align-self: baseline;
+    margin-top: 3.5rem;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+}
+
 .library__title {
     align-self: baseline;
     color: var(--primarycolor);
@@ -18,7 +27,7 @@
     text-shadow: var(--glow-text);
     border-bottom: var(--border-crt);
     padding-bottom: .3rem;
-    margin-top: 3.5rem;
+    margin-top: .5rem;
     font-size: 1.8rem;
 }
 
@@ -129,10 +138,13 @@
 
 @media screen and (max-width:650px) {
     .container {
-        padding: 0 1rem;
+        /* Clears the fixed collapsed sidebar rail (~85px visible), same
+           convention as .console in player.module.css — plain `0 1rem` left
+           the rail overlapping the first ~85px of every line here. */
+        padding: 0 1rem 0 5.5rem;
     }
 
-    .library__title {
+    .eyebrow {
         margin-top: 3.6rem;
     }
 }

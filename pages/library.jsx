@@ -41,6 +41,7 @@ const Library = () => {
 
             <div className={styles.container}>
                 {openModal && <Suspense> <Modal item={itemModal} triggerModal={triggerModal} /> </Suspense>}
+                <p className={styles.eyebrow}>SYSTEM_LOG // PLAYLISTS</p>
                 <h2 className={styles.library__title}>Playlists</h2>
 
                 <div className={styles.playlistSwitcher}>

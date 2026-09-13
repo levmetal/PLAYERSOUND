@@ -101,6 +101,14 @@
 
 }
 
+.eyebrow {
+    margin: 0 0 .5rem;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+}
+
 .container__title {
     font-size: 5vw;
     margin: 0;

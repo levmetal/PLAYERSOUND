@@ -40,6 +40,7 @@ export default function Home() {
 
             <div className={styles.infoHero}>
               <div className={styles.mainTitle}>
+                <p className={styles.eyebrow}>SYSTEM_LOG // HOME</p>
                 <h1 className={styles.container__title}>Music,Podcast or whatever you want</h1>
                 <h2 className={styles.container__subtitle}>Search every sound from this app to
                   enjoy your favorites podcasts, web show or music whitout ads
