@@ -5,7 +5,13 @@
     align-items: center;
     min-height: 100dvh;
     max-width: 100vw;
-    padding-left: var(--rail-width);
+    /* --rail-width alone (5rem) only clears the collapsed rail — this page's
+       layout (.playlistCreate's margin-left: auto in particular) was tuned
+       around a wider ~15rem left gutter that used to come along for free
+       when --rail-width meant something different. Add that same stylistic
+       margin back explicitly instead of quietly relying on the shared
+       rail-clearance variable for it. */
+    padding-left: calc(var(--rail-width) + 10rem);
     padding-right: 10rem;
     font-family: var(--font-body);
 }

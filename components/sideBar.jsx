@@ -86,7 +86,11 @@ const SideBar = () => {
                                 }
                             >
                                 <Link href={href}>
-                                    <a onClick={handleNavClick} aria-current={isActive(href) ? "page" : undefined}>
+                                    <a
+                                        onClick={handleNavClick}
+                                        aria-current={isActive(href) ? "page" : undefined}
+                                        title={label}
+                                    >
                                         {label}
                                         <Icon className={styles.sideIcon} aria-hidden="true" />
                                     </a>

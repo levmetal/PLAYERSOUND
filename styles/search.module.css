@@ -1,6 +1,11 @@
 .container {
     min-height: 100dvh;
     width: 100%;
+    /* Without this, `width: 100%` + `padding-left` under the default
+       content-box model add the padding ON TOP of a full-viewport-wide box
+       instead of inset within it — the whole page renders ~15rem wider than
+       the viewport and shifts/overflows to the right. */
+    box-sizing: border-box;
     /* Clears the fixed desktop rail (components/sideBar.jsx) — without this
        the results list rendered underneath it (soundlist.module.css has no
        left clearance of its own, only the mobile top-bar one). Below 768px

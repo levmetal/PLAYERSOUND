@@ -4,12 +4,18 @@
    between 2000 (expanded) and 100 (collapsed) depending on state, which could
    leave the collapsed rail rendering behind the loader — a layering bug, not
    a deliberate effect. */
+/* Fixed width on both states (was auto/content-hugging) so the collapsed
+   transform below can reveal an EXACT width instead of a vague percentage
+   of an unknown size — full-bleed pages clear that same exact width via
+   --rail-width (styles/tokens.css). Keep these two numbers and that
+   variable in sync if either one changes. */
 .sidebar__expanded {
 
     background: var(--crt-black);
     display: flex;
     flex-direction: column;
     border-right: var(--border-crt);
+    width: 17rem;
     height: 100dvh;
     transform: translateX(0%);
     z-index: 150;
@@ -27,6 +33,7 @@
     display: flex;
     flex-direction: column;
     border-right: var(--border-crt);
+    width: 17rem;
     height: 100dvh;
 
     z-index: 150;
@@ -34,15 +41,24 @@
     top: 0;
     left: 0;
     transition: transform 200ms;
-    transform: translateX(-70%);
+    /* Leaves exactly 5rem visible (17rem - 12rem) — matches --rail-width,
+       the icon column's own width plus its clearance from the border. */
+    transform: translateX(-12rem);
 }
 
 /* Keyboard users tabbing into the collapsed rail would otherwise land focus
    on a link whose label is cropped off-screen by the translateX above —
-   reveal the full rail while focus is inside it, same as a mouse click on
-   the toggle would. No JS/state change: this only affects the visual
-   transform, menuOpen stays false. */
-.sidebar__collapsed:focus-within {
+   reveal the full rail while a NAV LINK specifically has keyboard focus.
+   No JS/state change: this only affects the visual transform, menuOpen
+   stays false.
+   Scoped to .listbar__option a (not a blanket :focus-within on the whole
+   aside): the toggle button below also lives inside .sidebar__collapsed,
+   and a mouse click leaves it focused after the click handler already ran
+   — a plain :focus-within would then keep forcing the rail back open on
+   every subsequent click, making the button look like it never closes.
+   :focus-visible additionally limits this to actual keyboard navigation,
+   not the mouse click that already opens/closes it via React state. */
+.sidebar__collapsed:has(.listbar__option a:focus-visible) {
     transform: translateX(0%);
 }
 

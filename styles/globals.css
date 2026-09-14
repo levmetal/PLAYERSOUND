@@ -15,6 +15,11 @@
      scrollbars, etc. render dark by default instead of the browser's light
      UA styling clashing with the phosphor-on-black look. */
   color-scheme: dark;
+  /* Firefox equivalent of the ::-webkit-scrollbar-* rules below — it
+     doesn't support those, so without this its scrollbar stays fully
+     unstyled/light. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--primarycolor) var(--bgbox);
 }
 
 /* Visually hides content while keeping it in the accessible tree — for
@@ -138,7 +143,11 @@
 
 /* Track */
 ::-webkit-scrollbar-track {
-
+  /* Was unset, so it fell back to the browser's plain light-gray UA
+     default — defining any ::-webkit-scrollbar-* rule switches the
+     scrollbar into fully custom rendering, so `color-scheme: dark` above
+     no longer supplies a dark fallback for parts left unstyled here. */
+  background: var(--bgbox);
   border-radius: 10px;
 }
  

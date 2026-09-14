@@ -58,13 +58,14 @@
   --mobile-nav-height: 3.5rem;
 
   /* Above 768px, the rail (components/sideBar.jsx, styles/sidebar.module.css)
-     has no fixed width — it's sized by its own content (logo + row width),
-     not by this variable. This is only the shared, manually-kept-in-sync
-     estimate that full-bleed page containers use to clear it (e.g.
-     library.module.css's `padding-left`) — if the rail's content ever grows
-     meaningfully wider than this, bump it here rather than guessing a new
-     number in each page's own stylesheet. */
-  --rail-width: 15rem;
+     defaults to its collapsed, icon-only width — this must match that exact
+     value (17rem aside width - 12rem translateX = 5rem visible) or full-
+     bleed page containers either leave a dead gap past the icons (too big)
+     or render underneath them (too small). Manually-expanding the rail
+     overlays it on top of this clearance instead of pushing content over —
+     it's `position: fixed`, so that's a temporary, dismissible overlap by
+     design, not something this value needs to also account for. */
+  --rail-width: 5rem;
 
   /* HUD corner brackets — the ".hud-frame" utility in globals.css, backing
      the "corner-bracket boxes... like a targeting reticle" rule in
