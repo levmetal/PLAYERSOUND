@@ -20,7 +20,14 @@ function getInnertube() {
     // Persistent cache avoids re-fetching/re-parsing YouTube's player.js on
     // every request (that's also what generates the player.js cache files).
     const cacheDir = path.join(process.cwd(), '.cache', 'youtubei')
-    innertubePromise = Innertube.create({ cache: new UniversalCache(true, cacheDir) })
+    innertubePromise = Innertube.create({ cache: new UniversalCache(true, cacheDir) }).catch((err) => {
+      // Don't cache a rejected promise — a transient init/network failure
+      // would otherwise permanently break this endpoint for the process's
+      // lifetime, since every future request would just re-await the same
+      // rejection instead of retrying.
+      innertubePromise = null
+      throw err
+    })
   }
   return innertubePromise
 }
@@ -140,8 +147,12 @@ export default async function handler(req, res) {
     } else {
       res.writeHead(200, {
         'Content-Type': mimeType,
-        ...(totalSize ? { 'Content-Length': totalSize } : {}),
-        'Accept-Ranges': 'bytes',
+        // Only advertise range support when we actually know the total size —
+        // without it we can't honor an arbitrary byte-range request, so
+        // claiming Accept-Ranges here would make a later seek silently
+        // restart playback from byte 0 instead of jumping to the requested
+        // position.
+        ...(totalSize ? { 'Content-Length': totalSize, 'Accept-Ranges': 'bytes' } : {}),
       })
     }
 

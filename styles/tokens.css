@@ -122,8 +122,8 @@
   --grid-line: rgba(138, 46, 0, 0.08);
 }
 
-/* Scanline overlay utility. Not wired into any layout yet — apply
-   `.crt-scanlines` (position: relative) to a container to opt in. */
+/* Scanline overlay utility, mounted once as a fixed full-viewport layer in
+   pages/_app.js — do not add position: relative containers for it. */
 .crt-scanlines::after {
   content: '';
   position: fixed;

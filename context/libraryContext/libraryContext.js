@@ -27,15 +27,31 @@ export function useSoundContext() {
 export function SoundProvider({ children }) {
     const [state, dispatch] = useReducer(playlistReducer, defaultPlaylists)
     const hydrated = useRef(false)
+    // Tracks whether a real (non-HYDRATE) action landed before the async read
+    // below resolved, so hydration doesn't clobber a user's in-flight change
+    // by unconditionally overwriting state with the older stored snapshot.
+    const interacted = useRef(false)
+
+    function dispatchTracked(action) {
+        if (action.type !== 'HYDRATE') interacted.current = true
+        dispatch(action)
+    }
 
     // IndexedDB reads/writes are async and non-blocking, unlike localStorage
     // (which would re-serialize every playlist on every single track add).
     useEffect(() => {
         let cancelled = false
-        get(STORAGE_KEY).then((stored) => {
-            if (!cancelled && stored) dispatch({ type: 'HYDRATE', payload: stored })
-            hydrated.current = true
-        })
+        get(STORAGE_KEY)
+            .then((stored) => {
+                if (!cancelled && stored && !interacted.current) dispatch({ type: 'HYDRATE', payload: stored })
+            })
+            .catch(() => {
+                // IndexedDB can reject (private browsing, blocked storage) —
+                // still mark hydrated below so persistence isn't blocked forever.
+            })
+            .finally(() => {
+                if (!cancelled) hydrated.current = true
+            })
         return () => {
             cancelled = true
         }
@@ -48,7 +64,7 @@ export function SoundProvider({ children }) {
 
     return (
         <PlaylistsContext.Provider value={state}>
-            <PlaylistsDispatchContext.Provider value={dispatch}>
+            <PlaylistsDispatchContext.Provider value={dispatchTracked}>
                 {children}
             </PlaylistsDispatchContext.Provider>
         </PlaylistsContext.Provider>
