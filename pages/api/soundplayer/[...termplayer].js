@@ -1,5 +1,6 @@
 import { Innertube, UniversalCache } from 'youtubei.js'
 import path from 'path'
+import os from 'os'
 
 export const config = {
   api: {
@@ -19,7 +20,13 @@ function getInnertube() {
   if (!innertubePromise) {
     // Persistent cache avoids re-fetching/re-parsing YouTube's player.js on
     // every request (that's also what generates the player.js cache files).
-    const cacheDir = path.join(process.cwd(), '.cache', 'youtubei')
+    // Must live under os.tmpdir(), not process.cwd() — serverless platforms
+    // (Vercel) ship the deployed function bundle read-only and only allow
+    // writes under the OS temp dir; a plain process.cwd() path throws
+    // EROFS/EACCES there and breaks every request. /tmp still persists
+    // across warm invocations of the same instance, so the cache still pays
+    // off — just not across cold starts, which is fine.
+    const cacheDir = path.join(os.tmpdir(), 'youtubei-cache')
     innertubePromise = Innertube.create({ cache: new UniversalCache(true, cacheDir) }).catch((err) => {
       // Don't cache a rejected promise — a transient init/network failure
       // would otherwise permanently break this endpoint for the process's
