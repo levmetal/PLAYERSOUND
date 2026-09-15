@@ -23,7 +23,13 @@ Thumbs.db
 # AI coding assistant tooling/config (local only, not shared project config)
 /.claude/
 /.agents/
+/.mcp.json
 skills-lock.json
+CLAUDE.md
+AGENTS.md
+.cursorrules
+.windsurfrules
+.clinerules
 
 # debug
 npm-debug.log*
