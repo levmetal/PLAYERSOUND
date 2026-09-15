@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:audio": "node scripts/test-audio-endpoint.mjs"
+    "test:audio": "node scripts/test-audio-endpoint.mjs",
+    "postinstall": "patch-package"
   },
   "engines": {
     "node": "20.x"
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "eslint": "8.23.0",
-    "eslint-config-next": "12.2.5"
+    "eslint-config-next": "12.2.5",
+    "patch-package": "^8.0.1"
   }
 }

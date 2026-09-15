@@ -1,0 +1,70 @@
+diff --git a/node_modules/youtubei.js/dist/src/core/Player.js b/node_modules/youtubei.js/dist/src/core/Player.js
+index 611ca7a..385d1c4 100644
+--- a/node_modules/youtubei.js/dist/src/core/Player.js
++++ b/node_modules/youtubei.js/dist/src/core/Player.js
+@@ -2,7 +2,8 @@ import { Constants, BinarySerializer, Log } from '../utils/index.js';
+ import { getRandomUserAgent, getStringBetweenStrings, getNsigProcessorFn, Platform, PlayerError } from '../utils/Utils.js';
+ import { JsExtractor, JsAnalyzer } from '../utils/index.js';
+ import { nsigMatcher, timestampMatcher } from '../utils/javascript/matchers.js';
+-import packageInfo from '../../package.json' with { type: 'json' };
++import { createRequire } from 'module';
++const packageInfo = createRequire(import.meta.url)('../../package.json');
+ const TAG = 'Player';
+ /**
+  * Represents YouTube's player script. This is required to decipher signatures.
+diff --git a/node_modules/youtubei.js/dist/src/core/Session.js b/node_modules/youtubei.js/dist/src/core/Session.js
+index af61f11..3b6d945 100644
+--- a/node_modules/youtubei.js/dist/src/core/Session.js
++++ b/node_modules/youtubei.js/dist/src/core/Session.js
+@@ -4,7 +4,8 @@ import Player from './Player.js';
+ import * as Constants from '../utils/Constants.js';
+ import { EventEmitter, HTTPClient, BinarySerializer, Log, ProtoUtils } from '../utils/index.js';
+ import { generateRandomString, getRandomUserAgent, InnertubeError, Platform, SessionError } from '../utils/Utils.js';
+-import packageInfo from '../../package.json' with { type: 'json' };
++import { createRequire } from 'module';
++const packageInfo = createRequire(import.meta.url)('../../package.json');
+ export const ClientType = {
+     WEB: "WEB",
+     MWEB: "MWEB",
+diff --git a/node_modules/youtubei.js/dist/src/parser/parser.js b/node_modules/youtubei.js/dist/src/parser/parser.js
+index 12f6a81..4e17696 100644
+--- a/node_modules/youtubei.js/dist/src/parser/parser.js
++++ b/node_modules/youtubei.js/dist/src/parser/parser.js
+@@ -3,7 +3,8 @@ import { InnertubeError, ParsingError } from '../utils/Utils.js';
+ import { Memo, observe, SuperParsedResult } from './helpers.js';
+ import { camelToSnake, generateRuntimeClass, generateTypescriptClass } from './generator.js';
+ import { Log } from '../utils/index.js';
+-import packageInfo from '../../package.json' with { type: 'json' };
++import { createRequire } from 'module';
++const packageInfo = createRequire(import.meta.url)('../../package.json');
+ import { Continuation, ContinuationCommand, GridContinuation, ItemSectionContinuation, LiveChatContinuation, MusicPlaylistShelfContinuation, MusicShelfContinuation, NavigateAction, PlaylistPanelContinuation, ReloadContinuationItemsCommand, SectionListContinuation, ShowMiniplayerCommand } from './continuations.js';
+ import AudioOnlyPlayability from './classes/AudioOnlyPlayability.js';
+ import CardCollection from './classes/CardCollection.js';
+diff --git a/node_modules/youtubei.js/dist/src/utils/StreamingInfo.js b/node_modules/youtubei.js/dist/src/utils/StreamingInfo.js
+index ccacd3e..f3dae23 100644
+--- a/node_modules/youtubei.js/dist/src/utils/StreamingInfo.js
++++ b/node_modules/youtubei.js/dist/src/utils/StreamingInfo.js
+@@ -2,7 +2,8 @@ import PlayerStoryboardSpec from '../parser/classes/PlayerStoryboardSpec.js';
+ import { getStringBetweenStrings, InnertubeError } from './Utils.js';
+ import * as Constants from './Constants.js';
+ import * as Log from './Log.js';
+-import packageInfo from '../../package.json' with { type: 'json' };
++import { createRequire } from 'module';
++const packageInfo = createRequire(import.meta.url)('../../package.json');
+ const TAG_ = 'StreamingInfo';
+ function getFormatGroupings(formats, is_post_live_dvr) {
+     const group_info = new Map();
+diff --git a/node_modules/youtubei.js/dist/src/utils/Utils.js b/node_modules/youtubei.js/dist/src/utils/Utils.js
+index 6e2e4f9..8238368 100644
+--- a/node_modules/youtubei.js/dist/src/utils/Utils.js
++++ b/node_modules/youtubei.js/dist/src/utils/Utils.js
+@@ -2,7 +2,8 @@ import { Memo } from '../parser/helpers.js';
+ import { Text } from '../parser/misc.js';
+ import * as Log from './Log.js';
+ import userAgents from './user-agents.js';
+-import packageInfo from '../../package.json' with { type: 'json' };
++import { createRequire } from 'module';
++const packageInfo = createRequire(import.meta.url)('../../package.json');
+ const TAG_ = 'Utils';
+ let shim;
+ export class Platform {
