@@ -1,250 +1,126 @@
-# Audio backend: current blockers and next steps
+# Audio backend: dual playback engine (shipped)
 
-Written 2026-09-15 after a debugging session. Read this before touching the audio
-resolver again — it explains what's already fixed, what's still broken, why, and
-what's worth trying next, so a fresh session doesn't have to re-derive it.
+Last updated 2026-09-15. Read this first if you're picking this up in a new session —
+it tells you what already works, what's still open, and where the reasoning behind it
+lives, without having to reconstruct the investigation that led here.
 
-## The problem, in one paragraph
+## Current state (read this, skip the history unless you need it)
 
-The app streams YouTube audio through `pages/api/soundplayer/[...termplayer].js`,
-which uses `youtubei.js` (InnerTube) to resolve a playable stream and pipes bytes to
-the client. Deployed on Vercel, every request to this route returned a 500. Two
-separate bugs were stacked on top of each other: a Next.js/Vercel bundling bug (now
-fixed) was hiding the real, harder problem underneath — YouTube's bot detection
-outright blocks the request before we even get a stream to pipe. **The bundling bug
-is fixed. The bot-detection wall is not, and is the actual reason audio doesn't play
-in production today.**
+**The hosted demo works again. This is done, not in-progress.**
 
-## Architecture today
+The app ships **two interchangeable playback engines** behind one hook,
+`hooks/usePlaybackEngine.js`, consumed only by `components/player.jsx`:
 
-- `pages/api/soundplayer/[...termplayer].js` — the audio resolver. Tries a fixed
-  client fallback chain (`CLIENT_FALLBACK_CHAIN = ['VISIONOS', 'IOS', 'ANDROID_VR']`,
-  see the comment above it) via `youtubei.js`, remembers whichever client worked per
-  video id (`lastWorkingClient`), streams bytes with Range/206 support.
-- `.env.local.example` documents `NEXT_PUBLIC_AUDIO_API_BASE`, an escape hatch to
-  point the frontend at an **external** audio service instead of this local route —
-  the comment there references `https://yt-audio-l01p.onrender.com`, "once it's back
-  up," implying a separate Render-hosted service existed for this and is currently
-  down. That service's code isn't in this repo.
-- `backup-2026-07-14` branch (local only, not on origin) holds an older, abandoned
-  implementation that fought the exact same YouTube bot-detection problem with fake
-  User-Agents, pre-fetched session cookies, and client-switching — none of it stuck,
-  which is why the app was rewritten around `youtubei.js` instead. Worth reading its
-  commit messages (`fix: use real browser User-Agent + Google referer for yt-dlp`,
-  `fix: pre-fetch anonymous YouTube session cookies before yt-dlp call`, `fix: try
-  Android/Music/iOS clients to bypass YouTube bot detection`) as evidence this is a
-  long-running fight, not a one-off bug.
+- **`native`** (default — what `npm run dev` uses with no config): real `<audio>`
+  streaming via `pages/api/soundplayer/[...termplayer].js` + `youtubei.js`. No ads, no
+  YouTube UI. Only reaches YouTube reliably from a **residential IP** — see "Why two
+  engines exist" below for why this is a hard constraint, not a bug to fix.
+- **`iframe`** (what the deployed Vercel demo uses): mounts YouTube's own IFrame
+  Player API (`youtube-nocookie.com`) directly in the visitor's browser. The request
+  never touches our server, so the IP-reputation block below cannot apply to it.
 
-## What's already fixed (confirmed via real Vercel logs, not guessing)
+Selected via `NEXT_PUBLIC_PLAYBACK_MODE` (`native` | `iframe`, see
+`.env.local.example`). The native engine auto-falls-back to `iframe` at runtime if the
+`<audio>` element errors. MediaSession (lock-screen/notification controls) is wired
+for `native` only.
 
-1. **`getInnertube()` cached a rejected promise** — one transient init failure broke
-   the endpoint for the process's whole lifetime. Fixed: resets `innertubePromise` to
-   `null` on rejection so it retries.
-2. **InnerTube's cache wrote to `process.cwd()/.cache`** — throws on Vercel, whose
-   deployed function filesystem is read-only outside `/tmp`. Fixed: cache dir moved
-   to `os.tmpdir()`.
-3. **The actual cause of the 500**: `youtubei.js`'s compiled `Utils.js`,
-   `StreamingInfo.js`, `Player.js`, `Session.js`, and `parser.js` all import their own
-   `package.json` via `import ... with { type: 'json' }` (import attributes). Next.js
-   12's bundled file tracer can't parse that syntax, silently drops the *entire*
-   dependency list of whichever file it fails on, and a file only reachable through
-   `Utils.js`'s own import (`utils/user-agents.js`) never made it into the deployed
-   function → `ERR_MODULE_NOT_FOUND` crash on every cold start, before our own
-   try/catch ever ran (that's why it showed Next's generic `/500` page, not our
-   custom error text). Fixed via `patch-package` (`patches/youtubei.js+18.0.0.patch`,
-   reapplied automatically by the `postinstall` script on every `npm install`):
-   rewrote the five `with { type: 'json' }` imports to use `createRequire` instead,
-   which every tool can parse and returns the identical parsed object.
-   - Confirmed with real `vercel logs` output before and after: the exact
-     `ERR_MODULE_NOT_FOUND` for `user-agents.js` reproduced on a fully clean,
-     cache-free forced redeploy (ruling out stale build cache), then disappeared
-     after the patch — the deployed function now reaches our own route code instead
-     of crashing at import time (`X-Matched-Path` changed from `/500` to
-     `/api/soundplayer/[...termplayer]`).
+**Live right now:**
+- `https://playersound.vercel.app` — `NEXT_PUBLIC_PLAYBACK_MODE=iframe` is set in
+  Vercel's Production environment variables. Verified in the actual deployed site
+  (not just locally): the iframe mounts at `youtube-nocookie.com`, play/pause/seek all
+  work against the real YouTube player, and zero requests hit `/api/soundplayer`.
+- Local `npm run dev` — defaults to `native`, verified play/pause/seek/volume all work
+  identically to before this change.
 
-If a future session sees `ERR_MODULE_NOT_FOUND` from inside `node_modules/youtubei.js`
-again after a dependency upgrade, re-check whether the patch still applies cleanly
-(`npx patch-package youtubei.js` regenerates it) — a `youtubei.js` version bump could
-shift line numbers or fix this upstream and make the patch redundant/conflicting.
+Implementation commit: `feat(audio): add IFrame playback engine alongside the native
+one` on `main`. Read `hooks/usePlaybackEngine.js` directly for exact behavior — it's
+short and the comments explain the non-obvious parts (why MediaSession is
+native-only, why the iframe mount can't be hidden, etc).
 
-## What's still broken: YouTube's bot detection
+### Not yet verified — real gaps, not hypothetical ones
 
-After the fix above, `/api/soundplayer/<id>` reaches our code and gets a real
-response from YouTube — which is itself a block:
+- **Embedding-disabled videos in `iframe` mode.** The code path exists (`onError` →
+  "Este video no está disponible para reproducir embebido."), but no video known to
+  have embedding disabled has actually been clicked through to confirm the message
+  renders correctly instead of hanging.
+- **Mobile background playback**, for real, on a phone. Expected behavior per how
+  each engine works: `native` should survive lock-screen/backgrounding fine (real
+  `<audio>` + MediaSession); `iframe` likely does not (cross-origin frame, no
+  MediaSession wiring) — but this is reasoning from how browsers generally behave,
+  not something actually watched happen on a device.
+- **The native→iframe runtime fallback path.** Reasoned through and reads correctly
+  in the code, but never actually forced (e.g. by pointing `native` mode at a host
+  that's blocked) to watch it flip over live.
+- **Ad appearance over time.** See the one manual test result below — it's a single
+  data point, not a guarantee. Worth an occasional recheck, not active monitoring.
 
-```
-could not resolve audio for this video: video unavailable: Sign in to confirm you're not a bot
-```
+## Why two engines exist (background)
 
-This was tested exhaustively, not assumed:
+YouTube's InnerTube `/player` API blocks requests from datacenter/cloud IPs
+(Vercel, Render, any VPS) with `Sign in to confirm you're not a bot`, regardless of
+which client the request pretends to be. This was confirmed exhaustively: a
+diagnostic route tested all 15 InnerTube clients `youtubei.js` supports (`IOS,
+ANDROID, ANDROID_VR, VISIONOS, WEB, MWEB, WEB_EMBEDDED, WEB_CREATOR, TV, TV_SIMPLY,
+TV_EMBEDDED, YTMUSIC, YTMUSIC_ANDROID, YTKIDS, YTSTUDIO_ANDROID`) from the live Vercel
+deployment — **all 15 failed**. The same code, from the developer's residential IP,
+worked every time. IP reputation is the dominant signal, not client spoofing and not
+(directly) the absence of a PO token — a controlled A/B (same code, same clients, no
+PO token in either case) isolated IP as the only variable that changed the outcome.
 
-- Deployed a temporary diagnostic route that tried **every** InnerTube client
-  `youtubei.js` supports (`IOS, ANDROID, ANDROID_VR, VISIONOS, WEB, MWEB,
-  WEB_EMBEDDED, WEB_CREATOR, TV, TV_SIMPLY, TV_EMBEDDED, YTMUSIC, YTMUSIC_ANDROID,
-  YTKIDS, YTSTUDIO_ANDROID` — 15 total, including the obscure ones not in the
-  existing `CLIENT_FALLBACK_CHAIN`/`scripts/test-clients.mjs` list) against a real
-  video, run from the actual live Vercel production deployment (not locally — local
-  requests come from a residential IP and never hit this wall).
-- **All 15 failed**, each with a bot-detection or sign-in-wall variant
-  (`Sign in to confirm you're not a bot`, `Please sign in`, or an outright 400/video
-  unavailable). No client swap fixes this.
-- The diagnostic route was deleted immediately after (never committed to git) — if
-  you need to re-run this test, recreate it from this doc's description rather than
-  looking for it in the repo.
+The failure happens inside `getBasicInfo()` (the InnerTube `/player` call) itself,
+before `chooseFormat()`, before `download()`, before a single byte is requested from
+`googlevideo.com`. That rules out most "how to stream YouTube without getting
+blocked" advice — spoofing headers, parsing the DASH manifest, deciphering the `n`
+parameter, using short byte-ranges — all of it operates *after* a successful
+`/player` response, which this repo already does correctly and which we never reach
+in production.
 
-Confirmed via web search (August 2026 data) that this is expected, not
-misconfiguration: YouTube scores requests on IP reputation plus a **Proof-of-Origin
-(PO) token** minted by its BotGuard JavaScript challenge (required since 2024).
-Datacenter/cloud IP ranges (Vercel, Render, any VPS) get flagged at a roughly 1-in-4
-rate on first contact regardless of which client pretends to be making the request.
-Client spoofing alone (what the current `CLIENT_FALLBACK_CHAIN` approach relies on)
-stopped being sufficient once PO token enforcement rolled out broadly — this is
-almost certainly also why the abandoned `backup-2026-07-14` branch's user-agent/client
-tricks never fully worked either.
+Options considered and rejected for fixing the server-side path directly: a
+`bgutil-ytdlp-pot-provider` sidecar (works, but swaps one arms race for another that
+needs permanent babysitting), cookies from a real Google account (account-ban risk),
+a residential/rotating proxy (recurring cost). The dual-engine architecture sidesteps
+the problem instead of fighting it: `native` only ever runs from IPs that were never
+blocked to begin with (contributors' own machines), and `iframe` moves the request to
+the visitor's own browser, where it was never a bot in the first place.
 
-### Where exactly the block happens (this rules out a lot of advice)
+Fuller two-session investigation trail — exact log output, the `patch-package` fix
+for an unrelated `youtubei.js`/Next.js 12 bundling crash that was blocking things
+*before* the bot wall was even reached, and the discarded options in more detail — is
+preserved in git history for this file if you need the blow-by-blow; it's been
+compressed out of the current version to keep this doc scannable now that the
+decision has shipped.
 
-Every meaningful failure in the 15-client diagnostic came back as
-**`stage: 'playability'`** — that stage is checked immediately after
-`yt.getBasicInfo(videoId, { client })`, i.e. the InnerTube **`/player` API call**.
-We never reach `chooseFormat()`, never reach `download()`, never issue a single
-request to `googlevideo.com`.
+### The one ad test that was run (manual, not automated)
 
-This matters because most advice found online about "streaming YouTube audio without
-getting blocked" describes things that happen *after* a successful `/player`
-response. None of it can help here. Point by point, against what this repo already
-does:
+Browser automation could not complete an ad test itself — one attempt was
+contaminated by an ad-blocking extension already active in that Chrome profile
+(masked whether `youtube.com/embed` itself was blocking ads or the extension was),
+and another got stuck at `0:00` forever because synthetic clicks don't satisfy the
+browser's autoplay-with-sound gesture requirement inside a cross-origin iframe. If
+you need to re-test this, it needs an actual human click — don't retry it via
+automation.
 
-| Common advice | Verdict here |
-|---|---|
-| Spoof mobile client headers (Android/iOS user-agents) | Already done — that's exactly what `youtubei.js`'s client presets send. All 15 tested, all blocked. Not sufficient. |
-| Parse the DASH manifest, isolate an audio-only itag (e.g. 140) | Already done via `chooseFormat({ type: 'audio' })`. A bandwidth optimization, not an evasion. |
-| Decipher the `n` parameter locally | Already done by `youtubei.js` — that's what the cached `player.js` is for (see the `os.tmpdir()` fix above). It solves *throttling* (slow transfers), not the sign-in wall. |
-| Request short byte-ranges instead of one continuous connection | Already done (Range/206 support). Also happens after `/player`, so it cannot affect this block. |
-| **Route traffic through residential proxies** | **The only load-bearing item.** Everything else is downstream of a problem we never get to. |
-
-### The controlled A/B we already have
-
-Worth stating explicitly, because it was collected across two sessions and is easy to
-miss: the **same code, same InnerTube clients, and no PO token in either case** was
-run from two places:
-
-- From the developer's home machine (**residential IP**): works. Repeatedly returned
-  `206` with ~5.8 MB of real audio for `fJ9rUzIMcZQ`.
-- From the live Vercel deployment (**datacenter IP**): all 15 clients blocked.
-
-The only variable that changed is the originating IP. **IP reputation is the dominant
-signal, not the absence of a PO token** — if the PO token were the gating factor,
-local would fail too, and it doesn't.
-
-Corollary worth weighing before building anything: a PO token sidecar exists to make
-a *flagged datacenter IP* acceptable. Getting onto a non-flagged IP in the first place
-sidesteps the need for one entirely — which is a simpler system, not a more complex
-one. That reorders the options below.
-
-### A fourth option the earlier list missed: self-host on a residential connection
-
-Not previously considered, and given the A/B above it's arguably the cheapest path to
-something that actually works: run the audio backend container **on a machine on the
-developer's own home network** and expose it via Cloudflare Tunnel, Tailscale Funnel,
-or similar, then point `NEXT_PUBLIC_AUDIO_API_BASE` at that hostname. The frontend
-stays on Vercel; only the audio resolver moves.
-
-- Upside: residential IP by construction (the exact condition already proven to
-  work), no recurring proxy cost, no PO token infrastructure, no account/cookie risk.
-- Downside: the machine has to stay on, home upstream bandwidth becomes the ceiling
-  for concurrent listeners, and a dynamic residential IP means relying on the tunnel
-  rather than a static address. Fine for personal/hobby scale; does not scale to real
-  traffic.
-
-**Open question, not tested and no longer planned**: whether Render's specific IP
-ranges happen to fare better than Vercel's. Superseded by the decision below — the
-bot wall stopped being something to work around at all.
-
-## Final decision: two playback engines, not one fixed backend
-
-Docker + `yt-dlp` + a PO token sidecar (`bgutil-ytdlp-pot-provider`) was explored as
-the fix for the bot wall and explicitly **not chosen**. It would have worked, but it
-trades one arms race (client spoofing) for another (BotGuard challenge solving) that
-still needs babysitting forever. Cookies and residential proxies were also discussed
-and rejected for the reasons above (account risk / recurring cost).
-
-Instead: **stop trying to make the server-side resolver work in production at all.**
-The app now ships two independent playback engines behind one interface:
-
-- **Native engine** — the existing code, completely unchanged
-  (`pages/api/soundplayer/`, `youtubei.js`, the `patch-package` patch, the
-  `postinstall` script, `scripts/test-clients.mjs` / `test-audio-endpoint.mjs`).
-  Real `<audio>` streaming, no ads, no YouTube player UI. Works perfectly from a
-  residential IP (i.e. `npm run dev` on any contributor's machine) — this **is** the
-  fix for the bot wall for that use case, because the audio never gets fetched from
-  a datacenter IP in the first place.
-- **IFrame engine** — new. The visitor's own browser talks to YouTube's official
-  IFrame Player API directly (`youtube-nocookie.com/embed/...`). The bot wall
-  structurally cannot apply: the request carries the visitor's own residential IP
-  and cookies, not the server's. This is what the hosted Vercel demo uses.
-
-Selected via `NEXT_PUBLIC_PLAYBACK_MODE` (`native` default, `iframe` set on Vercel),
-with automatic fallback from native → iframe if the native engine fails at runtime.
-Full implementation plan lives in the approved plan file used to build this (see git
-history around the commit that introduces `hooks/usePlaybackEngine.js` for the
-concrete file-by-file breakdown) — this doc only needs to record the *why* and the
-one empirical result the plan depended on.
-
-### IFrame ad test — decisive, ran by the user directly (not automation)
-
-Browser automation (`claude-in-chrome`) could not complete this test itself: a
-first pass was contaminated by an ad-blocking extension already active in that
-Chrome profile (silently zero network requests to `youtube.com/embed`, while
-`youtube-nocookie.com/embed` loaded — a dead giveaway), and a second pass got stuck
-at `0:00` indefinitely because synthetic CDP clicks don't count as the kind of
-"real user gesture" the browser's autoplay-with-sound policy requires inside a
-cross-origin iframe. Both are recorded here so a future session doesn't waste time
-re-attempting this via automation — it needs an actual human click.
-
-The user then tested manually: multiple browsers, incognito, no extensions,
-`kJQP7kiw5Fk` (Despacito — a monetized major-label video, chosen specifically
-because it's likely to carry ads). **No ad played on either `youtube.com/embed` or
-`youtube-nocookie.com/embed`.**
-
-Caveat, stated plainly: this is one video, and YouTube's ad fill is probabilistic —
-even direct youtube.com views don't get an ad on every play. "Didn't show this time"
-is not "will never show." But it's consistent with known, general behavior: IFrame
-embeds have substantially lower ad fill than watching directly on youtube.com,
-regardless of which of the two embed domains is used. Since both domains behaved
-identically here, the implementation uses `youtube-nocookie.com` anyway — it sends
-no tracking cookie before playback starts, so it's never worse, only possibly
-better.
-
-**Practical takeaway for the IFrame engine's UI copy**: don't promise "no ads" —
-say something honest like "reproducido vía YouTube" and let reality be a pleasant
-surprise rather than a broken promise.
-
-## Status
-
-- [x] Root-caused and fixed the Vercel deploy crash (`patch-package` on
-      `youtubei.js`).
-- [x] Exhaustively confirmed the bot wall blocks all 15 InnerTube clients from
-      Vercel's IP, and root-caused it to IP reputation via a controlled A/B
-      (residential works, datacenter doesn't, same code, no PO token either way).
-- [x] Decided against building PO-token/proxy/cookie infrastructure — chose the
-      dual-engine architecture instead.
-- [x] Validated (manually, by the user) that the IFrame engine doesn't reliably
-      show ads for at least one monetized video, across multiple clean browser
-      profiles.
-- [ ] Ship the dual-engine implementation (`hooks/usePlaybackEngine.js`,
-      `NEXT_PUBLIC_PLAYBACK_MODE`, MediaSession API on the native engine, updated
-      README/CLAUDE.md) — in progress as of this doc's last edit.
+The user then tested manually across multiple incognito browsers with no extensions,
+using `kJQP7kiw5Fk` (Despacito — a monetized major-label video picked specifically to
+be likely to carry ads): **no ad played on either `youtube.com/embed` or
+`youtube-nocookie.com/embed`.** This is one video and ad fill is probabilistic —
+"didn't show this time" isn't "will never show" — but it's consistent with IFrame
+embeds generally having much lower ad fill than direct youtube.com views. The
+implementation uses `youtube-nocookie.com` regardless, since it sends no tracking
+cookie before playback starts and performed identically to the standard domain in
+this test. The in-app "demo" notice deliberately doesn't promise "no ads" — it says
+"vía YouTube" and lets reality be a pleasant surprise rather than a broken promise.
 
 ## Useful facts for quick reproduction
 
-- Production URL: `https://playersound.vercel.app` (aliased; the project is
-  `levmetals-projects/playersound` — `npx vercel link` then `npx vercel logs <url>` to
-  get real runtime logs, not just build status).
-- `gh api repos/levmetal/PLAYERSOUND/commits/main/status` / `.../deployments` only
-  show Vercel's *build* status (always green so far) — they say nothing about
-  runtime errors. Use `vercel logs`/`vercel inspect --logs` for that.
-- Known-good test video ids used throughout this investigation: `fJ9rUzIMcZQ`
-  (Bohemian Rhapsody), `xFYQQPAOz7Y`, `kJQP7kiw5Fk`, `DfG6VKnjrVw` — all real,
-  popular, non-region-locked videos, so a failure on these is the bot wall, not a
-  video-specific issue.
+- Production URL: `https://playersound.vercel.app` (aliased; Vercel project is
+  `levmetals-projects/playersound`). `npx vercel link` then `npx vercel logs <url>` to
+  get real runtime logs — `gh api repos/levmetal/PLAYERSOUND/commits/main/status` /
+  `.../deployments` only show *build* status, never runtime errors.
+- To check/change the Production env var: `npx vercel env ls` /
+  `npx vercel env add NEXT_PUBLIC_PLAYBACK_MODE production`, then
+  `npx vercel deploy --prod --force` to actually redeploy with the new value (env var
+  changes don't retroactively apply to already-built deployments).
+- Known-good, non-region-locked test video ids used throughout this investigation:
+  `fJ9rUzIMcZQ` (Bohemian Rhapsody), `xFYQQPAOz7Y`, `kJQP7kiw5Fk` (Despacito),
+  `DfG6VKnjrVw`.

@@ -1,5 +1,13 @@
 # Bot-wall: metodología prestada de hack-skills
 
+> **Superado.** Este doc analiza la ruta del sidecar de PO token (`bgutil-ytdlp-pot-provider`)
+> como posible solución al bloqueo. Esa ruta **no se implementó** — en su lugar se
+> decidió una arquitectura de dos motores de reproducción (nativo + IFrame de
+> YouTube) que evita el bloqueo por completo en vez de pelearlo. Ver la sección
+> "Why two engines exist" en `docs/AUDIO_BACKEND_BLOCKERS.md` para el estado y la
+> decisión actuales. Se conserva este doc como registro de la metodología explorada,
+> no como plan vigente.
+
 Escrito 2026-09-15. Complementa a `docs/AUDIO_BACKEND_BLOCKERS.md` (léelo primero
 para el estado técnico completo) — este doc no repite ese contenido, agrega una
 lente metodológica extraída de revisar
