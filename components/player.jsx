@@ -3,8 +3,7 @@ import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import styles from '../styles/player.module.css';
 import { useSoundContext, useDispatchContext } from "../context/libraryContext/libraryContext";
-
-const audioApiBase = process.env.NEXT_PUBLIC_AUDIO_API_BASE || '';
+import usePlaybackEngine from "../hooks/usePlaybackEngine";
 
 // Purely decorative — a neon VU-meter bar-graph above the seek bar, staggered
 // via --vu-i so the bars don't bounce in lockstep. Not driven by real audio
@@ -15,31 +14,35 @@ const Player = ({ item }) => {
     const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
-    const [audioReady, setAudioReady] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const player = useRef();
     const bar = useRef();
     const animationRef = useRef();
     const volumeControl = useRef();
     const duration = ConvertSecToMin(item.duration);
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
+    const onEndedRef = useRef(() => {});
 
-    // The <audio> element streams progressively straight from the resolver
-    // endpoint (Range/206 aware) instead of buffering the whole file first.
-    const audioUrl = `${audioApiBase}/api/soundplayer/${item.id}`;
+    // See docs/AUDIO_BACKEND_BLOCKERS.md — two interchangeable playback
+    // engines behind one interface, because our own resolver only reaches
+    // YouTube reliably from a residential IP.
+    const engine = usePlaybackEngine({
+        videoId: item.id,
+        playing,
+        onEnded: () => onEndedRef.current(),
+        metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
+    });
 
     useEffect(() => {
-        setLoading(true);
-        setAudioReady(false);
-        setError(null);
+        setPlaying(false);
+        setCurrentTime(0);
+        cancelAnimationFrame(animationRef.current);
     }, [item.id]);
 
     const whileIsPlaying = () => {
         try {
-            bar.current.value = player.current.currentTime;
-            setCurrentTime(bar.current.value);
+            const time = engine.getCurrentTime();
+            bar.current.value = time;
+            setCurrentTime(time);
             animationRef.current = requestAnimationFrame(whileIsPlaying);
         } catch (error) {
             cancelAnimationFrame(animationRef.current);
@@ -48,17 +51,17 @@ const Player = ({ item }) => {
 
     const onChangeBar = () => {
         // Read back from bar.current.value (the position we just asked for),
-        // not player.current.currentTime — the <audio> element's currentTime
-        // can lag behind a requested seek by a frame or more, which desynced
-        // the filled portion of the bar (driven by this state) from the seek
-        // thumb (driven directly by the input's own value).
+        // not engine.getCurrentTime() — that can lag a requested seek by a
+        // frame or more, which desynced the filled portion of the bar (driven
+        // by this state) from the seek thumb (driven directly by the input's
+        // own value).
         const seekTime = Number(bar.current.value);
-        player.current.currentTime = seekTime;
+        engine.seek(seekTime);
         setCurrentTime(seekTime);
     };
 
     const HandlePlaying = async () => {
-        if (!audioReady || !audioUrl) {
+        if (!engine.ready) {
             console.error('Audio not ready yet');
             return;
         }
@@ -68,13 +71,13 @@ const Player = ({ item }) => {
 
         if (!preValue) {
             try {
-                await player.current.play();
+                await engine.play();
             } catch (error) {
                 console.error('Error playing audio:', error);
             }
             animationRef.current = requestAnimationFrame(whileIsPlaying);
         } else {
-            player.current.pause();
+            engine.pause();
             cancelAnimationFrame(animationRef.current);
         }
     };
@@ -89,16 +92,16 @@ const Player = ({ item }) => {
         onChangeBar();
     };
 
-    const endendFunction = () => {
-        player.current.load(); // Reset audio to start
-        HandlePlaying(); // Auto-play next?  (Adjust logic if needed)
+    onEndedRef.current = () => {
+        engine.seek(0);
+        setPlaying(false);
+        cancelAnimationFrame(animationRef.current);
         setCurrentTime(0);
         bar.current.value = 0;
     };
 
     const volumeChange = () => {
-        let realVolumeScale = volumeControl.current.value / 100;
-        player.current.volume = realVolumeScale;
+        engine.setVolume(Number(volumeControl.current.value));
     };
 
     const saveHandle = () => {
@@ -121,6 +124,13 @@ const Player = ({ item }) => {
 
     return (
         <div className={`${styles.player__panel} hud-frame`}>
+            {engine.engine === 'iframe' && (
+                // Visible mount point for YouTube's own IFrame Player — required
+                // to be at least 200x200 by YouTube's own terms; a hidden/1x1
+                // iframe is non-conformant and fragile. See
+                // docs/AUDIO_BACKEND_BLOCKERS.md for why this engine exists.
+                <div className={styles.iframeEngineMount} ref={engine.containerRef} />
+            )}
             <div
                 className={playing ? `${styles.vuMeter} ${styles.vuMeterActive}` : styles.vuMeter}
                 aria-hidden="true"
@@ -163,20 +173,9 @@ const Player = ({ item }) => {
                     <span className={styles.controlLabel}>Fav</span>
                 </div>
                 <div className={styles.button__group}>
-                    <audio
-                        onCanPlay={() => {
-                            setAudioReady(true);
-                            setLoading(false);
-                        }}
-                        onError={() => {
-                            setError('No se pudo cargar el audio de este video.');
-                            setLoading(false);
-                        }}
-                        onEnded={endendFunction}
-                        ref={player}
-                        src={audioUrl}
-                        preload="auto"
-                    />
+                    {engine.engine === 'native' && (
+                        <audio ref={engine.audioRef} src={engine.audioUrl} preload="auto" />
+                    )}
 
                     <div className={styles.controlUnit}>
                         <button className={styles.button} onClick={BackTime}>
@@ -186,10 +185,10 @@ const Player = ({ item }) => {
                     </div>
 
                     <div className={playing ? `${styles.controlUnit} ${styles.controlUnitActive}` : styles.controlUnit}>
-                        <button className={styles.button} onClick={HandlePlaying} disabled={loading || !!error}>
-                            {error ? (
-                                <span title={error}>!</span>
-                            ) : loading ? (
+                        <button className={styles.button} onClick={HandlePlaying} disabled={!engine.ready || !!engine.error}>
+                            {engine.error ? (
+                                <span title={engine.error}>!</span>
+                            ) : !engine.ready ? (
                                 <FaSpinner className={styles.spinner} />
                             ) : playing ? (
                                 <FaPause className={styles.pause} />

@@ -51,6 +51,19 @@ const Modal = ({ triggerModal, item }) => {
                 </div>
 
                 <div className={styles.console__footer}>
+                    {process.env.NEXT_PUBLIC_PLAYBACK_MODE === 'iframe' && (
+                        // Honest, not apologetic: this build plays via YouTube's own
+                        // player (ads possible, see docs/AUDIO_BACKEND_BLOCKERS.md) —
+                        // point people at the real, ad-free experience instead of
+                        // silently degrading. See README.md's "Two ways to run this".
+                        <span>
+                            DEMO // via YouTube —{' '}
+                            <a href="https://github.com/levmetal/PLAYERSOUND" target="_blank" rel="noreferrer">
+                                sin ads, corré el repo local
+                            </a>
+                            {' '}·{' '}
+                        </span>
+                    )}
                     <span>PLAYERSOUND-84</span>
                 </div>
             </div>

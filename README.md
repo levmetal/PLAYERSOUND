@@ -1,6 +1,28 @@
 
 # PlayerSound
 
+Search and stream audio from YouTube — no login, no fake genre filters, playlists saved
+locally in your browser.
+
+## Two ways to run this
+
+YouTube blocks server-to-server audio requests from datacenter IPs (Vercel, Render, any
+cloud host) — it does not block a real browser. So this app ships two playback engines:
+
+- **Local (recommended, and the default)** — run it on your own machine
+  (`npm run dev`) and it streams real audio directly, with **no ads** and no YouTube
+  player on screen. Your machine's IP is a normal residential one, which is exactly what
+  YouTube expects, so nothing gets blocked.
+- **Hosted demo** ([playersound.vercel.app](https://playersound.vercel.app)) — runs in
+  "iframe" mode instead: your own browser talks to YouTube's official player directly, so
+  it works from anywhere without installing anything, but the YouTube player is visible
+  and it *can* show ads (not guaranteed — see
+  [`docs/AUDIO_BACKEND_BLOCKERS.md`](docs/AUDIO_BACKEND_BLOCKERS.md) for what was actually
+  tested).
+
+If you want the full experience — no ads, MediaSession lock-screen controls — clone it
+and run it locally.
+
 ## Table of Contents
 
 - [Getting Started](#getting-started)
@@ -46,7 +68,7 @@ Make sure you have the following installed on your machine:
 Clone the repository:
 
 ```bash
-git clone <https://github.com/levmetal/PLAYERSOUNDl>
+git clone https://github.com/levmetal/PLAYERSOUND
 ```
 
 **Second:**
@@ -70,8 +92,9 @@ npm install
 Run the development server:
 
 ```bash
-npm run start
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-> **⚠️ WARNING:** The app PlayerSound deployed at [http://playersound.vercel.app](http://playersound.vercel.app) sometimes may have problems due to backend issues and YouTube's API policies. You can use the complete functions on a local server as described above. REPO SERVER: [https://github.com/levmetal/YT-AUDIO](https://github.com/levmetal/YT-AUDIO)
+This uses the native playback engine by default — real audio, no ads — since
+`NEXT_PUBLIC_PLAYBACK_MODE` is unset. See `.env.local.example` for the full explanation.

@@ -102,73 +102,139 @@ stopped being sufficient once PO token enforcement rolled out broadly — this i
 almost certainly also why the abandoned `backup-2026-07-14` branch's user-agent/client
 tricks never fully worked either.
 
-**Open question, not yet tested**: whether Render's specific IP ranges happen to
-fare better than Vercel's. Untested — worth 10 minutes to check before assuming a
-full Docker rebuild is required (see checklist below).
+### Where exactly the block happens (this rules out a lot of advice)
 
-## Options discussed for fixing the bot wall (none built yet)
+Every meaningful failure in the 15-client diagnostic came back as
+**`stage: 'playability'`** — that stage is checked immediately after
+`yt.getBasicInfo(videoId, { client })`, i.e. the InnerTube **`/player` API call**.
+We never reach `chooseFormat()`, never reach `download()`, never issue a single
+request to `googlevideo.com`.
 
-The user chose to explore Docker + `yt-dlp` instead of continuing with
-`youtubei.js`+Vercel, on the reasoning that `yt-dlp` is far more actively maintained
-against YouTube's countermeasures. That's a reasonable direction, but **`yt-dlp`
-alone does not sidestep the PO token requirement** — it hits the same wall unless
-paired with one of these:
+This matters because most advice found online about "streaming YouTube audio without
+getting blocked" describes things that happen *after* a successful `/player`
+response. None of it can help here. Point by point, against what this repo already
+does:
 
-1. **PO token provider sidecar** (`bgutil-ytdlp-pot-provider`,
-   https://github.com/Brainicism/bgutil-ytdlp-pot-provider) — a second Docker
-   container (prebuilt image, `docker run ... brainicism/bgutil-ytdlp-pot-provider`)
-   that runs an HTTP server simulating YouTube's BotGuard challenge to mint valid PO
-   tokens on demand, which `yt-dlp`'s POT plugin framework then attaches to requests.
-   No account risk, no recurring cost, but it's another moving part to keep running
-   and updated, and it can break if YouTube changes the BotGuard challenge (the
-   project tends to patch quickly, per its history).
-   - **This was the option the user was leaning toward** when this doc was written.
-2. **Cookies from a real, logged-in Google account** (`--cookies-from-browser` /
-   cookies.txt) — simplest to wire up, but risks that account being flagged/banned,
-   and cookies need periodic refreshing.
-3. **Residential/rotating proxy** in front of outbound requests — most likely to work
-   reliably, but has a real recurring dollar cost and adds latency.
-4. **Do nothing extra yet, test plain `yt-dlp` on Render first** — cheapest to try,
-   but per the research above, likely to hit the same wall; treat this as a quick
-   sanity check, not a real plan.
+| Common advice | Verdict here |
+|---|---|
+| Spoof mobile client headers (Android/iOS user-agents) | Already done — that's exactly what `youtubei.js`'s client presets send. All 15 tested, all blocked. Not sufficient. |
+| Parse the DASH manifest, isolate an audio-only itag (e.g. 140) | Already done via `chooseFormat({ type: 'audio' })`. A bandwidth optimization, not an evasion. |
+| Decipher the `n` parameter locally | Already done by `youtubei.js` — that's what the cached `player.js` is for (see the `os.tmpdir()` fix above). It solves *throttling* (slow transfers), not the sign-in wall. |
+| Request short byte-ranges instead of one continuous connection | Already done (Range/206 support). Also happens after `/player`, so it cannot affect this block. |
+| **Route traffic through residential proxies** | **The only load-bearing item.** Everything else is downstream of a problem we never get to. |
 
-No decision was finalized — the conversation was paused here specifically so it
-could be picked up fresh, possibly by a different session testing options in
-parallel.
+### The controlled A/B we already have
 
-## Concrete things to try in a new session
+Worth stating explicitly, because it was collected across two sessions and is easy to
+miss: the **same code, same InnerTube clients, and no PO token in either case** was
+run from two places:
 
-In rough order of cheapest/fastest first:
+- From the developer's home machine (**residential IP**): works. Repeatedly returned
+  `206` with ~5.8 MB of real audio for `fJ9rUzIMcZQ`.
+- From the live Vercel deployment (**datacenter IP**): all 15 clients blocked.
 
-- [ ] **Test whether Render's IP happens to not be blocked.** Spin up the simplest
-      possible `yt-dlp` (or even current `youtubei.js`) call on a free/cheap Render
-      web service and hit it the same way the Vercel diagnostic was tested (see
-      "What's still broken" above for the client list and video ids used). If Render
-      somehow isn't flagged, that alone might unblock things without any Docker/PO
-      token work at all. Cheap, worth ruling out first.
-- [ ] **Prototype the PO token provider approach.** `docker-compose` with two
-      services: `brainicism/bgutil-ytdlp-pot-provider` (unmodified, don't expose its
-      port beyond `127.0.0.1`/the internal network — see its README's security note)
-      and a new small Node service wrapping the `yt-dlp` CLI (via `child_process`,
-      consistent with this repo being all-JS) that queries the provider for a token
-      before each YouTube request. Test resolving + streaming a real video end to
-      end from wherever this gets deployed (Render supports Docker natively) before
-      wiring it into the main app.
-  - Once it works, point `NEXT_PUBLIC_AUDIO_API_BASE` (already wired in
-    `pages/search/[search].jsx`'s `getServerSideProps`, per `CLAUDE.md`) at it instead
-    of rebuilding `/api/soundplayer` itself — that env var exists exactly for this.
-- [ ] **If PO token route stalls, try cookies as a fast unblock** while the more
-      durable solution is built, understanding the account-risk tradeoff explained
-      above.
-- [ ] **Re-run the full 15-client diagnostic** against whatever new backend gets
-      built, the same way it was done here, before declaring victory — don't assume
-      one working request means the bot wall is gone; retest across multiple videos
-      and repeat requests (the current in-repo `scripts/test-clients.mjs` is close
-      but is missing `YTKIDS`/`YTSTUDIO_ANDROID`; extend it, or recreate the
-      deleted diagnostic route, to include those too).
-- [ ] Once a backend actually works reliably, run `npm run test:audio` (the existing
-      smoke test at `scripts/test-audio-endpoint.mjs`) against it to confirm
-      Range/206 seeking still works end to end, not just single-shot playback.
+The only variable that changed is the originating IP. **IP reputation is the dominant
+signal, not the absence of a PO token** — if the PO token were the gating factor,
+local would fail too, and it doesn't.
+
+Corollary worth weighing before building anything: a PO token sidecar exists to make
+a *flagged datacenter IP* acceptable. Getting onto a non-flagged IP in the first place
+sidesteps the need for one entirely — which is a simpler system, not a more complex
+one. That reorders the options below.
+
+### A fourth option the earlier list missed: self-host on a residential connection
+
+Not previously considered, and given the A/B above it's arguably the cheapest path to
+something that actually works: run the audio backend container **on a machine on the
+developer's own home network** and expose it via Cloudflare Tunnel, Tailscale Funnel,
+or similar, then point `NEXT_PUBLIC_AUDIO_API_BASE` at that hostname. The frontend
+stays on Vercel; only the audio resolver moves.
+
+- Upside: residential IP by construction (the exact condition already proven to
+  work), no recurring proxy cost, no PO token infrastructure, no account/cookie risk.
+- Downside: the machine has to stay on, home upstream bandwidth becomes the ceiling
+  for concurrent listeners, and a dynamic residential IP means relying on the tunnel
+  rather than a static address. Fine for personal/hobby scale; does not scale to real
+  traffic.
+
+**Open question, not tested and no longer planned**: whether Render's specific IP
+ranges happen to fare better than Vercel's. Superseded by the decision below — the
+bot wall stopped being something to work around at all.
+
+## Final decision: two playback engines, not one fixed backend
+
+Docker + `yt-dlp` + a PO token sidecar (`bgutil-ytdlp-pot-provider`) was explored as
+the fix for the bot wall and explicitly **not chosen**. It would have worked, but it
+trades one arms race (client spoofing) for another (BotGuard challenge solving) that
+still needs babysitting forever. Cookies and residential proxies were also discussed
+and rejected for the reasons above (account risk / recurring cost).
+
+Instead: **stop trying to make the server-side resolver work in production at all.**
+The app now ships two independent playback engines behind one interface:
+
+- **Native engine** — the existing code, completely unchanged
+  (`pages/api/soundplayer/`, `youtubei.js`, the `patch-package` patch, the
+  `postinstall` script, `scripts/test-clients.mjs` / `test-audio-endpoint.mjs`).
+  Real `<audio>` streaming, no ads, no YouTube player UI. Works perfectly from a
+  residential IP (i.e. `npm run dev` on any contributor's machine) — this **is** the
+  fix for the bot wall for that use case, because the audio never gets fetched from
+  a datacenter IP in the first place.
+- **IFrame engine** — new. The visitor's own browser talks to YouTube's official
+  IFrame Player API directly (`youtube-nocookie.com/embed/...`). The bot wall
+  structurally cannot apply: the request carries the visitor's own residential IP
+  and cookies, not the server's. This is what the hosted Vercel demo uses.
+
+Selected via `NEXT_PUBLIC_PLAYBACK_MODE` (`native` default, `iframe` set on Vercel),
+with automatic fallback from native → iframe if the native engine fails at runtime.
+Full implementation plan lives in the approved plan file used to build this (see git
+history around the commit that introduces `hooks/usePlaybackEngine.js` for the
+concrete file-by-file breakdown) — this doc only needs to record the *why* and the
+one empirical result the plan depended on.
+
+### IFrame ad test — decisive, ran by the user directly (not automation)
+
+Browser automation (`claude-in-chrome`) could not complete this test itself: a
+first pass was contaminated by an ad-blocking extension already active in that
+Chrome profile (silently zero network requests to `youtube.com/embed`, while
+`youtube-nocookie.com/embed` loaded — a dead giveaway), and a second pass got stuck
+at `0:00` indefinitely because synthetic CDP clicks don't count as the kind of
+"real user gesture" the browser's autoplay-with-sound policy requires inside a
+cross-origin iframe. Both are recorded here so a future session doesn't waste time
+re-attempting this via automation — it needs an actual human click.
+
+The user then tested manually: multiple browsers, incognito, no extensions,
+`kJQP7kiw5Fk` (Despacito — a monetized major-label video, chosen specifically
+because it's likely to carry ads). **No ad played on either `youtube.com/embed` or
+`youtube-nocookie.com/embed`.**
+
+Caveat, stated plainly: this is one video, and YouTube's ad fill is probabilistic —
+even direct youtube.com views don't get an ad on every play. "Didn't show this time"
+is not "will never show." But it's consistent with known, general behavior: IFrame
+embeds have substantially lower ad fill than watching directly on youtube.com,
+regardless of which of the two embed domains is used. Since both domains behaved
+identically here, the implementation uses `youtube-nocookie.com` anyway — it sends
+no tracking cookie before playback starts, so it's never worse, only possibly
+better.
+
+**Practical takeaway for the IFrame engine's UI copy**: don't promise "no ads" —
+say something honest like "reproducido vía YouTube" and let reality be a pleasant
+surprise rather than a broken promise.
+
+## Status
+
+- [x] Root-caused and fixed the Vercel deploy crash (`patch-package` on
+      `youtubei.js`).
+- [x] Exhaustively confirmed the bot wall blocks all 15 InnerTube clients from
+      Vercel's IP, and root-caused it to IP reputation via a controlled A/B
+      (residential works, datacenter doesn't, same code, no PO token either way).
+- [x] Decided against building PO-token/proxy/cookie infrastructure — chose the
+      dual-engine architecture instead.
+- [x] Validated (manually, by the user) that the IFrame engine doesn't reliably
+      show ads for at least one monetized video, across multiple clean browser
+      profiles.
+- [ ] Ship the dual-engine implementation (`hooks/usePlaybackEngine.js`,
+      `NEXT_PUBLIC_PLAYBACK_MODE`, MediaSession API on the native engine, updated
+      README/CLAUDE.md) — in progress as of this doc's last edit.
 
 ## Useful facts for quick reproduction
 

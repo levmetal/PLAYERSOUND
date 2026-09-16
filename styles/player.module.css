@@ -113,6 +113,11 @@
     text-transform: uppercase;
 }
 
+.console__footer a {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
 .btn__close {
     composes: pixel-depth from global;
     display: flex;
@@ -243,6 +248,27 @@
     padding: .7rem 1rem;
     border: var(--border-crt);
     background: var(--crt-black-tint);
+}
+
+/* Mount point for the IFrame playback engine (see hooks/usePlaybackEngine.js
+   and docs/AUDIO_BACKEND_BLOCKERS.md) — only rendered when that engine is
+   active. YouTube's own terms require the embedded player to be at least
+   200x200; this can't be hidden or shrunk below that without breaking. Same
+   CRT "screen" treatment as .player__img (see docs/design/DESIGN_SYSTEM.md)
+   so it reads as another console window, not a foreign embed. */
+.iframeEngineMount {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 200px;
+    border: var(--border-crt);
+    box-shadow: 0 0 14px rgba(var(--phosphor-primary-rgb), 0.45), inset 0 0 8px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.iframeEngineMount iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 /* Neon VU-meter bar-graph, purely decorative (see components/player.jsx).
