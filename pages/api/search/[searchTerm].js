@@ -1,17 +1,12 @@
-import { youtube } from "scrape-youtube";
+import { searchVideos } from "../../../lib/searchVideos";
 
 
 export default async function (req, res) {
   const { query } = req
   const { searchTerm } = query
-  
+
   try {
-    console.log(searchTerm);
-
-
-    await youtube.search(searchTerm).then(value => {
-      res.status(200).json(value.videos)
-    })
+    res.status(200).json(await searchVideos(searchTerm))
 
   } catch (error) {
     console.error(`search error for "${searchTerm}":`, error);
@@ -19,7 +14,4 @@ export default async function (req, res) {
 
   }
 
-
-
-
-}   
+}
