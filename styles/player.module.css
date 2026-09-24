@@ -519,10 +519,15 @@
        resting state instead of snapping to it, like a real VU needle
        settling rather than being cut off. height/background-color/
        box-shadow serve the expanded meter's bounce, transform the mini
-       meter's (see .consoleMini below) — both share this one rule. */
-    transition: height 550ms ease-out, opacity 550ms ease-out,
-        background-color 550ms ease-out, box-shadow 550ms ease-out,
-        transform 550ms ease-out;
+       meter's (see .consoleMini below) — both share this one rule.
+       ease-in-out, not ease-out: ease-out's fast start means most of the
+       drop happens in the first ~150ms and the rest is an imperceptible
+       crawl, which read as an instant cutoff, not a decay. ease-in-out
+       eases into the motion too, so the whole 900ms reads as one smooth
+       settle. */
+    transition: height 900ms ease-in-out, opacity 900ms ease-in-out,
+        background-color 900ms ease-in-out, box-shadow 900ms ease-in-out,
+        transform 900ms ease-in-out;
 }
 
 .vuMeter__bar::after {
@@ -536,7 +541,7 @@
     box-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
     opacity: 0;
     /* Same handoff as ::before above, for the peak cap's own fade/position. */
-    transition: opacity 550ms ease-out, transform 550ms ease-out;
+    transition: opacity 900ms ease-in-out, transform 900ms ease-in-out;
 }
 
 .vuMeterActive .vuMeter__bar::before {
