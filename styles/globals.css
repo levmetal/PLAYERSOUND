@@ -4,7 +4,7 @@
 :root{
   /* Remapped onto the CRT phosphor tokens (styles/tokens.css) — every
      component still reads these 4 names, so retinting here retints the
-     whole app. See docs/design/DESIGN_SYSTEM.md. */
+     whole app. */
   --bg: var(--crt-black);
   --bgbox: var(--phosphor-box-bg);
   --primarycolor: var(--phosphor-primary);
@@ -20,6 +20,29 @@
      unstyled/light. */
   scrollbar-width: thin;
   scrollbar-color: var(--primarycolor) var(--bgbox);
+  /* Reserves the page scrollbar's gutter width permanently, whether or not
+     a scrollbar is actually showing — prevents a layout shift when one
+     appears/disappears. This became a real, reproducible bug once the
+     mini-player (components/modal.jsx, `.miniSpacer`) started existing:
+     home/about (`overflow: hidden`, exactly `100dvh`) are built to fill one
+     screen with zero page-level scroll, but a minimized player elsewhere in
+     the app still adds its `.miniSpacer` clearance (`--mini-player-height`)
+     to the DOCUMENT below them — which is enough extra height to make the
+     page scrollbar appear. That scrollbar's own width then shrank the
+     `vw`-sized hero title/subtitle in `styles/Home.module.css` just enough
+     to rewrap the subtitle onto an extra line, which grew tall enough to
+     overlap the search form positioned below it (`bottom: 27vh`) — visible
+     right after minimizing the player and navigating to `/`, and
+     occasionally on a fresh load of `/` too (the same appear/disappear
+     race, from whatever transient content briefly changes the document's
+     total height that early). `overflow-y: scroll` is the fallback for
+     browsers without `scrollbar-gutter` support (mainly older Safari) —
+     together they mean every page's actual content width is computed
+     against the SAME budget regardless of whether anything on the page
+     right now happens to need a scrollbar, so this class of bug can't
+     recur elsewhere in the app either. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 /* Visually hides content while keeping it in the accessible tree — for
@@ -46,8 +69,8 @@
   background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.55) 100%);
 }
 
-/* Targeting-reticle corner brackets called for in docs/design/DESIGN_SYSTEM.md
-   ("Prefer corner-bracket boxes... over a full continuous border"). Painted
+/* Targeting-reticle corner brackets (preferred over a full continuous
+   border). Painted
    entirely with background-image layers so it composes with an element's own
    background-color/border instead of replacing them — add this class
    alongside a component's own CSS-module class on "console/panel" boxes
@@ -102,7 +125,7 @@
    visually "stuck" lifted until something else is tapped (a well-known
    touch-device :hover quirk). Touch devices skip straight from resting to
    the :active press below, which is the behavior that actually matters
-   there. See docs/design/DESIGN_SYSTEM.md. */
+   there. */
 .pixel-depth {
   box-shadow: var(--pixel-shadow-rest);
   transition: transform 80ms, box-shadow 80ms;
@@ -126,6 +149,87 @@
    button themselves. */
 .pixel-depth-static {
   box-shadow: var(--pixel-shadow-rest);
+}
+
+/* Route change "tuning in" (components/layout.jsx): the new page's content
+   flickers up like a signal locking on while one faint phosphor band sweeps
+   down over it. ~400ms, navigations only. The wrapper animates opacity ONLY — a transform or filter on
+   it would become the containing block for every position:fixed/sticky
+   element inside the page (the sticky search bar, the scan layer below). */
+.route-tune {
+  animation: route-tune-in 320ms ease-out both;
+}
+
+@keyframes route-tune-in {
+  0% { opacity: .15; }
+  30% { opacity: .8; }
+  45% { opacity: .5; }
+  65% { opacity: .95; }
+  100% { opacity: 1; }
+}
+
+/* Covers the content area only (not the rail), under the mini-player (120)
+   and the nav (150), never catches clicks. */
+.route-tune__scan {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--rail-width);
+  z-index: 110;
+  overflow: hidden;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(var(--phosphor-primary-rgb), .05) 0,
+    rgba(var(--phosphor-primary-rgb), .05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: route-tune-fade 420ms ease-out both;
+}
+
+/* The sweeping band — moved with transform only (compositor, no repaint). */
+.route-tune__scan::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18vh;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--phosphor-primary-rgb), .14) 50%,
+    transparent
+  );
+  transform: translateY(-100%);
+  animation: route-tune-band 380ms ease-in-out both;
+}
+
+@keyframes route-tune-fade {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes route-tune-band {
+  to { transform: translateY(100vh); }
+}
+
+@media screen and (max-width: 768px) {
+  .route-tune__scan {
+    left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-tune {
+    animation: none;
+  }
+
+  .route-tune__scan {
+    display: none;
+  }
 }
 
 /* Tactile press feedback for any button NOT using .pixel-depth — wrapped in
