@@ -1,6 +1,19 @@
 .container {
     position: absolute;
     inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
     background: var(--crt-black-tint);
+}
+
+/* Sized imperatively in components/globePanel.jsx (kept square, centered) —
+   the internal pixel buffer stays fixed (RENDER_SIZE) while this CSS size
+   scales it up; pixelated rendering keeps the dither's individual pixels
+   visible as flat blocks instead of a blurred, anti-aliased circle. */
+.canvas {
+    display: block;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 6px rgba(var(--phosphor-primary-rgb), 0.45));
 }
