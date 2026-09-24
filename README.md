@@ -16,9 +16,7 @@ cloud host) — it does not block a real browser. So this app ships two playback
 - **Hosted demo** ([playersound.vercel.app](https://playersound.vercel.app)) — runs in
   "iframe" mode instead: your own browser talks to YouTube's official player directly, so
   it works from anywhere without installing anything, but the YouTube player is visible
-  and it *can* show ads (not guaranteed — see
-  [`docs/AUDIO_BACKEND_BLOCKERS.md`](docs/AUDIO_BACKEND_BLOCKERS.md) for what was actually
-  tested).
+  and it *can* show ads.
 
 If you want the full experience — no ads, MediaSession lock-screen controls — clone it
 and run it locally.

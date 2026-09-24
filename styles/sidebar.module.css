@@ -156,7 +156,7 @@
 }
 
 /* The site's "you are here" state marker — cyan, not the dominant green,
-   per the 60/30/10 rule (docs/design/DESIGN_SYSTEM.md). Hover on other nav
+   per the 60/30/10 color rule. Hover on other nav
    items (.listbar__option:hover above) stays green, so exploring vs. being
    on a page read as visually distinct. */
 .listbar__active {
@@ -172,7 +172,7 @@
 /* Collapsed rail only: dissolves the active box's real right edge (the
    rail's own border, where it meets the content grid) into a pixel dither
    instead of a flat cyan-to-black cut, per the CRT phosphor aesthetic
-   (docs/design/DESIGN_SYSTEM.md) — same mask-fade technique already used
+   — same mask-fade technique already used
    for edges in Home.module.css. Lives on the row itself (not a sibling)
    so it just rides along with the row's real border in both rail states,
    no viewport-relative math needed. A checkerboard tile of --bg squares,
@@ -225,8 +225,7 @@
 }
 
 /* Below 768px the persistent nav stops being a left-hand rail and becomes a
-   fixed top bar (logo + menu toggle) with a dropdown, per
-   docs/design/UX_FLOW.md — a vertical sliver rail doesn't give a usable
+   fixed top bar (logo + menu toggle) with a dropdown — a vertical sliver rail doesn't give a usable
    "logo + menu button" navbar, which is the point of this switch. Every
    full-bleed page reserves `--mobile-nav-height` of top padding at this
    same width instead of the rail's left-hand clearance. */

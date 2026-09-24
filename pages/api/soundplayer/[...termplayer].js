@@ -13,7 +13,7 @@ export const config = {
 // Stream resolver: extracts a playable audio-only stream for one video id and
 // pipes it straight to the client, with Range/206 support for seeking.
 // Kept separate from the search/catalog endpoint on purpose (different cost,
-// different failure modes) — see docs/plan notes on catalog vs. stream resolver.
+// different failure modes).
 
 let innertubePromise = null
 function getInnertube() {

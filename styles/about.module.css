@@ -25,7 +25,7 @@
     object-position: 34% center;
     display: block;
     /* Same green-phosphor tint treatment as every other thumbnail/hero
-       image in the app (60/30/10 rule, docs/design/DESIGN_SYSTEM.md) —
+       image in the app (60/30/10 color rule) —
        grayscale first so the recolor is even, then sepia+hue-rotate to
        land on the phosphor hue. The photo's own huge exposure range (dark
        figure against blown-out signage) does the work of the "silhouette
@@ -158,8 +158,8 @@
 
 
 /* One consolidated mobile treatment (was three separate tiers at 850/500/450px)
-   — below 768px the nav is a top bar, not a left rail
-   (docs/design/UX_FLOW.md), and clamp()-based fluid sizing covers the range
+   — below 768px the nav is a top bar, not a left rail,
+   and clamp()-based fluid sizing covers the range
    from a small phone up to this breakpoint without needing extra tiers.
    The photo becomes a fixed, blurred full-bleed backdrop (pinned behind the
    text as it scrolls) instead of a side panel, since there's no room for

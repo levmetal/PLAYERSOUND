@@ -65,7 +65,7 @@
 }
 
 /* The site's "you are here" state marker — cyan, not the dominant green,
-   per the 60/30/10 rule (docs/design/DESIGN_SYSTEM.md). */
+   per the 60/30/10 color rule. */
 .playlistTabActive {
     composes: pixel-depth from global;
     border: var(--border-crt);
@@ -142,7 +142,7 @@
     list-style: none;
 }
 
-/* Below 768px the nav is a top bar, not a left rail (docs/design/UX_FLOW.md)
+/* Below 768px the nav is a top bar, not a left rail
    — clear its height instead of a left-hand rail width. */
 @media screen and (max-width: 768px) {
     .container {
