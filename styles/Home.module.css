@@ -18,8 +18,8 @@
    Self-contained: delete this block and the .heroAura* block below it, plus
    the one <div className={styles.heroAura}> in pages/index.js, to remove it
    cleanly if it doesn't work out. Kept monochrome (--phosphor-primary-rgb
-   only, no cyan) to stay inside the 60/30/10 rule in
-   docs/design/DESIGN_SYSTEM.md — cyan is reserved for the 3 state markers,
+   only, no cyan) to stay inside the 60/30/10 color rule —
+   cyan is reserved for the 3 state markers,
    not decorative backgrounds. */
 .heroAura {
     position: absolute;
@@ -32,25 +32,21 @@
 .heroAura__lattice {
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(var(--phosphor-primary-rgb), 0.05) 0px,
-        rgba(var(--phosphor-primary-rgb), 0.05) 1px,
-        transparent 1px,
-        transparent 6px
-    );
+    background: repeating-linear-gradient(0deg,
+            rgba(var(--phosphor-primary-rgb), 0.05) 0px,
+            rgba(var(--phosphor-primary-rgb), 0.05) 1px,
+            transparent 1px,
+            transparent 6px);
     opacity: .6;
 }
 
 .heroAura__band {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        90deg,
-        rgba(var(--phosphor-primary-rgb), 0.12) 0%,
-        rgba(var(--phosphor-primary-rgb), 0.06) 30%,
-        transparent 60%
-    );
+    background: linear-gradient(90deg,
+            rgba(var(--phosphor-primary-rgb), 0.12) 0%,
+            rgba(var(--phosphor-primary-rgb), 0.06) 30%,
+            transparent 60%);
     mix-blend-mode: screen;
     filter: blur(88px);
     opacity: .65;
@@ -60,11 +56,9 @@
 .heroAura__glow {
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-        circle at 22% 45%,
-        rgba(var(--phosphor-primary-rgb), 0.16) 0%,
-        transparent 55%
-    );
+    background: radial-gradient(circle at 22% 45%,
+            rgba(var(--phosphor-primary-rgb), 0.16) 0%,
+            transparent 55%);
     mix-blend-mode: screen;
     filter: blur(163px);
     transform: translateZ(0);
@@ -81,24 +75,40 @@
 }
 
 
+/* The title block and the search form used to be `position: absolute` at
+   `top: 21vh` / `bottom: 27vh` respectively — two fixed points measured from
+   .infoHero's own edges, entirely independent of how tall their actual
+   content rendered. That content's height is set by WIDTH-based units
+   (.container__title is 5vw, .container__subtitle 1.5vw — neither shrinks
+   as the viewport gets shorter), while the 21vh/27vh gap between them DOES
+   shrink with viewport height. On a wide-but-not-very-tall window (a common
+   1366x768-class laptop, or any maximized browser on a large desktop
+   monitor with modest vertical space) the fixed gap shrank past the
+   content's actual rendered height and the search form landed on top of the
+   subtitle — a real, reproducible bug, not an edge case. Static/in-flow
+   children of this already-`flex; flex-direction:column`-centered container
+   can't do that: the group just sits centered as a whole, sized by its own
+   content, so the gap between blocks (`gap` below) never has to guess a
+   height nobody knows in advance. `align-items` switched center → flex-start
+   to keep the original left-aligned look now that these children are
+   actually laid out by it (it had zero effect on absolutely-positioned
+   children before, which both had their own explicit `left: 0`). */
 .infoHero {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    gap: 2.5rem;
     height: 100dvh;
     width: 75%;
-    z-index: 100;
+
     position: relative;
 
 }
 
 .mainTitle {
     width: 65%;
-    top: 21vh;
-    left: 0;
-    position: absolute;
-
+    max-width: 100%;
 }
 
 .eyebrow {
@@ -174,14 +184,11 @@
 
 .container__form {
     display: flex;
-    position: absolute;
     width: 35rem;
+    max-width: 100%;
     height: auto;
-    left: 0;
     gap: 1rem;
-    bottom: 27vh;
-
-
+    flex: none;
 }
 
 .form__input {
@@ -226,8 +233,7 @@
     box-shadow: var(--glow-box);
 }
 
-/* Below 768px (same threshold the nav switches to a top bar at, see
-   docs/design/UX_FLOW.md) the hero drops the desktop's absolute-position
+/* Below 768px (same threshold the nav switches to a top bar at,) the hero drops the desktop's absolute-position
    layout entirely for a plain stacked flex flow — title/subtitle/form, then
    the cassette art below — sized with clamp()/fluid units instead of a
    second, smaller-phone tier on top. One consolidated breakpoint replaces
@@ -247,10 +253,13 @@
     .infoHero {
         height: auto;
         width: 100%;
+        /* Spacing here still comes from .container__form's own margin-top
+           below, same as before .infoHero had a gap of its own — without
+           this reset, the two would stack (gap + margin-top). */
+        gap: 0;
     }
 
     .mainTitle {
-        position: static;
         width: 100%;
     }
 
@@ -263,7 +272,6 @@
     }
 
     .container__form {
-        position: static;
         display: flex;
         flex-wrap: wrap;
         width: 100%;
