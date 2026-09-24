@@ -1,9 +1,7 @@
 import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
-import { useState, Suspense, lazy } from "react";
+import { useState } from "react";
 import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libraryContext/libraryContext";
-
-const Modal = lazy(() => import('../components/modal'))
 
 const Library = () => {
 
@@ -11,14 +9,6 @@ const Library = () => {
     const dispatch = useDispatchContext()
     const [selectedId, setSelectedId] = useState(FAVORITES_ID)
     const [newPlaylistName, setNewPlaylistName] = useState("")
-    const [openModal, setOpenModal] = useState(false)
-    const [itemModal, setItemModal] = useState(null)
-
-    const triggerModal = (itemModal) => {
-        setOpenModal(!openModal)
-        setItemModal(itemModal)
-    }
-
     const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedId) ?? playlists[0]
 
     const createPlaylist = (e) => {
@@ -37,7 +27,6 @@ const Library = () => {
 
     return (
             <div className={styles.container}>
-                {openModal && <Suspense> <Modal item={itemModal} triggerModal={triggerModal} /> </Suspense>}
                 <p className={styles.eyebrow}>SYSTEM_LOG // PLAYLISTS</p>
                 <h1 className={styles.library__title}>Playlists</h1>
 
@@ -84,7 +73,7 @@ const Library = () => {
                             <SoundItem
                                 key={sound.id}
                                 item={sound}
-                                triggerModal={triggerModal}
+                                showStats={false}
                             />
                         ))
                     )}

@@ -4,14 +4,34 @@ import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import styles from '../styles/player.module.css';
 import { useSoundContext, useDispatchContext } from "../context/libraryContext/libraryContext";
 import usePlaybackEngine from "../hooks/usePlaybackEngine";
+import MarqueeText from './marqueeText';
 
-// Purely decorative — a neon VU-meter bar-graph above the seek bar, staggered
-// via --vu-i so the bars don't bounce in lockstep. Not driven by real audio
-// analysis, same spirit as the loader's fake telemetry readouts.
-const VU_BARS = Array.from({ length: 20 });
+// Purely decorative — a neon VU-meter bar-graph. Not driven by real audio
+// analysis, same spirit as the loader's fake telemetry readouts. The expanded
+// console shows the first 20 bars, staggered by --vu-i; the mini-player's
+// wider, thinner meter shows all 64 and uses --vu-t/--vu-d/--vu-a instead —
+// at that count a phase growing linearly with the index reads as a
+// travelling sine wave, not a meter.
+// Integer bit-mixing hash rather than Math.random: identical on server and
+// client, so hydration never sees a different style attribute.
+const vuHash = (i, seed) => {
+    let h = Math.imul((i + 1) ^ seed, 0x9e3779b1);
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x85ebca6b);
+    h ^= h >>> 13;
+    return (h >>> 0) / 4294967296;
+};
+const VU_BARS = Array.from({ length: 64 }, (_, i) => {
+    const duration = 0.8 + vuHash(i, 0x1b873593) * 0.7;
+    return {
+        '--vu-i': i,
+        '--vu-t': `${duration.toFixed(2)}s`,
+        '--vu-d': `${(-vuHash(i, 0x2c1b3c6d) * duration).toFixed(2)}s`,
+        '--vu-a': (0.55 + vuHash(i, 0x297a2d39) * 0.45).toFixed(2),
+    };
+});
 
 const Player = ({ item }) => {
-    const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
     const bar = useRef();
@@ -22,32 +42,63 @@ const Player = ({ item }) => {
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
 
-    // See docs/AUDIO_BACKEND_BLOCKERS.md — two interchangeable playback
-    // engines behind one interface, because our own resolver only reaches
+    // Two interchangeable playback engines behind one interface, because our own resolver only reaches
     // YouTube reliably from a residential IP.
     const engine = usePlaybackEngine({
         videoId: item.id,
-        playing,
         onEnded: () => onEndedRef.current(),
         metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
     });
+    const { playing } = engine;
+
+    // Last whole second pushed into `currentTime` state — see the frame loop below.
+    const lastSecondRef = useRef(0);
+
+    // Seek thumb + green fill are written straight to the <input> every frame
+    // instead of through React state: re-rendering the whole Player (VU bars,
+    // marquee, controls) 60x/s just to move one bar was the main cost here.
+    // The fill reads --bar-progress (styles/player.module.css); it's set only
+    // here, never from the JSX style prop, so a re-render can't reset it.
+    const syncBar = (time) => {
+        if (!bar.current) return;
+        bar.current.value = time;
+        const progress = item.duration ? (time / item.duration) * 100 : 0;
+        bar.current.style.setProperty('--bar-progress', progress);
+    };
+
+    const updateElapsed = (time) => {
+        const second = Math.floor(time);
+        if (second === lastSecondRef.current) return;
+        lastSecondRef.current = second;
+        setCurrentTime(second);
+    };
 
     useEffect(() => {
-        setPlaying(false);
         setCurrentTime(0);
-        cancelAnimationFrame(animationRef.current);
+        lastSecondRef.current = 0;
+        syncBar(0);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [item.id]);
 
-    const whileIsPlaying = () => {
-        try {
-            const time = engine.getCurrentTime();
-            bar.current.value = time;
-            setCurrentTime(time);
-            animationRef.current = requestAnimationFrame(whileIsPlaying);
-        } catch (error) {
-            cancelAnimationFrame(animationRef.current);
-        }
-    };
+    // Driven by the engine's real playing state, so a pause/play from the
+    // browser's media controls or the YouTube frame starts/stops it too.
+    useEffect(() => {
+        const tick = () => {
+            try {
+                const time = engine.getCurrentTime();
+                syncBar(time);
+                // The only on-screen text that depends on time is the mm:ss
+                // readout, so state only changes (→ re-render) once per second.
+                updateElapsed(time);
+                if (playing) animationRef.current = requestAnimationFrame(tick);
+            } catch (error) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+        tick();
+        return () => cancelAnimationFrame(animationRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playing, engine.getCurrentTime]);
 
     const onChangeBar = () => {
         // Read back from bar.current.value (the position we just asked for),
@@ -57,7 +108,8 @@ const Player = ({ item }) => {
         // own value).
         const seekTime = Number(bar.current.value);
         engine.seek(seekTime);
-        setCurrentTime(seekTime);
+        syncBar(seekTime);
+        updateElapsed(seekTime);
     };
 
     const HandlePlaying = async () => {
@@ -66,19 +118,14 @@ const Player = ({ item }) => {
             return;
         }
 
-        const preValue = playing;
-        setPlaying(!preValue);
-
-        if (!preValue) {
-            try {
-                await engine.play();
-            } catch (error) {
-                console.error('Error playing audio:', error);
-            }
-            animationRef.current = requestAnimationFrame(whileIsPlaying);
-        } else {
+        if (playing) {
             engine.pause();
-            cancelAnimationFrame(animationRef.current);
+            return;
+        }
+        try {
+            await engine.play();
+        } catch (error) {
+            console.error('Error playing audio:', error);
         }
     };
 
@@ -94,10 +141,8 @@ const Player = ({ item }) => {
 
     onEndedRef.current = () => {
         engine.seek(0);
-        setPlaying(false);
-        cancelAnimationFrame(animationRef.current);
-        setCurrentTime(0);
-        bar.current.value = 0;
+        updateElapsed(0);
+        syncBar(0);
     };
 
     const volumeChange = () => {
@@ -122,31 +167,47 @@ const Player = ({ item }) => {
 
     const verificationSaved = sounds.some((element) => element.id === item.id);
 
+    // The console's first window (grid area "window" in .faceplate, see
+    // components/modal.jsx): the mandatory-visible YouTube window in iframe
+    // mode, the track thumbnail otherwise. Rendered as a sibling of the
+    // transport panel (this component returns both cells as a fragment) so it
+    // lands directly in Modal's grid — no portal needed.
+    const windowContent = engine.engine === 'iframe' ? (
+        // The YT IFrame API replaces whatever DOM node containerRef points at
+        // with its own <iframe> (documented behavior, not a bug) — so the ref
+        // sits on this plain inner placeholder, and .iframeEngineMount stays on
+        // the outer div, which YouTube never touches and which is what
+        // actually needs the border/glow/scanline/retint framing to survive.
+        // data-pip-window: lets page CSS know a floating PiP window may be
+        // covering the bottom-right corner (see .listEnd in soundlist.module.css).
+        <div className={styles.iframeEngineMount} data-pip-window="">
+            <div ref={engine.containerRef} />
+        </div>
+    ) : (
+        <div className={styles.player__img}>
+            <img src={item.thumbnail} alt="" />
+        </div>
+    );
+
     return (
+        <>
+        {windowContent}
         <div className={`${styles.player__panel} hud-frame`}>
-            {engine.engine === 'iframe' && (
-                // Visible mount point for YouTube's own IFrame Player — required
-                // to be at least 200x200 by YouTube's own terms; a hidden/1x1
-                // iframe is non-conformant and fragile. See
-                // docs/AUDIO_BACKEND_BLOCKERS.md for why this engine exists.
-                <div className={styles.iframeEngineMount} ref={engine.containerRef} />
-            )}
             <div
                 className={playing ? `${styles.vuMeter} ${styles.vuMeterActive}` : styles.vuMeter}
                 aria-hidden="true"
             >
-                {VU_BARS.map((_, i) => (
-                    <span key={i} className={styles.vuMeter__bar} style={{ '--vu-i': i }} />
+                {VU_BARS.map((vars, i) => (
+                    <span key={i} className={styles.vuMeter__bar} style={vars} />
                 ))}
             </div>
             <div className={styles.player__bar__container}>
-                <div className={`${styles.time} ${styles.currentime}`}>{ConvertSecToMin(currentTime)}</div>
                 <input
                     ref={bar}
                     type="range"
                     className={styles.bar}
                     defaultValue={0}
-                    // Same source (item.duration) as --bar-progress below —
+                    // Same source (item.duration) as --bar-progress (syncBar) —
                     // this used to be set imperatively from the <audio>
                     // element's own .duration in an effect, but that reads as
                     // NaN until the stream's metadata finishes loading
@@ -157,18 +218,36 @@ const Player = ({ item }) => {
                     // where the fill thought the track was.
                     max={item.duration || 0}
                     onChange={onChangeBar}
-                    style={{ '--bar-progress': item.duration ? (currentTime / item.duration) * 100 : 0 }}
                 />
-                <div className={`${styles.time} ${styles.durationTotal}`}>{duration}</div>
+            </div>
+
+            {/* The console's "master clock" + track text — sits between the
+                bars above and the button row below, cassette-deck style (VU
+                meters up top, LCD readout in the middle, transport buttons at
+                the bottom). Used to be portaled up into Modal's windowsRow
+                instead; rendered directly here now since Player already owns
+                `item` — no cross-component slot needed for content that never
+                actually needed to leave this render. */}
+            <div className={styles.trackReadout}>
+                <div className={styles.masterTimer}>
+                    <span className={styles.masterTimer__elapsed}>{ConvertSecToMin(currentTime)}</span>
+                    <span className={styles.masterTimer__sep}>-</span>
+                    <span className={styles.masterTimer__total}>{duration}</span>
+                </div>
+                <div className={styles.metaText}>
+                    <h2>{item.channel?.name || 'Unknown channel'}</h2>
+                    <MarqueeText text={item.title} className={styles.player__title} />
+                </div>
             </div>
 
             <div className={styles.player__controls__container}>
-                <div className={styles.controlUnit}>
+                <div className={`${styles.controlUnit} ${styles.favUnit}`}>
                     <button
                         onClick={verificationSaved ? delHandle : saveHandle}
                         className={verificationSaved ? `${styles.button} ${styles.buttonAccent}` : styles.button}
+                        aria-label={verificationSaved ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                        {verificationSaved ? <FaHeart /> : <FaRegHeart />}
+                        {verificationSaved ? <FaHeart aria-hidden="true" /> : <FaRegHeart aria-hidden="true" />}
                     </button>
                     <span className={styles.controlLabel}>Fav</span>
                 </div>
@@ -177,31 +256,36 @@ const Player = ({ item }) => {
                         <audio ref={engine.audioRef} src={engine.audioUrl} preload="auto" />
                     )}
 
-                    <div className={styles.controlUnit}>
-                        <button className={styles.button} onClick={BackTime}>
+                    <div className={`${styles.controlUnit} ${styles.seekUnit}`}>
+                        <button className={styles.button} onClick={BackTime} aria-label="Back 10 seconds">
                             <FaBackward className={styles.backward} />
                         </button>
                         <span className={styles.controlLabel}>Rew</span>
                     </div>
 
                     <div className={playing ? `${styles.controlUnit} ${styles.controlUnitActive}` : styles.controlUnit}>
-                        <button className={styles.button} onClick={HandlePlaying} disabled={!engine.ready || !!engine.error}>
+                        <button
+                            className={styles.button}
+                            onClick={HandlePlaying}
+                            disabled={!engine.ready || !!engine.error}
+                            aria-label={engine.error ? engine.error : !engine.ready ? 'Loading' : playing ? 'Pause' : 'Play'}
+                        >
                             {engine.error ? (
-                                <span title={engine.error}>!</span>
+                                <span aria-hidden="true">!</span>
                             ) : !engine.ready ? (
-                                <FaSpinner className={styles.spinner} />
+                                <FaSpinner className={styles.spinner} aria-hidden="true" />
                             ) : playing ? (
-                                <FaPause className={styles.pause} />
+                                <FaPause className={styles.pause} aria-hidden="true" />
                             ) : (
-                                <FaPlay className={styles.play} />
+                                <FaPlay className={styles.play} aria-hidden="true" />
                             )}
                         </button>
                         <span className={styles.controlLabel}>{playing ? 'Pause' : 'Play'}</span>
                     </div>
 
-                    <div className={styles.controlUnit}>
-                        <button className={styles.button}>
-                            <FaForward onClick={ForwardTime} className={styles.forward} />
+                    <div className={`${styles.controlUnit} ${styles.seekUnit}`}>
+                        <button className={styles.button} onClick={ForwardTime} aria-label="Forward 10 seconds">
+                            <FaForward className={styles.forward} />
                         </button>
                         <span className={styles.controlLabel}>Fwd</span>
                     </div>
@@ -209,8 +293,12 @@ const Player = ({ item }) => {
 
                 <div className={styles.volumeGroup}>
                     <div className={styles.controlUnit}>
-                        <button onClick={() => setVisible(!volVisible)} className={styles.btn__vol}>
-                            <FaVolumeUp />
+                        <button
+                            onClick={() => setVisible(!volVisible)}
+                            className={styles.btn__vol}
+                            aria-label={volVisible ? 'Hide volume slider' : 'Show volume slider'}
+                        >
+                            <FaVolumeUp aria-hidden="true" />
                         </button>
                         <span className={styles.controlLabel}>Vol</span>
                     </div>
@@ -224,6 +312,7 @@ const Player = ({ item }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

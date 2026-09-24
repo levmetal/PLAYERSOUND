@@ -1,6 +1,21 @@
-/* Retro-Cyberpunk CRT / Terminal design tokens. See docs/design/DESIGN_SYSTEM.md. */
+/* Retro-Cyberpunk CRT / Terminal design tokens. */
 
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Press+Start+2P&family=Doto:wght@700&display=swap');
+
+/* Self-hosted (not on Google Fonts) — DSEG7-Classic, SIL Open Font License,
+   see public/fonts/dseg7-classic/LICENSE.txt. True 7-segment glyph shapes
+   (angled segment cuts, dim "ghost" segments behind the lit ones, like a
+   real LED clock) for the player's master timer — see .masterTimer in
+   player.module.css. --font-digits (Doto) below is unrelated and
+   stays as-is for smaller inline numbers (list-row duration badges) that
+   don't need true segment shapes. */
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('/fonts/dseg7-classic/DSEG7Classic-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* base */
@@ -24,8 +39,15 @@
   --font-body: 'Share Tech Mono', 'VT323', monospace;
   --font-display: 'Press Start 2P', 'Share Tech Mono', monospace;
   /* Dot-matrix LED look for standalone numeric readouts (timers, duration
-     badges) — not for prose/labels. See docs/design/DESIGN_SYSTEM.md. */
+     badges) — not for prose/labels. */
   --font-digits: 'Doto', 'Share Tech Mono', monospace;
+  /* True 7-segment display face — see the @font-face above. Used by the
+     player's master timer and every list-row duration badge (SoundItem's shared
+     .row__duration, styles/soundlist.module.css) — not a full replacement
+     for --font-digits, which still backs this font's own fallback and any
+     other standalone numeric readout that doesn't need true segment
+     shapes. */
+  --font-digits-7seg: 'DSEG7Classic', var(--font-digits);
   --letter-spacing-wide: 1.5px;
 
   /* borders */
@@ -35,21 +57,20 @@
   --glow-text: 0 0 8px rgba(0, 255, 102, 0.7);
   --glow-box: 0 0 12px rgba(0, 255, 102, 0.25);
   /* cyan accent glow — shared by every "state, not property" accent use
-     (favorited/saved indicators, current-nav-position markers); see
-     docs/design/DESIGN_SYSTEM.md's 60/30/10 rule. */
+     (favorited/saved indicators, current-nav-position markers), per
+     the 60/30/10 color rule. */
   --glow-accent: 0 0 12px rgba(0, 255, 255, 0.35);
   /* Tighter, less-diffuse cyan glow for the one small-text LED readout that
      is itself cyan (the player's track-info box) — legibility at small text
      sizes over a wider blur radius. A separate, deliberate exception from
-     the 60/30/10 rule; see docs/design/DESIGN_SYSTEM.md. */
+     the 60/30/10 color rule. */
   --glow-text-accent: 0 0 4px rgba(0, 255, 255, 0.8), 0 0 1px rgba(0, 255, 255, 0.9);
 
   /* chromatic aberration (title hover) */
   --chromatic-shadow: -2px 0 var(--rgb-cyan), 2px 0 var(--rgb-magenta);
 
   /* Below this width the persistent nav (components/sideBar.jsx) switches
-     from a left-hand rail to a fixed top bar (logo + menu toggle) — see
-     docs/design/UX_FLOW.md. Every full-bleed page container reserves this
+     from a left-hand rail to a fixed top bar (logo + menu toggle). Every full-bleed page container reserves this
      much top space at that same width instead of the rail's left-hand
      clearance. Media query conditions can't read custom properties, so the
      768px number itself is still repeated literally in each stylesheet's
@@ -67,15 +88,20 @@
      design, not something this value needs to also account for. */
   --rail-width: 5rem;
 
+  /* Height of the docked mini-player bar (components/modal.jsx minimized,
+     .consoleMini in styles/player.module.css) — also the height of the
+     in-flow spacer (.miniSpacer) that keeps it from covering the end of a
+     page's content. Smaller at phone width, see player.module.css. */
+  --mini-player-height: 4.25rem;
+
   /* HUD corner brackets — the ".hud-frame" utility in globals.css, backing
-     the "corner-bracket boxes... like a targeting reticle" rule in
-     docs/design/DESIGN_SYSTEM.md. Reuses --phosphor-primary so it re-tints
+     the "corner-bracket boxes... like a targeting reticle" rule. Reuses --phosphor-primary so it re-tints
      automatically under [data-theme="amber"]. */
   --bracket-size: 14px;
   --bracket-thickness: 2px;
 
   /* Blueprint/graph-paper grid — the "operator console" backdrop for
-     full-bleed page containers (see docs/design/DESIGN_SYSTEM.md). Applied
+     full-bleed page containers. Applied
      via `background: var(--bg-grid)` instead of `var(--bg)` on a handful of
      top-level page containers; --grid-line re-tints per phosphor variant. */
   --grid-size: 42px;

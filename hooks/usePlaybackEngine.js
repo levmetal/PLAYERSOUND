@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Which engine actually fetches the audio bytes:
 // - 'native': our own /api/soundplayer resolver, via a real <audio> element.
-//   No ads, but only reaches YouTube reliably from a residential IP (see
-//   docs/AUDIO_BACKEND_BLOCKERS.md) — this is what `npm run dev` uses by
+//   No ads, but only reaches YouTube reliably from a residential IP — this is what `npm run dev` uses by
 //   default, since a contributor's machine *is* a residential IP.
 // - 'iframe': YouTube's own IFrame Player API, running in the visitor's
 //   browser. The request never touches our server, so the IP-reputation bot
@@ -32,16 +31,20 @@ function loadIframeApi() {
 }
 
 // One interface, two engines, so the rest of the player never has to know
-// which one is actually live — see docs/AUDIO_BACKEND_BLOCKERS.md for why
-// both exist. `containerRef` is only used by the iframe engine; the native
+// which one is actually live (see the mode notes above for why both
+// exist). `containerRef` is only used by the iframe engine; the native
 // engine's <audio> element is self-contained and needs no visible mount
 // point.
-export default function usePlaybackEngine({ videoId, playing, onEnded, metadata }) {
+export default function usePlaybackEngine({ videoId, onEnded, metadata }) {
     const [fellBackToIframe, setFellBackToIframe] = useState(false);
     const engine = PLAYBACK_MODE === 'iframe' || fellBackToIframe ? 'iframe' : 'native';
 
     const [ready, setReady] = useState(false);
     const [error, setError] = useState(null);
+    // Mirrors the media element's real state, not the last button press: the
+    // browser's own media controls, the lock screen, or a click on the YouTube
+    // frame can all pause/resume playback without going through our transport.
+    const [playing, setPlaying] = useState(false);
 
     const audioRef = useRef(null);
     const containerRef = useRef(null);
@@ -52,6 +55,7 @@ export default function usePlaybackEngine({ videoId, playing, onEnded, metadata 
     useEffect(() => {
         setReady(false);
         setError(null);
+        setPlaying(false);
     }, [videoId, engine]);
 
     // --- native engine: wire the <audio> element's own events ---
@@ -61,7 +65,12 @@ export default function usePlaybackEngine({ videoId, playing, onEnded, metadata 
         if (!el) return;
 
         const handleCanPlay = () => setReady(true);
-        const handleEnded = () => onEndedRef.current?.();
+        const handlePlay = () => setPlaying(true);
+        const handlePause = () => setPlaying(false);
+        const handleEnded = () => {
+            setPlaying(false);
+            onEndedRef.current?.();
+        };
         const handleError = () => {
             if (PLAYBACK_MODE === 'native') {
                 // Only auto-fallback when native is the intended default (local
@@ -69,14 +78,18 @@ export default function usePlaybackEngine({ videoId, playing, onEnded, metadata 
                 setFellBackToIframe(true);
                 return;
             }
-            setError('No se pudo cargar el audio de este video.');
+            setError("Couldn't load this video's audio.");
         };
 
         el.addEventListener('canplay', handleCanPlay);
+        el.addEventListener('play', handlePlay);
+        el.addEventListener('pause', handlePause);
         el.addEventListener('ended', handleEnded);
         el.addEventListener('error', handleError);
         return () => {
             el.removeEventListener('canplay', handleCanPlay);
+            el.removeEventListener('play', handlePlay);
+            el.removeEventListener('pause', handlePause);
             el.removeEventListener('ended', handleEnded);
             el.removeEventListener('error', handleError);
         };
@@ -92,18 +105,28 @@ export default function usePlaybackEngine({ videoId, playing, onEnded, metadata 
                 if (cancelled || !containerRef.current) return;
                 ytPlayerRef.current = new YT.Player(containerRef.current, {
                     videoId,
-                    playerVars: { playsinline: 1, rel: 0 },
+                    // controls: 0 hides YouTube's own play/pause/seek/volume bar —
+                    // our own transport (components/player.jsx) already drives this
+                    // player via play/pause/seek/setVolume below, so leaving
+                    // YouTube's controls on just doubled up on controls for the
+                    // same video with no benefit. disablekb stops the iframe from
+                    // also reacting to space/arrow keys behind our own transport.
+                    playerVars: { playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3 },
                     host: 'https://www.youtube-nocookie.com',
                     events: {
                         onReady: () => setReady(true),
-                        onError: () => setError('Este video no está disponible para reproducir embebido.'),
+                        onError: () => setError("This video can't be played embedded."),
                         onStateChange: (event) => {
-                            if (event.data === YT.PlayerState.ENDED) onEndedRef.current?.();
+                            const { PLAYING, PAUSED, ENDED, CUED, UNSTARTED } = YT.PlayerState;
+                            // BUFFERING is left alone so a mid-play stall doesn't flicker the button.
+                            if (event.data === PLAYING) setPlaying(true);
+                            else if ([PAUSED, ENDED, CUED, UNSTARTED].includes(event.data)) setPlaying(false);
+                            if (event.data === ENDED) onEndedRef.current?.();
                         },
                     },
                 });
             })
-            .catch(() => setError('No se pudo cargar el reproductor de YouTube.'));
+            .catch(() => setError("Couldn't load the YouTube player."));
 
         return () => {
             cancelled = true;
@@ -186,6 +209,7 @@ export default function usePlaybackEngine({ videoId, playing, onEnded, metadata 
         engine,
         ready,
         error,
+        playing,
         play,
         pause,
         seek,

@@ -33,7 +33,10 @@
        don't render underneath it. */
     margin-left: 5.5rem;
     width: calc(100% - 5.5rem);
-    max-height: 58dvh;
+    /* A ceiling, not a target: the grid faceplate (below) needs ~400px, well
+       under this at normal heights. .faceplate's own overflow-y:auto is the
+       fallback for a viewport too short even for this. */
+    max-height: 90dvh;
     background: var(--phosphor-box-bg);
     border-top: var(--border-crt);
     box-shadow: 0 -4px 24px rgba(var(--phosphor-primary-rgb), 0.2);
@@ -63,7 +66,8 @@
     .backdrop,
     .backdropClosing,
     .console,
-    .consoleClosing {
+    .consoleClosing,
+    .consoleMini {
         animation: none;
     }
 }
@@ -86,21 +90,39 @@
     text-overflow: ellipsis;
 }
 
-/* "Faceplate": the cassette-deck front panel proper — a column (windows row
-   on top, transport/info block below) rather than one flat row, so the
-   thumbnail+globe read as their own "windows" separate from the controls. */
-.faceplate {
+/* Minimize/expand toggle + stop. Minimize (also Escape / backdrop click)
+   keeps the music playing in the docked mini-player; only stop ends it. */
+.console__headerActions {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.1rem 1.6rem;
-    overflow: hidden;
+    align-items: center;
+    gap: .5rem;
+    flex: none;
 }
 
-.windowsRow {
-    display: flex;
-    align-items: stretch;
-    gap: .8rem;
+/* "Faceplate": the cassette-deck front panel proper. A grid, not stacked
+   rows: [video/thumbnail window] [transport panel] [globe window] side by
+   side, with the description as one thin strip underneath. An earlier
+   version stacked a full-width "windows row" (thumbnail + a 200px-tall
+   globe/description panel) ABOVE a full-width transport panel — both boxes
+   ran the console's whole width with little content in them, so the
+   console was ~2x taller than it needed to be and, at common laptop
+   heights (~560px), the transport controls had to be scrolled into view.
+   Putting the two square windows beside the transport uses the width
+   instead of the height. Player (components/player.jsx) renders the
+   "window" and "transport" cells itself as a fragment; Modal renders the
+   globe and description. overflow-y:auto stays as a fallback for a viewport too short
+   even for this layout — scrolling beats silently clipping controls. */
+.faceplate {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "window transport globe"
+        "info   info      info";
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.4rem;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .console__footer {
@@ -149,11 +171,15 @@
    real, boosted color instead of being tinted a single phosphor hue — reads
    like a small glowing CRT display, not a printed photo. The scanline
    overlay (::after) and glow (box-shadow) sell the "screen", not the color
-   grade. See docs/design/DESIGN_SYSTEM.md. */
+   grade. */
 .player__img {
+    grid-area: window;
     flex: none;
-    width: 4.5rem;
-    height: 4.5rem;
+    /* Same 210px as .iframeEngineMount so the console is the same size
+       whichever engine is live. */
+    width: 210px;
+    height: 210px;
+    max-width: 100%;
     overflow: hidden;
     position: relative;
     border: var(--border-crt);
@@ -182,43 +208,179 @@
     filter: contrast(1.2) saturate(1.6) brightness(.95);
 }
 
-/* Tape-deck "window" — a real, low-res rendered wireframe globe (three.js,
-   ordered-dither + pixelated upscale) spinning next to the real thumbnail
-   like a second readout on the console. Height matches .player__img; square
-   aspect ratio reads better for a globe than the old cassette-photo ratio. */
-.deckWindow {
-    flex: none;
-    height: 4.5rem;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
+/* The globe's own console window — its own square cell (grid area "globe"),
+   the same 210px as the video/thumbnail window on the other side of the
+   transport, so the faceplate reads as one symmetric deck: a screen on
+   each side, controls in the middle. Used to share a full-width 200px-tall
+   panel with the description (see .infoStrip below for where that went).
+   GlobePanel's own container (styles/globePanel.module.css) is
+   absolutely positioned to fill this box and sizes its square canvas to
+   min(width, height). No hud-frame here: that container paints its own
+   background over the whole box, which would hide the corner brackets. */
+.globeWindow {
+    grid-area: globe;
     position: relative;
+    width: 210px;
+    height: 210px;
+    box-sizing: border-box;
     border: var(--border-crt);
     background: var(--crt-black-tint);
+    overflow: hidden;
 }
 
-/* Third "window" alongside the thumbnail and globe — a read-out label, not a
-   fixed-width column beside the transport panel below (see Player Transport
-   in docs/design/DESIGN_SYSTEM.md for why it moved here). */
-.player__meta {
+/* The video's own description (real data from the search API — see
+   pages/api/search/[searchTerm].js; it's the search snippet, a line or two
+   at most, not the full description), as one thin strip under the deck
+   instead of a 200px-tall panel of mostly empty space. Clamped to 2 lines;
+   not rendered at all when the video has no description (components/
+   modal.jsx) rather than spending a row on a placeholder message.
+   Left-aligned (running text), dashed border so it reads as a secondary
+   readout rather than a fourth window. `overflow-wrap: anywhere` +
+   `min-width: 0` because descriptions routinely contain long unbroken
+   URLs, which would otherwise widen the grid (and the page) past the
+   viewport instead of wrapping — an actual bug found on a device-width
+   test of the earlier version. */
+.infoStrip {
+    grid-area: info;
+    min-width: 0;
+    margin: 0;
+    padding: .5rem .9rem;
+    border: 1px dashed var(--phosphor-secondary);
+    font-family: var(--font-body);
+    font-size: .75rem;
+    line-height: 1.45;
+    color: var(--accent);
+    text-shadow: var(--glow-text-accent);
+    opacity: .8;
+    white-space: pre-line;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* The master timer + channel/title block, between the VU/seek bars above and
+   the button row below (components/player.jsx) — a cassette deck's own
+   layout, top to bottom: meters, then the LCD readout, then the transport
+   buttons. Centered as one unit, `max-width` keeping it from stretching
+   edge-to-edge across the full transport panel (which runs much wider than
+   this content needs) so it reads as its own inset display module rather
+   than a stray row stretched full-bleed. */
+.trackReadout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    max-width: 32rem;
+    /* Without this, a flex item's default min-width:auto lets its content's
+       own intrinsic width (a long channel name, say) refuse to shrink below
+       that width even on a narrow viewport — forcing .player__panel, and the
+       whole console, wider than the screen instead of wrapping/ellipsizing.
+       .metaText below already sets this on itself too; belt and suspenders. */
+    min-width: 0;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Text half of what used to be .infoPanel, now inside .trackReadout — no
+   border/background of its own (nothing behind it here needs one). Centered,
+   matching .masterTimer's own centering above it — a cassette deck's LCD
+   readout is one centered stack (clock over track label), not a clock
+   centered over left-hugging text; ellipsis/marquee truncation
+   (MarqueeText, styles/marqueeText.module.css) still works centered since it
+   only needs overflow:hidden + white-space:nowrap, not a particular
+   text-align. */
+.metaText {
     flex: 1;
     min-width: 0;
+    /* Stretch to .trackReadout's width instead of shrink-wrapping (the
+       parent centers its children): shrink-to-fit sized this box to the
+       title's full unwrapped width, so a long title widened it past the
+       transport panel and the marquee's own overflow:hidden — 100% of that
+       already-too-wide box — clipped nothing. Children stay centered via
+       align-items/text-align below. */
+    align-self: stretch;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    text-align: center;
     gap: .2rem;
-    padding: .35rem .6rem;
-    border: var(--border-crt);
-    background: var(--crt-black-tint);
+}
+
+/* The console's "master clock" — one bigger readout replacing the two small
+   ones that used to flank the seek bar, car-stereo style: elapsed time large
+   and bright, duration smaller and dimmer beside it. No border/background/
+   shadow of its own (a previous version gave it a standalone bezel, which
+   then read as a nested box floating inside an already-bordered panel — the
+   same "boxes within boxes" clutter this whole area has repeatedly been
+   simplified away from); the digits just sit directly on the panel behind
+   them, like .metaText below. `align-items: center` (not the old `baseline`)
+   keeps the three spans' noticeably different font sizes vertically centered
+   on each other instead of lining up on a text baseline that reads oddly
+   across a 7-segment face mixed with the regular digits font. */
+.masterTimer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    font-variant-numeric: tabular-nums;
+    width: fit-content;
+}
+
+/* letter-spacing: normal overrides the inherited default tracking on the
+   regular digits font (see .masterTimer__sep below) — without it "01:43"
+   drove apart into a detached-looking "0 1:43". */
+.masterTimer__elapsed {
+    font-size: 2.6rem;
+    font-family: var(--font-digits-7seg);
+    color: var(--accent);
+    text-shadow: var(--glow-text-accent);
+    letter-spacing: normal;
+}
+
+/* The elapsed/duration divider is a hyphen, not the "/" this used — true
+   7-segment fonts render digits AND a plain dash cleanly (a single lit
+   middle segment, the same glyph a real LED scoreboard uses as a minus/
+   divider), but have no proper slash glyph, which is why an earlier version
+   kept the separator in the regular digits font: next to true 7-segment
+   digits that mismatched font read as a visibly different "material". */
+.masterTimer__sep {
+    font-size: 1.4rem;
+    font-family: var(--font-digits-7seg);
+    color: var(--phosphor-secondary);
+    opacity: .7;
+}
+
+/* Same text-shadow recipe as .masterTimer__elapsed, not a flat/un-glowing
+   variant — without it this half read as a visibly different, thinner
+   "material" next to the elapsed digits despite sharing the same 7-segment
+   font. `opacity: .65` alone (already doing the "secondary" job of dimming
+   both the glyphs and their glow together) keeps it legible as the same LED
+   glass, just further from the viewer's focus. */
+.masterTimer__total {
+    font-size: 1.6rem;
+    font-family: var(--font-digits-7seg);
+    color: var(--accent);
+    text-shadow: var(--glow-text-accent);
+    opacity: .65;
+    letter-spacing: normal;
 }
 
 /* Track-info readout: cyan, not the dominant green — reads as its own small
    LED display within the console (a deliberate, bounded exception to the
    60/30/10 rule's "cyan is state, not property," same category as the VU
-   meter's peak cap; see docs/design/DESIGN_SYSTEM.md). Glow is intentionally
-   tighter than --glow-text so the text stays legible at this size. */
-.player__meta h2 {
-    font-size: .7rem;
+   meter's peak cap). Glow is intentionally
+   tighter than --glow-text so the text stays legible at this size.
+   `width: 100%` keeps the ellipsis truncation below correct now that
+   .metaText centers its children (`align-items: center`) instead of
+   stretching them — without an explicit width this would shrink-to-fit its
+   own content instead of the column's actual available space. */
+.metaText h2 {
+    font-size: .85rem;
     margin: 0;
+    width: 100%;
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--accent);
@@ -230,7 +392,7 @@
 }
 
 .player__title {
-    font-size: .9rem;
+    font-size: 1.15rem;
     color: var(--accent);
     text-shadow: var(--glow-text-accent);
 }
@@ -240,6 +402,10 @@
    floating in the faceplate. Add the "hud-frame" utility class alongside
    this one in the JSX for the corner-bracket reticle treatment. */
 .player__panel {
+    grid-area: transport;
+    /* Grid items default to min-width:auto — without this a long title or
+       channel name would refuse to shrink and widen the whole console. */
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -250,25 +416,55 @@
     background: var(--crt-black-tint);
 }
 
-/* Mount point for the IFrame playback engine (see hooks/usePlaybackEngine.js
-   and docs/AUDIO_BACKEND_BLOCKERS.md) — only rendered when that engine is
-   active. YouTube's own terms require the embedded player to be at least
-   200x200; this can't be hidden or shrunk below that without breaking. Same
-   CRT "screen" treatment as .player__img (see docs/design/DESIGN_SYSTEM.md)
-   so it reads as another console window, not a foreign embed. */
+/* The faceplate's "window" cell (components/player.jsx), in place of the
+   track thumbnail, when the iframe engine is active — not a separate block
+   elsewhere, so the transport panel always sits in its usual spot
+   regardless of playback engine. In the mini-player this same element
+   becomes a fixed picture-in-picture window (see .consoleMini
+   .iframeEngineMount below) — never removed or hidden, since moving an
+   iframe in the DOM reloads it and hiding it breaks YouTube's terms. YouTube's own terms require the embedded player to be at least
+   200x200 — this can't be hidden or shrunk below that without breaking, so
+   it's fixed at just above that floor rather than stretching full-width/16:9
+   (which produced a 400px+ tall raw-color banner in an earlier version of
+   this fix, pushing the transport controls off-screen). Same CRT "screen"
+   framing (border/glow/scanline) as .player__img, but re-tinted to the
+   phosphor hue rather than kept full-color: unlike .player__img (our own
+   track art, a deliberate full-color exception), this is YouTube's own foreign chrome, so it
+   gets the same monochrome-retint treatment as other imported imagery
+   (home/about hero art) — exact same filter recipe as .heroArt__img in
+   about.module.css, for consistency. */
 .iframeEngineMount {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    min-height: 200px;
+    grid-area: window;
+    flex: none;
+    width: 210px;
+    height: 210px;
+    max-width: 100%;
+    position: relative;
     border: var(--border-crt);
     box-shadow: 0 0 14px rgba(var(--phosphor-primary-rgb), 0.45), inset 0 0 8px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+}
+
+.iframeEngineMount::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.35) 0px,
+        rgba(0, 0, 0, 0.35) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    mix-blend-mode: multiply;
 }
 
 .iframeEngineMount iframe {
     width: 100%;
     height: 100%;
     display: block;
+    filter: grayscale(1) brightness(.6) contrast(1.3) sepia(1) hue-rotate(75deg) saturate(3.5);
 }
 
 /* Neon VU-meter bar-graph, purely decorative (see components/player.jsx).
@@ -280,7 +476,7 @@
    bars glow in the primary tone and bounce, each staggered via --vu-i so they
    don't move in lockstep. The peak cap borrows the site's one existing accent
    (cyan) for a momentary flash, the same way it's already used for the seek
-   thumb below — not a new resting-state color, see docs/design/DESIGN_SYSTEM.md. */
+   thumb below — not a new resting-state color. */
 .vuMeter {
     display: flex;
     align-items: flex-end;
@@ -294,6 +490,11 @@
     flex: 1;
     min-width: 1px;
     height: 100%;
+}
+
+/* Extra bars exist only for the mini-player's wider meter (see .consoleMini). */
+.vuMeter__bar:nth-child(n+21) {
+    display: none;
 }
 
 /* Idle state on purpose has no `animation` at all (not just a paused one) —
@@ -386,6 +587,11 @@
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     width: 100%;
+    /* Same cap as .trackReadout above it: on a wide console the 1fr columns
+       otherwise pushed fav/vol out to the panel's far edges, a long reach
+       away from the transport buttons they sit beside. */
+    max-width: 32rem;
+    margin: 0 auto;
     height: auto;
 }
 
@@ -505,24 +711,6 @@
     color: var(--bg);
 }
 
-/* Its own small bordered "LCD window", not bare floating text — closer to a
-   car-stereo-style segmented time display (a reference image) than plain
-   digits sitting on the panel background. */
-.time {
-    width: 3.4rem;
-    text-align: center;
-    font-family: var(--font-digits);
-    font-size: .8rem;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 1px;
-    color: var(--accent);
-    text-shadow: var(--glow-text-accent);
-    border: 1px solid var(--phosphor-secondary);
-    background: var(--crt-black-tint);
-    padding: .15rem 0;
-    box-sizing: border-box;
-}
-
 .button__group {
     display: flex;
     align-items: center;
@@ -581,7 +769,37 @@
     }
 }
 
-/* Below 768px the nav is a top bar, not a left rail (docs/design/UX_FLOW.md)
+/* Mid widths: not enough room for three columns without squeezing the
+   transport panel, so the globe (decorative) goes first — the video/
+   thumbnail window and the transport stay side by side. */
+@media screen and (max-width: 900px) {
+    .faceplate {
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            "window transport"
+            "info   info";
+    }
+
+    .globeWindow {
+        display: none;
+    }
+}
+
+/* Short-but-wide viewports (a laptop with a small browser window, a phone
+   in landscape): the two-line description strip is the first thing to go,
+   so the deck itself never needs scrolling. */
+@media screen and (min-width: 701px) and (max-height: 540px) {
+    .infoStrip {
+        display: none;
+    }
+
+    .faceplate {
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
+}
+
+/* Below 768px the nav is a top bar, not a left rail
    — this modal no longer needs to clear anything on its left. */
 @media screen and (max-width: 768px) {
     .console {
@@ -591,17 +809,39 @@
 }
 
 @media screen and (max-width:700px) {
+    /* One column at phone width: window centered on top, transport below.
+       The description strip hides — there isn't room, same as the old
+       globe/description panel always did below this breakpoint. */
     .faceplate {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "window"
+            "transport";
         gap: .5rem;
         padding: .8rem;
     }
 
-    .windowsRow {
-        gap: .5rem;
+    .player__img,
+    .iframeEngineMount {
+        justify-self: center;
     }
 
-    .deckWindow {
+    .player__img {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    .infoStrip {
         display: none;
+    }
+
+    .masterTimer__elapsed {
+        font-size: 1.1rem;
+    }
+
+    .masterTimer__sep,
+    .masterTimer__total {
+        font-size: .75rem;
     }
 
     .console__footer {
@@ -613,11 +853,6 @@
         gap: .4rem;
     }
 
-    .time {
-        width: 2.5rem;
-        font-size: .7rem;
-    }
-
     /* Keep the mobile transport bar as compact as before the deck-style
        captions were added — there isn't room for a label under a 2.1rem
        button at this width. */
@@ -627,5 +862,322 @@
 
     .vuMeter {
         height: .5rem;
+    }
+}
+
+/* ===================== Mini-player =====================
+   The same console, minimized (components/modal.jsx, expanded=false) into
+   a bar docked to the bottom of the viewport, so the music keeps playing
+   while the user browses. Pure CSS over the same DOM tree as the expanded
+   console — nothing remounts, so the <audio> element / YouTube iframe
+   inside it never reload.
+
+   Layout, left to right: [thumbnail] [channel / title] [VU meter] [mm:ss]
+   [transport] | [expand] [stop], with the seek bar as a thin line along the
+   bar's top edge (the usual mini-player pattern — thin enough not to cost
+   height, still draggable). The globe, description and control captions are
+   dropped; the VU meter stays as the bar's one bit of motion, and is dropped
+   at phone width where there's no room for it. */
+
+/* The backdrop wrapper stops being a full-screen scrim — display: contents
+   so it generates no box at all (no dimming, doesn't block the page), while
+   staying in the tree so nothing inside remounts. */
+.backdropMini {
+    display: contents;
+}
+
+.consoleMini {
+    position: fixed;
+    left: var(--rail-width);
+    right: 0;
+    bottom: 0;
+    /* Above page content, below the nav (150) and the route Loader (184). */
+    z-index: 120;
+    margin-left: 0;
+    width: auto;
+    height: var(--mini-player-height);
+    max-height: none;
+    box-sizing: border-box;
+    flex-direction: row;
+    align-items: stretch;
+    /* Opacity only, deliberately no transform: a transformed ancestor
+       becomes the containing block for position:fixed descendants, which
+       would make the iframe's picture-in-picture window (below) jump during
+       the animation. */
+    animation: mini-in 150ms ease-out;
+}
+
+@keyframes mini-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.consoleMini .console__header {
+    order: 2;
+    flex: none;
+    padding: 0 .8rem;
+    border-bottom: none;
+    border-left: 1px solid var(--phosphor-secondary);
+}
+
+.consoleMini .console__headerLabel,
+.consoleMini .console__footer,
+.consoleMini .globeWindow,
+.consoleMini .infoStrip,
+.consoleMini .controlLabel {
+    display: none;
+}
+
+.consoleMini .faceplate {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    /* Top padding leaves room for the seek line along the top edge. */
+    padding: .55rem .9rem 0;
+    overflow: visible;
+}
+
+.consoleMini .player__img {
+    width: 3rem;
+    height: 3rem;
+    box-shadow: none;
+}
+
+/* The mandatory-visible YouTube window floats above the bar as a
+   picture-in-picture screen at its full 210px (YouTube's 200x200 floor
+   applies whether or not the console is minimized) — genuinely floating,
+   like a real PiP window: it overlaps whatever page content is already
+   behind that corner instead of pushing it up. An earlier version grew
+   .miniSpacer by this window's own height to keep the end of every list
+   clear of it, but since the window only occupies one corner, that reserved
+   the same extra height across the FULL width of every page — a large,
+   permanently empty band at the bottom of every screen, not just under the
+   window itself. A small, temporary overlap in one corner reads as a
+   picture-in-picture window doing its job; a page-wide dead zone reads as a
+   bug. */
+.consoleMini .iframeEngineMount {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(var(--mini-player-height) + .75rem);
+    z-index: 120;
+    background: var(--crt-black);
+}
+
+.consoleMini .player__panel {
+    flex: 1;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0;
+    border: none;
+    /* Shorthand on purpose: also drops the panel's own hud-frame brackets —
+       the bar's outer console already carries them. */
+    background: none;
+}
+
+/* Positioned against .consoleMini (the nearest positioned ancestor). */
+.consoleMini .player__bar__container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.consoleMini .bar,
+.consoleMini .bar::-webkit-slider-runnable-track {
+    height: .45rem;
+}
+
+.consoleMini .bar::-webkit-slider-thumb {
+    height: .75rem;
+    margin-top: -.15rem;
+}
+
+/* Dissolved into the panel's row so the VU meter (a sibling of
+   .trackReadout, not a child) can sit between the title and the clock:
+   [title] [VU meter] [mm:ss] [transport]. */
+.consoleMini .trackReadout {
+    display: contents;
+}
+
+/* Fills the whole gap between the title and the clock, right-aligned against
+   the clock so the two read as one "meter + readout" module. Bars stay thin
+   (5-8px) instead of stretching — 20 bars across ~500px read as a bar chart,
+   not a spectrum. When the gap is narrower than all 64 bars, the overflow is
+   clipped on the title side, softened by the left-edge fade. */
+.consoleMini .vuMeter {
+    order: 2;
+    flex: 1 1 0;
+    min-width: 4rem;
+    height: 2rem;
+    gap: 3px;
+    padding: 0;
+    justify-content: flex-end;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 3rem);
+    mask-image: linear-gradient(to right, transparent, #000 3rem);
+}
+
+.consoleMini .vuMeter__bar {
+    display: block;
+    flex: 1 0 5px;
+    max-width: 8px;
+}
+
+/* Spectrum-analyzer variant, mini-player only (the expanded console keeps
+   the original meter above). With 64 columns, the expanded meter's linear
+   --vu-i stagger reads as a travelling sine wave and its fixed cyan zone as
+   blotches — so here each column gets its own phase/speed/amplitude
+   (--vu-d/--vu-t/--vu-a, components/player.jsx) and a thin peak-hold line.
+   Transform-only (scaleY / translateY on full-height boxes), no height. */
+.consoleMini .vuMeter__bar::before {
+    top: 0;
+    height: 100%;
+    transform-origin: bottom;
+    transform: scaleY(.08);
+}
+
+/* translateY % is of this box's own height, i.e. the column's. */
+.consoleMini .vuMeter__bar::after {
+    height: 100%;
+    background: none;
+    box-shadow: none;
+    border-top: 2px solid var(--rgb-cyan);
+    transform: translateY(92%);
+}
+
+.consoleMini .vuMeterActive .vuMeter__bar::before {
+    height: 100%;
+    animation: vu-mini-bounce var(--vu-t, 1.1s) ease-in-out var(--vu-d, 0s) infinite;
+}
+
+.consoleMini .vuMeterActive .vuMeter__bar::after {
+    opacity: .85;
+    animation: vu-mini-peak var(--vu-t, 1.1s) var(--vu-d, 0s) infinite;
+}
+
+@keyframes vu-mini-bounce {
+    0%, 100% { transform: scaleY(calc(.15 * var(--vu-a, 1))); }
+    20% { transform: scaleY(calc(.9 * var(--vu-a, 1))); }
+    35% { transform: scaleY(calc(.4 * var(--vu-a, 1))); }
+    50% { transform: scaleY(calc(.7 * var(--vu-a, 1))); }
+    65% { transform: scaleY(calc(.25 * var(--vu-a, 1))); }
+    80% { transform: scaleY(calc(.55 * var(--vu-a, 1))); }
+}
+
+/* Rises with the fill (same ease-in-out, a hair above), holds at each peak,
+   then falls linearly and slowly enough to stay above the fill until the
+   next peak catches it. */
+@keyframes vu-mini-peak {
+    0% { transform: translateY(calc(100% - 17% * var(--vu-a, 1))); animation-timing-function: ease-in-out; }
+    20%, 30% { transform: translateY(calc(100% - 92% * var(--vu-a, 1))); animation-timing-function: linear; }
+    50%, 56% { transform: translateY(calc(100% - 72% * var(--vu-a, 1))); animation-timing-function: linear; }
+    80%, 86% { transform: translateY(calc(100% - 57% * var(--vu-a, 1))); animation-timing-function: linear; }
+    100% { transform: translateY(calc(100% - 17% * var(--vu-a, 1))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .consoleMini .vuMeterActive .vuMeter__bar::before {
+        transform: scaleY(calc(.55 * var(--vu-a, 1)));
+        animation: none;
+    }
+
+    .consoleMini .vuMeterActive .vuMeter__bar::after {
+        opacity: 0;
+        animation: none;
+    }
+}
+
+.consoleMini .masterTimer {
+    order: 3;
+    flex: none;
+    gap: .3rem;
+}
+
+.consoleMini .masterTimer__elapsed {
+    font-size: 1.1rem;
+}
+
+.consoleMini .masterTimer__sep,
+.consoleMini .masterTimer__total {
+    font-size: .75rem;
+}
+
+/* Left-aligned here (unlike the expanded console's centered LCD stack): in a
+   one-line bar the text starts right after the thumbnail it describes. */
+.consoleMini .metaText {
+    order: 1;
+    flex: 0 1 18rem;
+    align-items: flex-start;
+    text-align: left;
+    gap: .1rem;
+}
+
+.consoleMini .metaText h2 {
+    font-size: .6rem;
+}
+
+.consoleMini .player__title {
+    font-size: .9rem;
+}
+
+.consoleMini .player__controls__container {
+    order: 4;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex: none;
+    width: auto;
+    max-width: none;
+    margin: 0;
+}
+
+.consoleMini .button__group {
+    width: auto;
+    gap: .5rem;
+}
+
+/* In-flow spacer rendered after the page (components/modal.jsx), so the
+   fixed bar never hides the last rows of a list. Fixed to the bar's own
+   height only — see the comment on .consoleMini .iframeEngineMount above
+   for why the PiP window is deliberately NOT accounted for here too. */
+.miniSpacer {
+    height: var(--mini-player-height);
+}
+
+@media screen and (max-width: 768px) {
+    .consoleMini {
+        left: 0;
+    }
+}
+
+/* Phone width: only what fits one thumb-reachable row — thumbnail, title,
+   play/pause, expand, stop. Seeking/volume/favorite are one tap away in the
+   expanded console. The PiP window drops to exactly YouTube's 200px floor. */
+@media screen and (max-width: 700px) {
+    .consoleMini .faceplate {
+        gap: .6rem;
+        padding: .55rem .6rem 0;
+    }
+
+    .consoleMini .console__header {
+        padding: 0 .5rem;
+    }
+
+    .consoleMini .vuMeter,
+    .consoleMini .masterTimer,
+    .consoleMini .favUnit,
+    .consoleMini .seekUnit,
+    .consoleMini .volumeGroup {
+        display: none;
+    }
+
+    .consoleMini .iframeEngineMount {
+        width: 200px;
+        height: 200px;
+        right: .5rem;
     }
 }

@@ -1,10 +1,16 @@
 import '../styles/globals.css'
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import Router, { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic';
 import { SoundProvider } from '../context/libraryContext/libraryContext'
+import { NowPlayingProvider, useNowPlaying } from '../context/nowPlayingContext'
 import Loader from '../components/loader';
 import Layout from '../components/layout';
+
+// Code-split: the player (and its globe/marquee/engine code) only downloads
+// once something is actually played.
+const Modal = dynamic(() => import('../components/modal'))
 // Delay before showing the loader at all: most route changes here resolve in
 // well under this, so without the delay every navigation flashes a full-screen
 // overlay for a single frame. Once shown, closing plays its own ease-in fade
@@ -32,8 +38,14 @@ function Loading() {
   const closeTimerRef = useRef(null);
 
   useEffect(() => {
+    // Compared against the live Router singleton, not `router` from
+    // useRouter(): that one is a snapshot from Loading's last render, and
+    // after a back/forward between two /search URLs it was still stale when
+    // routeChangeComplete fired — so the show timer was never cleared and
+    // the Loader appeared after the navigation had finished, stuck for good.
     const handleStart = (url) => {
-      if (url === router.asPath) return
+      if (url === Router.asPath) return
+      clearTimeout(showTimerRef.current)
       clearTimeout(closeTimerRef.current)
       setClosing(false)
       showTimerRef.current = setTimeout(() => {
@@ -42,7 +54,7 @@ function Loading() {
       }, SHOW_DELAY_MS)
     };
     const handleComplete = (url) => {
-      if (url !== router.asPath) return
+      if (url !== Router.asPath) return
       clearTimeout(showTimerRef.current)
       if (!loadingRef.current) return
       setClosing(true)
@@ -74,6 +86,24 @@ function Loading() {
   return loading && (<Loader closing={closing} />)
 }
 
+// Lives here, outside <Layout>'s page content, so the player isn't unmounted
+// by route changes. Keyed by track id: a different track gets a fresh player
+// (engine, position, playing state), the same track keeps its instance.
+function NowPlayingHost() {
+  const { item, expanded, minimize, expand, stop } = useNowPlaying()
+  if (!item) return null
+  return (
+    <Modal
+      key={item.id}
+      item={item}
+      expanded={expanded}
+      onMinimize={minimize}
+      onExpand={expand}
+      onStop={stop}
+    />
+  )
+}
+
 function MyApp({ Component, pageProps }) {
   return (<>
     <Head>
@@ -83,14 +113,18 @@ function MyApp({ Component, pageProps }) {
       <meta name="theme-color" content="#050B05" />
     </Head>
     <SoundProvider >
-      <Loading />
+      <NowPlayingProvider>
+        <Loading />
 
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
 
-      <div className="crt-scanlines" aria-hidden="true" />
-      <div className="crt-vignette" aria-hidden="true" />
+        <NowPlayingHost />
+
+        <div className="crt-scanlines" aria-hidden="true" />
+        <div className="crt-vignette" aria-hidden="true" />
+      </NowPlayingProvider>
     </SoundProvider>
 
   </>
