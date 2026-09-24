@@ -511,6 +511,18 @@
     height: 8%;
     background: var(--phosphor-secondary);
     opacity: .5;
+    /* Only takes effect the instant .vuMeterActive's own `animation` is
+       removed (pause): the running vu-bounce/vu-mini-bounce animation
+       overrides these same properties every frame while playing, so a
+       transition declared here is inert until then — but once the
+       animation stops, the bar eases from wherever it was down to this
+       resting state instead of snapping to it, like a real VU needle
+       settling rather than being cut off. height/background-color/
+       box-shadow serve the expanded meter's bounce, transform the mini
+       meter's (see .consoleMini below) — both share this one rule. */
+    transition: height 550ms ease-out, opacity 550ms ease-out,
+        background-color 550ms ease-out, box-shadow 550ms ease-out,
+        transform 550ms ease-out;
 }
 
 .vuMeter__bar::after {
@@ -523,6 +535,8 @@
     background: var(--rgb-cyan);
     box-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
     opacity: 0;
+    /* Same handoff as ::before above, for the peak cap's own fade/position. */
+    transition: opacity 550ms ease-out, transform 550ms ease-out;
 }
 
 .vuMeterActive .vuMeter__bar::before {
