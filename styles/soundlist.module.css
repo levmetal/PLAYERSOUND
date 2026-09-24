@@ -1,5 +1,7 @@
-.soundlist__container {
+/* Search results page (components/soundList.jsx) + the track row shared by
+   search results and the library (components/soundItem.jsx). */
 
+.soundlist__container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -7,182 +9,694 @@
     background: var(--bg-grid);
     font-family: var(--font-body);
     padding-bottom: 3rem;
-
 }
 
+/* One shared column for everything on the page, capped so rows don't
+   stretch into a wide empty band between title and duration on big screens.
+   border-box: several of these carry their own padding/border (there is
+   no global box-sizing reset). */
+.controls,
+.searchlist,
+.channelGroup,
+.skeletonList,
+.statusPanel,
+.listEnd {
+    width: 85%;
+    max-width: 72rem;
+    box-sizing: border-box;
+}
 
-.soundlist__container .searchlist {
-
+/* ===================== Command bar =====================
+   Sticky, so search + sort/filter stay reachable while scrolling a long
+   list. Two decks inside one hud-frame panel: the query line (terminal
+   prompt, input, submit, live result count), then the filter strip. */
+.controls {
+    composes: pixel-depth-static from global;
+    position: sticky;
+    top: 0;
+    /* Above rows (and an open row menu, see .rowMenuOpen), below the
+       mini-player (120) and the nav (150). */
+    z-index: 100;
     display: flex;
     flex-direction: column;
     gap: .6rem;
-    margin: 1rem 0 0 0;
-    width: 85%;
-    padding: 0;
-
+    margin: 1.5rem 0 0;
+    padding: .7rem 1rem;
+    border: var(--border-crt);
+    /* background-color only — .hud-frame paints its brackets with
+       background-image, which the `background` shorthand would wipe. Opaque
+       so rows scrolling underneath don't show through. */
+    background-color: var(--bg);
+    color: var(--primarycolor);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-/* row item (search results / library / playlist tracks) */
-
-.row {
+.searchRow {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: .75rem;
+    margin: 0;
+}
+
+.prompt {
+    flex: none;
+    font-size: 1.1rem;
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+}
+
+/* Inputs stay flat/recessed — no pixel-depth. */
+.searchInput {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    background: var(--crt-black);
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--primarycolor);
+    caret-color: var(--phosphor-primary);
+    font-family: var(--font-body);
+    font-size: .95rem;
+    letter-spacing: 1px;
+    padding: .45rem .6rem;
+    transition: border-color 150ms;
+}
+
+.searchInput::placeholder {
+    color: var(--lowPrimaryColor);
+    opacity: 1;
+    text-transform: uppercase;
+}
+
+.searchInput:hover,
+.searchInput:focus {
+    border-color: var(--phosphor-primary);
+}
+
+.searchBtn {
+    composes: pixel-depth from global;
+    flex: none;
+    background: transparent;
+    border: var(--border-crt);
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    padding: .45rem .9rem;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+}
+
+.searchBtn:hover {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+.resultCount {
+    flex: none;
+    margin: 0;
+    min-width: 7.5rem;
+    text-align: right;
+    font-size: .72rem;
+    color: var(--lowPrimaryColor);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1.5rem;
+    padding-top: .6rem;
+    border-top: 1px dashed var(--phosphor-secondary);
+}
+
+.segmentGroup {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.groupLabel {
+    font-size: .68rem;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+}
+
+.segments {
+    display: flex;
+}
+
+/* A joined segmented control built on real radios (arrow keys move within
+   a group natively); the radio itself is visually hidden, the span is the
+   visible segment. Selected = full phosphor inversion, the design system's
+   active-button state — not cyan (cyan is rationed, see the 60/30/10 rule). */
+.segment {
+    position: relative;
+    cursor: pointer;
+}
+
+.segment input,
+.toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.segment span {
+    display: block;
+    padding: .28rem .6rem;
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--primarycolor);
+    font-size: .72rem;
+    white-space: nowrap;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+.segment + .segment span {
+    border-left-width: 0;
+}
+
+.segment:hover span {
+    background: var(--bgbox);
+}
+
+.segment input:checked + span {
+    background: var(--phosphor-primary);
+    border-color: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+.segment input:focus-visible + span,
+.toggle input:focus-visible + .toggleBox {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    position: relative;
+    cursor: pointer;
+    font-size: .72rem;
+    white-space: nowrap;
+}
+
+.toggleBox {
+    flex: none;
+    width: .8rem;
+    height: .8rem;
+    box-sizing: border-box;
+    border: 1px solid var(--phosphor-primary);
+    transition: background-color 150ms;
+}
+
+.toggle input:checked + .toggleBox {
+    background: var(--phosphor-primary);
+    box-shadow: var(--glow-box);
+}
+
+.resetBtn {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    padding: .28rem .4rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 150ms, color 150ms;
+}
+
+.resetBtn::before {
+    content: '[ ';
+}
+
+.resetBtn::after {
+    content: ' ]';
+}
+
+.resetBtn:hover {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+}
+
+/* ===================== Results ===================== */
+
+.searchlist {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+}
+
+/* Empty / error states — dim phosphor copy plus one action to recover. */
+.statusPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--lowPrimaryColor);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.statusTitle {
+    margin: 0;
+    font-size: .95rem;
+    color: var(--primarycolor);
+    letter-spacing: var(--letter-spacing-wide);
+    text-shadow: var(--glow-text);
+    overflow-wrap: anywhere;
+}
+
+.statusHint {
+    margin: 0;
+    font-size: .75rem;
+}
+
+.statusBtn {
+    composes: pixel-depth from global;
+    margin-top: .6rem;
+    background: transparent;
+    border: var(--border-crt);
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    padding: .45rem .9rem;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+}
+
+.statusBtn:hover {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+.channelGroup {
+    margin-top: 2rem;
+}
+
+.channelGroup__title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    margin: 0 0 .5rem;
+    padding-bottom: .3rem;
+    border-bottom: 1px solid var(--phosphor-secondary);
+    font-size: .9rem;
+    color: var(--primarycolor);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    text-shadow: var(--glow-text);
+}
+
+.channelGroup__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.channelGroup__verified {
+    flex: none;
+    font-size: .65rem;
+}
+
+.channelGroup__count {
+    flex: none;
+    font-size: .75rem;
+    color: var(--lowPrimaryColor);
+    text-shadow: none;
+}
+
+.channelGroup .searchlist {
     width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* "End of results" marker. When the iframe engine's picture-in-picture
+   window is floating over the page (mini-player + iframe engine), it also
+   reserves that window's height so the last rows can scroll up clear of it
+   — only here, at the end of a list, never page-wide.
+   data-player-state / data-pip-window come from components/modal.jsx and
+   components/player.jsx. */
+.listEnd {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    margin: 1.5rem 0 0;
+    font-size: .68rem;
+    color: var(--lowPrimaryColor);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+}
+
+.listEnd::before,
+.listEnd::after {
+    content: '';
+    flex: 1;
+    margin-top: .45em;
+    border-top: 1px dashed var(--phosphor-secondary);
+}
+
+:global(:root:has([data-player-state="mini"] [data-pip-window])) .listEnd {
+    /* The PiP window's 210px + its .75rem gap above the mini-player bar. */
+    min-height: calc(210px + .75rem);
+}
+
+/* The window floats at the right edge — keep the label on the left, clear of it. */
+:global(:root:has([data-player-state="mini"] [data-pip-window])) .listEnd::before {
+    flex: 0 0 1.5rem;
+}
+
+/* ===================== Track row =====================
+   Shared by search results and the library. Grid, so the stat/duration
+   columns line up down the list:
+   [thumb] [title + meta] [views] [uploaded] [duration] [actions]. */
+.row {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr) 6.5rem 7rem 4.75rem auto;
+    align-items: center;
+    column-gap: 1rem;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
     padding: .5rem .8rem;
     border: 1px solid transparent;
     border-bottom: 1px solid var(--phosphor-secondary);
     background: transparent;
-    transition: 200ms;
-    position: relative;
+    transition: background-color 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+/* Library rows: views/upload date were a snapshot from when the track was
+   saved, so those two columns are left out there. */
+.rowNoStats {
+    grid-template-columns: 3.5rem minmax(0, 1fr) 4.75rem auto;
 }
 
 /* Depth only shows up on hover, not at rest — at rest the row has no
    background (just the bottom divider), so there's no clean "card" shape to
-   shadow yet. Once hover gives it an opaque background, the box-shadow
-   reads as a proper raised card (combined in one declaration with the glow,
-   since box-shadow only accepts one value per rule). */
+   shadow yet. Glow + pixel shadow in one declaration (box-shadow only takes
+   one value per rule). */
 .row:hover {
     border: var(--border-crt);
     box-shadow: var(--glow-box), var(--pixel-shadow-rest);
     background: var(--bgbox);
 }
 
+/* The track loaded in the player. Phosphor, not cyan: "now playing" isn't
+   one of the three cyan accent categories (saved / current nav position /
+   keyboard focus). A lit bar on the left edge + the box fill. */
+.rowCurrent {
+    background: var(--bgbox);
+    border-color: var(--phosphor-secondary);
+    box-shadow: inset 3px 0 0 var(--phosphor-primary);
+}
+
+.rowCurrent:hover {
+    box-shadow: inset 3px 0 0 var(--phosphor-primary), var(--glow-box), var(--pixel-shadow-rest);
+}
+
+/* Lifts the row with an open playlist menu above the following rows'
+   action buttons (each .row__actions is its own z-index: 1 layer). */
+.rowMenuOpen {
+    z-index: 2;
+}
+
 .row__thumb {
     position: relative;
-    flex: none;
-    width: 3.4rem;
-    height: 3.4rem;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
     border: 1px solid var(--phosphor-secondary);
+    background: var(--phosphor-box-bg);
 }
 
 .row__thumb img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     filter: grayscale(.4) contrast(1.1);
+    transition: filter 200ms;
 }
 
-.row__playIcon {
-    position: absolute;
+.row__thumbFallback {
+    padding: 0 .2rem;
+    font-size: .5rem;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--lowPrimaryColor);
+}
+
+.row__thumbIcon {
+    position: relative;
     color: var(--phosphor-primary);
     opacity: 0;
-    transition: 200ms;
-    text-shadow: var(--glow-text);
+    transition: opacity 200ms;
 }
 
-.row__thumb:hover .row__playIcon {
+.row:hover .row__thumbIcon,
+.rowCurrent .row__thumbIcon {
     opacity: 1;
 }
 
-.row__thumb:hover img {
-    filter: grayscale(0) contrast(1) brightness(.5);
+.row:hover .row__thumb img,
+.rowCurrent .row__thumb img {
+    filter: grayscale(0) contrast(1) brightness(.45);
+}
+
+/* Duration badge over the thumbnail — mobile only, where the duration
+   column is dropped (see the ≤768px block). */
+.row__thumbDuration {
+    display: none;
 }
 
 .row__info {
     display: flex;
     flex-direction: column;
+    gap: .25rem;
     min-width: 0;
-    flex: 1;
-    gap: .2rem;
+}
+
+/* The row's one primary control. Its ::after covers the whole row (the
+   nearest positioned ancestor), so clicking anywhere on the row plays it,
+   while keyboard users get a single tab stop per row. */
+.row__primary {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.row__primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+}
+
+/* Cancels globals.css's `button:active { transform: translateY(1px) }` press
+   nudge here: a transform makes this button the containing block of its own
+   ::after, so mid-press the stretched hit area collapsed to the title and a
+   click anywhere else on the row was lost (mousedown and mouseup landed on
+   different elements). */
+.row__primary:active {
+    transform: none;
+}
+
+/* Focus ring drawn around the whole row (the ::after), not just the title. */
+.row__primary:focus-visible {
+    outline: none;
+}
+
+.row__primary:focus-visible::after {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
 }
 
 .row__title {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: .95rem;
     color: var(--primarycolor);
-    text-shadow: var(--glow-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.row__channel {
-    font-size: .75rem;
+/* Glow only on the row being pointed at / playing — not on every resting
+   title in a list of dozens (paint cost, and it flattens the hierarchy). */
+.row:hover .row__title,
+.rowCurrent .row__title {
+    text-shadow: var(--glow-text);
+}
+
+.row__meta {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: .7rem;
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--lowPrimaryColor);
-    white-space: nowrap;
+}
+
+/* The channel keeps priority over the inline stats: it never shrinks below
+   its own width (capped at 60% of the line), the stats truncate instead. */
+.row__channel {
+    flex: 0 0 auto;
+    max-width: 60%;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.row__duration {
+.row__verified {
     flex: none;
-    font-family: var(--font-digits);
+    font-size: .6rem;
+    color: var(--primarycolor);
+}
+
+.row__nowTag {
+    flex: none;
+    padding: .05rem .35rem;
+    border: 1px solid var(--phosphor-primary);
+    font-size: .6rem;
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+}
+
+/* Views/upload date inline in the meta line — only below 1024px, where the
+   stat columns are dropped. */
+.row__metaStat {
+    display: none;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row__metaStat::before {
+    content: '·';
+    margin-right: .5rem;
+}
+
+.row__stat {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: right;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    color: var(--lowPrimaryColor);
+}
+
+/* The column the list is currently sorted by, so the order can be checked
+   at a glance. */
+.row__statActive {
+    color: var(--primarycolor);
+}
+
+/* Same true 7-segment face as the player's own master timer
+   (--font-digits-7seg).
+   letter-spacing: normal, or inherited tracking splits the digits apart. */
+.row__duration {
+    justify-self: end;
+    padding: .1rem .4rem;
+    font-family: var(--font-digits-7seg);
     font-size: .8rem;
     font-variant-numeric: tabular-nums;
+    letter-spacing: normal;
+    white-space: nowrap;
     color: var(--accent);
     text-shadow: var(--glow-text-accent);
-    border: 1px solid var(--phosphor-secondary);
-    padding: .1rem .4rem;
 }
 
-.saveControls {
-    flex: none;
+/* Above the row's stretched primary button (.row__primary::after). */
+.row__actions {
     position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
+    gap: .35rem;
 }
 
-.saveControls__buttons {
-    display: flex;
-    gap: .3rem;
-}
-
-.addBtn {
+.actionBtn {
     composes: pixel-depth from global;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
     background: transparent;
     border: var(--border-crt);
     color: var(--phosphor-primary);
-    height: 2rem;
-    width: 2rem;
-    padding: .1rem;
+    font-size: 1rem;
+    cursor: pointer;
     /* Explicit list, not `200ms` shorthand — see .btn__close in
        player.module.css for why that fights .pixel-depth's own transition. */
     transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
 }
 
-.menuToggleBtn {
-    composes: pixel-depth from global;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: var(--border-crt);
-    color: var(--phosphor-primary);
-    height: 2rem;
-    width: 2rem;
-    padding: .1rem;
-    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
-}
-
-.addBtn:hover,
-.menuToggleBtn:hover {
+.actionBtn:hover,
+.actionBtnOpen {
     background: var(--phosphor-primary);
     color: var(--bg);
     box-shadow: var(--glow-box);
 }
 
-/* Accent variant: this track is already saved to Favorites. Solid cyan
-   fill instead of the plain green outline every other button uses — the
-   site's one "you saved this" state marker, same pattern as the player
-   modal's favorite button. Compound selector required to beat
-   .addBtn:hover's specificity. */
-.addBtn.addBtnActive {
+/* Saved to Favorites: solid cyan fill — the site's one "you saved this"
+   marker, same heart as the player's own favorite button. Compound selector
+   to beat .actionBtn:hover. */
+.actionBtn.favActive {
     border-color: var(--accent);
     background: var(--accent);
     color: var(--bg);
     box-shadow: var(--glow-accent);
 }
 
-.addBtn.addBtnActive:hover {
+.actionBtn.favActive:hover {
     background: transparent;
     color: var(--accent);
     box-shadow: none;
@@ -194,8 +708,8 @@
     top: 100%;
     right: 0;
     margin-top: .3rem;
-    z-index: 90;
-    background: var(--phosphor-box-bg);
+    z-index: 1;
+    background-color: var(--phosphor-box-bg);
     border: var(--border-crt);
     box-shadow: var(--glow-box);
     padding: .6rem;
@@ -204,15 +718,28 @@
     overflow-y: auto;
 }
 
-/* Context menus shouldn't animate on entrance (it just appears above), only
-   on exit — a quick ease-in fade instead of vanishing instantly. */
+/* Not enough room below (end of the list, above the mini-player). */
+.playlistMenuUp {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: .3rem;
+}
+
+/* Context menus shouldn't animate on entrance (it just appears), only on
+   exit — a quick ease-in fade instead of vanishing instantly. */
 .playlistMenuClosing {
     animation: playlist-menu-out 120ms ease-in forwards;
 }
 
 @keyframes playlist-menu-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -270,80 +797,211 @@
     color: var(--bg);
 }
 
-
-/* search controls (sort / duration filter / group by channel) */
-.controls {
-    composes: pixel-depth-static from global;
+/* ===================== Loading skeleton =====================
+   Mirrors the row's geometry (3.5rem thumb, same padding/divider) so real
+   results don't visibly jump in size once they swap in. */
+.skeletonList {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: center;
-    width: 85%;
-    margin: 1.5rem 0 0 0;
-    padding: .6rem .8rem;
-    border: var(--border-crt);
-    color: var(--primarycolor);
-    font-size: .8rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    flex-direction: column;
+    gap: .6rem;
+    margin-top: 1rem;
 }
 
-.controls label {
+.skeletonRow {
     display: flex;
     align-items: center;
-    gap: .4rem;
-}
-
-.controls select {
-    background: var(--bg);
-    color: var(--primarycolor);
-    border: 1px solid var(--phosphor-secondary);
-    font-family: var(--font-body);
-    text-transform: uppercase;
-    padding: .2rem .4rem;
-}
-
-.groupToggle {
-    cursor: pointer;
-}
-
-.channelGroup {
-    width: 85%;
-    margin-top: 2rem;
-}
-
-.channelGroup__title {
-    color: var(--primarycolor);
-    text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-wide);
-    text-shadow: var(--glow-text);
-    margin-bottom: .5rem;
+    gap: 1rem;
+    padding: .5rem .8rem;
     border-bottom: 1px solid var(--phosphor-secondary);
-    padding-bottom: .3rem;
 }
 
-.channelGroup .searchlist {
-    margin: 0;
-    width: 100%;
+.skeletonThumb {
+    flex: none;
+    width: 3.5rem;
+    height: 3.5rem;
+    box-sizing: border-box;
+    border: 1px solid var(--phosphor-secondary);
+    background: var(--phosphor-box-bg);
 }
 
-@media screen and (max-width: 1040px) {
-    .controls {
-        width: 100%;
-        justify-content: center;
+.skeletonLines {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    flex: 1;
+}
+
+.skeletonLine {
+    height: .7rem;
+    background: var(--phosphor-box-bg);
+    border: 1px solid var(--phosphor-secondary);
+}
+
+.skeletonLineShort {
+    width: 40%;
+}
+
+.skeletonThumb,
+.skeletonLine {
+    animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+    0%, 100% { opacity: .35; }
+    50% { opacity: .85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeletonThumb,
+    .skeletonLine {
+        animation: none;
+        opacity: .5;
     }
 }
 
-/* Below 768px the nav is a top bar, not a left rail
-   (docs/design/UX_FLOW.md) — reserve its height so the first row of
-   results/controls doesn't render underneath it. Consolidated with the
-   duration-badge tweak that used to sit at its own 650px breakpoint. */
+/* ===================== Breakpoints ===================== */
+
+/* Tablet: the two stat columns fold into the meta line. */
+@media screen and (max-width: 1023px) {
+    .row {
+        grid-template-columns: 3.5rem minmax(0, 1fr) 4.75rem auto;
+    }
+
+    .row__stat {
+        display: none;
+    }
+
+    .row__metaStat {
+        display: inline;
+    }
+}
+
+/* Below 768px the nav is a fixed top bar, not a left rail
+   — reserve its height, and stick the command bar
+   just under it instead of at the very top. */
 @media screen and (max-width: 768px) {
     .soundlist__container {
         padding-top: var(--mobile-nav-height);
     }
 
+    .searchlist,
+    .channelGroup,
+    .skeletonList,
+    .statusPanel,
+    .listEnd {
+        width: 100%;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Full-bleed and flush under the nav: no side borders, no pixel shadow
+       (it would sit against the viewport edge). */
+    .controls {
+        top: var(--mobile-nav-height);
+        width: 100%;
+        margin-top: 0;
+        padding: .6rem 1rem;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+    }
+
+    .searchRow {
+        gap: .5rem;
+    }
+
+    .searchBtn {
+        padding: .45rem .6rem;
+    }
+
+    .resultCount {
+        min-width: 0;
+        font-size: .65rem;
+    }
+
+    /* One swipeable strip instead of wrapping into three rows of chips; the
+       right-edge fade hints there's more, and the end padding lets the last
+       chip scroll clear of it. */
+    .filterRow {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        gap: 1.25rem;
+        padding-bottom: .15rem;
+        padding-right: 2rem;
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    }
+
+    .filterRow::-webkit-scrollbar {
+        display: none;
+    }
+
+    .segmentGroup,
+    .toggle,
+    .resetBtn {
+        flex: none;
+    }
+
+    .row {
+        grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+        column-gap: .75rem;
+        padding: .6rem;
+    }
+
+    .rowNoStats {
+        grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    }
+
     .row__duration {
         display: none;
+    }
+
+    .row__thumbDuration {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: .05rem .2rem;
+        background: var(--crt-black);
+        font-family: var(--font-digits-7seg);
+        font-size: .5rem;
+        letter-spacing: normal;
+        color: var(--accent);
+        text-shadow: var(--glow-text-accent);
+    }
+
+    .row__title {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: .9rem;
+    }
+
+    /* Touch-sized (44px). */
+    .actionBtn {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+}
+
+/* Narrow phones: stack the two buttons so the title keeps enough width, and
+   let the stats wrap under the channel instead of truncating to "438… · 3 YE…"
+   (the row is already as tall as the stacked buttons). */
+@media screen and (max-width: 480px) {
+    .row__actions {
+        flex-direction: column;
+        gap: .4rem;
+    }
+
+    .row__meta {
+        flex-wrap: wrap;
+        row-gap: .15rem;
+    }
+
+    .row__metaStat {
+        flex: none;
     }
 }
