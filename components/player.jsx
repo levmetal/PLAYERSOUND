@@ -31,6 +31,12 @@ const VU_BARS = Array.from({ length: 64 }, (_, i) => {
     };
 });
 
+// How long the meter keeps bouncing after pause before it's allowed to stop —
+// matches .vuMeterFading's transition-duration in styles/player.module.css,
+// which is what actually makes the shutdown look gradual (see the effect
+// below for why a CSS-only version of this doesn't work).
+const VU_FADE_MS = 420;
+
 const Player = ({ item }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
@@ -50,6 +56,33 @@ const Player = ({ item }) => {
         metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
     });
     const { playing } = engine;
+
+    // Keeps the VU meter's bounce/peak animation alive for VU_FADE_MS after
+    // pause, instead of stopping it the instant `playing` goes false. Tried
+    // the obvious CSS-only version first — a transition on the bar's idle
+    // rule, meant to take over the moment vuMeterActive's `animation` is
+    // removed — and verified with transitionrun/transitionstart/transitionend
+    // listeners that it never actually fires: a browser doesn't treat a
+    // property reverting because its animation was removed as a transition-
+    // triggering change, so the bars were snapping to idle every time
+    // regardless of what transition was declared. Keeping the animation
+    // running while a sibling class fades the whole meter's opacity down
+    // (see .vuMeterFading) sidesteps that entirely — opacity is never
+    // touched by vu-bounce/vu-mini-bounce, so its transition is a plain,
+    // uncontested one — and doubles as cover for the moment the animation
+    // does finally stop: by then the meter is dim enough that the height
+    // snapping back to its idle 8% is no longer visible.
+    const [fading, setFading] = useState(false);
+    useEffect(() => {
+        if (playing) {
+            setFading(false);
+            return;
+        }
+        setFading(true);
+        const timer = setTimeout(() => setFading(false), VU_FADE_MS);
+        return () => clearTimeout(timer);
+    }, [playing]);
+    const vuBouncing = playing || fading;
 
     // Last whole second pushed into `currentTime` state — see the frame loop below.
     const lastSecondRef = useRef(0);
@@ -194,7 +227,11 @@ const Player = ({ item }) => {
         {windowContent}
         <div className={`${styles.player__panel} hud-frame`}>
             <div
-                className={playing ? `${styles.vuMeter} ${styles.vuMeterActive}` : styles.vuMeter}
+                className={[
+                    styles.vuMeter,
+                    vuBouncing && styles.vuMeterActive,
+                    fading && styles.vuMeterFading,
+                ].filter(Boolean).join(' ')}
                 aria-hidden="true"
             >
                 {VU_BARS.map((vars, i) => (

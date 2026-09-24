@@ -476,13 +476,37 @@
    bars glow in the primary tone and bounce, each staggered via --vu-i so they
    don't move in lockstep. The peak cap borrows the site's one existing accent
    (cyan) for a momentary flash, the same way it's already used for the seek
-   thumb below — not a new resting-state color. */
+   thumb below — not a new resting-state color.
+   What makes pause look gradual instead of an instant cutoff is
+   .vuMeterFading below, not a transition on the bars themselves — see its
+   comment, and the one on VU_FADE_MS in components/player.jsx, for why. */
 .vuMeter {
     display: flex;
     align-items: flex-end;
     gap: 3px;
     height: 1.6rem;
     padding: 0 .1rem;
+    /* Reveal side of the fade below, once .vuMeterFading is lifted —
+       ease-out: arrives fast, settles gently. */
+    transition: opacity 320ms ease-out;
+}
+
+/* Dims the whole meter toward off while vu-bounce/vu-mini-bounce keep
+   bouncing underneath — components/player.jsx keeps .vuMeterActive applied
+   for a short window after pause specifically so they do. opacity isn't a
+   property either keyframe touches, so this is a plain, uncontested
+   transition rather than one fighting a running animation on the same
+   property, the way a transition on the bars' own height/opacity was tried
+   first and (verified with transitionrun/transitionend listeners) never
+   actually fired: removing a CSS animation doesn't reliably trigger a
+   transition back to the property's static value. By the time the fade
+   timer clears this class and the animation is actually removed, the meter
+   is already dim enough that the bars snapping back to their idle height
+   underneath isn't visible. ease-in: exits build momentum, they don't ease
+   in gently. */
+.vuMeterFading {
+    opacity: .2;
+    transition: opacity 420ms ease-in;
 }
 
 .vuMeter__bar {
@@ -501,7 +525,8 @@
    a paused vu-bounce still freezes on whatever frame each bar's individual
    --vu-i delay landed on, which reads as random clutter, not "off". Applying
    the animation only under .vuMeterActive keeps idle a clean, uniform, flat
-   meter, the way a real VU meter rests at zero with no signal. */
+   meter, the way a real VU meter rests at zero with no signal — this is why
+   the bars themselves don't transition (see .vuMeterFading above instead). */
 .vuMeter__bar::before {
     content: '';
     position: absolute;
@@ -511,23 +536,6 @@
     height: 8%;
     background: var(--phosphor-secondary);
     opacity: .5;
-    /* Only takes effect the instant .vuMeterActive's own `animation` is
-       removed (pause): the running vu-bounce/vu-mini-bounce animation
-       overrides these same properties every frame while playing, so a
-       transition declared here is inert until then — but once the
-       animation stops, the bar eases from wherever it was down to this
-       resting state instead of snapping to it, like a real VU needle
-       settling rather than being cut off. height/background-color/
-       box-shadow serve the expanded meter's bounce, transform the mini
-       meter's (see .consoleMini below) — both share this one rule.
-       ease-in-out, not ease-out: ease-out's fast start means most of the
-       drop happens in the first ~150ms and the rest is an imperceptible
-       crawl, which read as an instant cutoff, not a decay. ease-in-out
-       eases into the motion too, so the whole 900ms reads as one smooth
-       settle. */
-    transition: height 900ms ease-in-out, opacity 900ms ease-in-out,
-        background-color 900ms ease-in-out, box-shadow 900ms ease-in-out,
-        transform 900ms ease-in-out;
 }
 
 .vuMeter__bar::after {
@@ -540,8 +548,6 @@
     background: var(--rgb-cyan);
     box-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
     opacity: 0;
-    /* Same handoff as ::before above, for the peak cap's own fade/position. */
-    transition: opacity 900ms ease-in-out, transform 900ms ease-in-out;
 }
 
 .vuMeterActive .vuMeter__bar::before {
