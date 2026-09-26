@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <>
     <Head>
-       <meta name="description" content="Find any YouTube audio without ads using our easy-to-use search app. Enjoy your favorite songs and create custom playlists uninterrupted. Try our app today and enjoy an uninterrupted online audio experience!"/>
+       <meta name="description" content="PlayerSound is a no-login audio deck for YouTube. Search music or podcasts, keep the signal playing while you browse, and save playlists right in your browser."/>
        <meta name="google-site-verification" content="_Y-WmLWOjBhsxYjfH08TLdnHZ0-SoiKZmeJ9IelQI0g" />
       </Head>
         <main className={styles.container}>
@@ -39,9 +39,10 @@ export default function Home() {
             <div className={styles.infoHero}>
               <div className={styles.mainTitle}>
                 <p className={styles.eyebrow}>SYSTEM_LOG // HOME</p>
-                <h1 className={styles.container__title}>Music,Podcast or whatever you want</h1>
-                <h2 className={styles.container__subtitle}>Search every sound from this app to
-                  enjoy your favorites podcasts, web show or music whitout ads
+                <h1 className={styles.container__title}>Music, podcasts or whatever you want</h1>
+                <h2 className={styles.container__subtitle}>
+                  Tune in to any song, podcast or live set on YouTube with no feed and
+                  no account. Your playlists stay saved in this browser.
                 </h2>
               </div>
 
@@ -56,7 +57,7 @@ export default function Home() {
                   className={styles.form__input}
                   value={search}
                   type="text"
-                  placeholder='Lets Rock !'
+                  placeholder="Let's rock!"
                   onChange={e => setSearch(e.target.value)}
                 />
                 <button className={styles.form__button} type="submit" >Search</button>

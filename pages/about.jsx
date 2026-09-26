@@ -11,14 +11,16 @@ const About = () => {
                     <h1 className={styles.title}>PlayerSound</h1>
 
                     <p className={styles.content}>
-                        Search any sound, stream it instantly, and save it to a playlist —
-                        no ad breaks, no catalog to browse first.
+                        PlayerSound strips YouTube down to the one channel you came for: the
+                        audio. Search any sound, start playing and keep browsing while it runs.
                     </p>
 
                     <ul className={styles.specList}>
-                        <li><span>SEARCH</span> — pull tracks straight from the source, ad-free.</li>
-                        <li><span>PLAYLISTS</span> — save favorites and build custom playlists.</li>
-                        <li><span>ANONYMOUS</span> — no login. Everything stays in this browser.</li>
+                        <li><span>SEARCH</span>Find music, podcasts and live sets, sorted by length, with verified channels marked.</li>
+                        <li><span>NON-STOP</span>Playback follows you across pages in a docked mini-player.</li>
+                        <li><span>PLAYLISTS</span>Favorites and custom playlists are stored locally in this browser.</li>
+                        <li><span>ANONYMOUS</span>No login, no feed and no recommendations pulling you off-frequency.</li>
+                        <li><span>LOCAL MODE</span>Run the repo on your own machine for a direct audio stream with no ads and lock-screen controls.</li>
                     </ul>
 
                     <footer className={styles.footer}>

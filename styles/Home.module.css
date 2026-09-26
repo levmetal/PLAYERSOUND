@@ -126,6 +126,8 @@
     letter-spacing: 2px;
     color: var(--primarycolor);
     text-shadow: var(--glow-text);
+    /* Evens out the line lengths so the last word never sits alone. */
+    text-wrap: balance;
 }
 
 .container__title:hover {
@@ -134,9 +136,14 @@
 
 .container__subtitle {
     color: var(--lowPrimaryColor);
-    font-size: 1.5vw;
+    font-size: max(1rem, 1.5vw);
     font-weight: 300;
     line-height: 140%;
+    /* Reset the browser's default h2 margins, which stacked on top of
+       .infoHero's gap and left a hole above the search form. */
+    margin: 1.25rem 0 0;
+    max-width: 46ch;
+    text-wrap: pretty;
 }
 
 /* Shifts the whole frame up (and slightly left) as one rigid unit — height

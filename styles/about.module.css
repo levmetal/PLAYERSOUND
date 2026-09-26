@@ -1,7 +1,7 @@
 .container {
     display: flex;
     background: var(--bg-grid);
-    height: 100dvh;
+    min-height: 100dvh;
     width: 100vw;
     position: relative;
 }
@@ -11,7 +11,8 @@
     overflow: hidden;
     background: var(--bgbox);
     width: 35%;
-    height: 100dvh;
+    top: 0;
+    bottom: 0;
     right: 0;
 }
 
@@ -49,7 +50,7 @@
 
     position: relative;
     margin-left: 12%;
-    height: 100dvh;
+    padding-bottom: 4rem;
 
     width: 60%;
     z-index: 1;
@@ -107,7 +108,11 @@
     color: var(--lowPrimaryColor);
 }
 
+/* Label on its own line above the description, so no separator
+   character is needed between them. */
 .specList span {
+    display: block;
+    margin-bottom: .2rem;
     color: var(--primarycolor);
     text-shadow: var(--glow-text);
     letter-spacing: 1px;
@@ -116,11 +121,9 @@
 .footer {
     display: flex;
     justify-content: flex-start;
-    margin-top: 3rem;
+    margin-top: 2.5rem;
     align-items: center;
     gap: 1rem;
-    position: absolute;
-    bottom: 10%;
 }
 
 .button {

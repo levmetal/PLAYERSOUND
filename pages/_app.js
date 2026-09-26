@@ -109,7 +109,7 @@ function MyApp({ Component, pageProps }) {
     <Head>
       <title>PlayerSound</title>
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-      <meta name="keywords" content="music, streaming, without ads"></meta>
+      <meta name="keywords" content="music, podcasts, youtube audio, playlists, no login"></meta>
       <meta name="theme-color" content="#050B05" />
     </Head>
     <SoundProvider >
