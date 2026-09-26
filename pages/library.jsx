@@ -1,10 +1,12 @@
 import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
 import { useRef, useState } from "react";
-import { FaPlay } from "react-icons/fa";
+import { FaPlay, FaRandom } from "react-icons/fa";
+import { MdRadio } from "react-icons/md";
 import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libraryContext/libraryContext";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import { toExport, parseImport, mergePlaylists } from "../core/library/exportFormat";
+import shuffle from "../core/queue/shuffle";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 
@@ -31,16 +33,21 @@ const Library = () => {
 
     const playlists = usePlaylists()
     const dispatch = useDispatchContext()
-    const { playQueue } = useNowPlaying()
+    const { playQueue, startPlaylistRadio, radio } = useNowPlaying()
     const [selectedId, setSelectedId] = useState(FAVORITES_ID)
     const [newPlaylistName, setNewPlaylistName] = useState("")
     const [backupStatus, setBackupStatus] = useState("")
     const importInputRef = useRef(null)
     const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedId) ?? playlists[0]
+    const isEmpty = selectedPlaylist.tracks.length === 0
 
     // The whole playlist is the queue, from the first track or the clicked one.
     const playFrom = (index) => {
         playQueue(selectedPlaylist.tracks, index, { type: 'playlist', label: selectedPlaylist.name })
+    }
+
+    const playShuffled = () => {
+        playQueue(shuffle(selectedPlaylist.tracks, Math.random), 0, { type: 'playlist', label: `${selectedPlaylist.name} · shuffled` })
     }
 
     const createPlaylist = (e) => {
@@ -129,14 +136,30 @@ const Library = () => {
                             ({selectedPlaylist.tracks.length} {selectedPlaylist.tracks.length === 1 ? 'track' : 'tracks'})
                         </span>
                     </h2>
-                    <button
-                        type="button"
-                        className={styles.playAll}
-                        onClick={() => playFrom(0)}
-                        disabled={selectedPlaylist.tracks.length === 0}
-                    >
-                        <FaPlay aria-hidden="true" /> Play all
-                    </button>
+                    <div className={styles.playlistActions}>
+                        <button
+                            type="button"
+                            className={styles.playAll}
+                            onClick={() => playFrom(0)}
+                            disabled={isEmpty}
+                        >
+                            <FaPlay aria-hidden="true" /> Play all
+                        </button>
+                        <button type="button" className={styles.playAll} onClick={playShuffled} disabled={isEmpty}>
+                            <FaRandom aria-hidden="true" /> Shuffle
+                        </button>
+                        {radio.status !== 'unavailable' && (
+                            <button
+                                type="button"
+                                className={styles.playAll}
+                                onClick={() => startPlaylistRadio(selectedPlaylist.tracks, selectedPlaylist.name)}
+                                disabled={isEmpty}
+                                title="Play tracks like the ones in this playlist"
+                            >
+                                <MdRadio aria-hidden="true" /> Radio
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <ul className={styles.list__container}>

@@ -147,6 +147,13 @@
     white-space: nowrap;
 }
 
+.playlistActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+
 .playAll {
     composes: pixel-depth from global;
     flex: none;
