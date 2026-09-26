@@ -31,3 +31,11 @@ test('an unknown capability is never granted', () => {
 test('exposes the search service', () => {
     assert.equal(typeof createContainer({ edition: 'public' }).search.search, 'function')
 })
+
+test('uses the in-memory cache outside Vercel', () => {
+    assert.equal(createContainer({ edition: 'public', vercel: false }).cacheKind, 'memory')
+})
+
+test('uses the Vercel Runtime Cache on Vercel', () => {
+    assert.equal(createContainer({ edition: 'public', vercel: true }).cacheKind, 'runtime')
+})
