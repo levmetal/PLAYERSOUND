@@ -172,6 +172,93 @@
     color: var(--bg);
 }
 
+.btn__close:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+/* Radio on is a state, so it takes the cyan accent (like a saved ♥). */
+.btn__close.radioOn {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: var(--glow-accent);
+}
+
+.btn__close.radioOn:hover {
+    background: transparent;
+    color: var(--accent);
+}
+
+/* First-run tip, hung under the header's buttons (above them in the mini). */
+.console__headerActions {
+    position: relative;
+}
+
+.radioHint {
+    composes: pixel-depth-static from global;
+    position: absolute;
+    top: calc(100% + .5rem);
+    right: 0;
+    z-index: 2;
+    width: 17rem;
+    padding: .6rem .7rem;
+    background-color: var(--phosphor-box-bg);
+    border: var(--border-crt);
+    box-shadow: var(--glow-box);
+    text-transform: none;
+    letter-spacing: normal;
+    text-shadow: none;
+}
+
+.radioHint p {
+    margin: 0 0 .5rem;
+    font-size: .8rem;
+    line-height: 1.4;
+}
+
+.radioHint button,
+.handoff button {
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .15rem .6rem;
+    cursor: pointer;
+}
+
+.radioHint button:hover,
+.handoff button:hover {
+    background: var(--primarycolor);
+    color: var(--bg);
+}
+
+/* "Your queue ended — radio from … continues." — stays for that track. */
+.handoff {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .4rem 1.2rem;
+    border-bottom: 1px solid var(--phosphor-secondary);
+    color: var(--phosphor-primary);
+    font-size: .8rem;
+}
+
+.handoff span {
+    flex: 1;
+    min-width: 0;
+}
+
+.handoff button:last-child {
+    display: flex;
+    align-items: center;
+    border: none;
+    padding: .2rem;
+}
+
 /* Deliberate exception to the monochrome-thumbnail treatment used
    everywhere else (search rows, about/home hero art): this is the one
    "screen" you're meant to sit and stare at, so it keeps the track art's
@@ -384,6 +471,39 @@
    .metaText centers its children (`align-items: center`) instead of
    stretching them — without an explicit width this would shrink-to-fit its
    own content instead of the column's actual available space. */
+/* "📻 Similar to Digital Love · night, synthwave · Last.fm" under a radio
+   track's title. */
+.reasonLine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    width: 100%;
+    margin: .25rem 0 0;
+    font-size: .75rem;
+    color: var(--phosphor-primary);
+}
+
+.reasonLine svg {
+    flex: none;
+    color: var(--accent);
+}
+
+.reasonLine__text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reasonLine a {
+    flex: none;
+    color: var(--phosphor-secondary-alt);
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .metaText h2 {
     font-size: .85rem;
     margin: 0;
@@ -1180,6 +1300,34 @@
 
 .consoleMini .metaText h2 {
     font-size: .6rem;
+}
+
+/* The mini has room for two lines: a radio track's reason replaces the channel. */
+.consoleMini .metaTextReason h2 {
+    display: none;
+}
+
+.consoleMini .reasonLine {
+    order: -1;
+    justify-content: flex-start;
+    margin: 0;
+    font-size: .6rem;
+}
+
+.consoleMini .radioHint {
+    top: auto;
+    bottom: calc(100% + .6rem);
+}
+
+.consoleMini .handoff {
+    position: absolute;
+    bottom: calc(100% + .4rem);
+    left: .9rem;
+    max-width: min(34rem, calc(100% - 1.8rem));
+    padding: .25rem .6rem;
+    background-color: var(--phosphor-box-bg);
+    border: var(--border-crt);
+    box-shadow: var(--glow-box);
 }
 
 .consoleMini .player__title {

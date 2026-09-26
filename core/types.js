@@ -24,15 +24,36 @@
  */
 
 /**
+ * Why radio picked a track: the seed it resembles (null for tag radio) and
+ * up to 3 tags both share.
+ * @typedef {Object} Reason
+ * @property {string | null} seed
+ * @property {string[]} sharedTags
+ */
+
+/**
+ * A ranked suggestion as /api/discover returns it; `video` is null until
+ * it's been matched to a playable upload.
+ * @typedef {Object} RadioCandidate
+ * @property {string} artist
+ * @property {string} title
+ * @property {number} score
+ * @property {Reason} reason
+ * @property {Video | null} video
+ */
+
+/**
  * @typedef {Object} QueueItem
  * @property {Video} video
- * @property {'user' | 'radio'} origin   only 'user' until radio exists
+ * @property {'user' | 'radio'} origin
+ * @property {Reason} [reason]                          radio items only
+ * @property {{ artist: string, title: string }} [track] radio items only
  */
 
 /**
  * Where the queue came from, for the player's header readout.
  * @typedef {Object} QueueSource
- * @property {'track' | 'search' | 'playlist'} type
+ * @property {'track' | 'search' | 'playlist' | 'radio'} type
  * @property {string} label
  */
 
@@ -43,6 +64,9 @@
  * @property {QueueSource | null} source
  * @property {1 | -1} direction      last move: 1 forward (next, auto-advance, new list), -1 back
  * @property {string[]} unplayable   ids that failed to play in this queue
+ * @property {number} generation     bumped per new queue; radio results carry the one they were asked for
+ * @property {{ enabled: boolean, seeds: Video[], pending: RadioCandidate[], loading: boolean,
+ *   status: 'idle' | 'unidentified' | 'exhausted' | 'unavailable', retryAt: number | null }} radio
  */
 
 export {}

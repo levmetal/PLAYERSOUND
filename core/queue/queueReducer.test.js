@@ -19,7 +19,10 @@ const playList = (list, startIndex, source = SEARCH) =>
     queueReducer(initialQueueState, { type: 'PLAY_LIST', payload: { videos: list, startIndex, source } })
 
 test('initial state is empty with nothing current', () => {
-    assert.deepEqual(initialQueueState, { items: [], index: -1, source: null, direction: 1, unplayable: [] })
+    assert.deepEqual(initialQueueState, {
+        items: [], index: -1, source: null, direction: 1, unplayable: [], generation: 0,
+        radio: { enabled: true, seeds: [], pending: [], loading: false, status: 'idle', retryAt: null },
+    })
     assert.equal(currentVideo(initialQueueState), null)
     assert.equal(hasNext(initialQueueState), false)
     assert.equal(hasPrev(initialQueueState), false)
@@ -78,9 +81,16 @@ test('PREV on the first item returns the same state object', () => {
     assert.equal(queueReducer(state, { type: 'PREV' }), state)
 })
 
+// Reset = the initial state, except the generation keeps counting up (so a
+// radio batch for the old queue can't land in the next one).
+const assertReset = (state, before) => {
+    assert.deepEqual({ ...state, generation: 0 }, initialQueueState)
+    assert.ok(state.generation > before.generation)
+}
+
 test('PLAY_LIST with no videos resets to the initial state', () => {
-    const state = queueReducer(playList([A, B], 1), { type: 'PLAY_LIST', payload: { videos: [], startIndex: 0, source: SEARCH } })
-    assert.deepEqual(state, initialQueueState)
+    const before = playList([A, B], 1)
+    assertReset(queueReducer(before, { type: 'PLAY_LIST', payload: { videos: [], startIndex: 0, source: SEARCH } }), before)
 })
 
 test('PLAY_LIST clamps an out-of-range start index', () => {
@@ -98,7 +108,8 @@ test('PLAY_LIST copies the list, so later changes to it do not leak in', () => {
 })
 
 test('CLEAR resets to the initial state', () => {
-    assert.deepEqual(queueReducer(playList([A, B], 1), { type: 'CLEAR' }), initialQueueState)
+    const before = playList([A, B], 1)
+    assertReset(queueReducer(before, { type: 'CLEAR' }), before)
 })
 
 test('an unknown action returns the same state object', () => {

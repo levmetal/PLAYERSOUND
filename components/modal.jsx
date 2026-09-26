@@ -4,13 +4,14 @@ import Player from '../components/player'
 import GlobePanel from '../components/globePanel'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
+import { MdRadio } from 'react-icons/md'
 
 // Matches the console-out/backdrop-out keyframe durations in player.module.css —
 // keeps the expanded console on screen long enough to play its own ease-in
 // exit before it collapses into the mini-player (or goes away on stop).
 const CLOSE_ANIMATION_MS = 200
 
-const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST' }
+const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'RADIO' }
 const pad2 = (n) => String(n).padStart(2, '0')
 
 // "NOW PLAYING // PLAYLIST: FAVORITES // TRK 03/12" for a queue, the plain
@@ -31,7 +32,9 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled
 // YouTube iframe inside Player keep playing untouched across the switch
 // (moving an iframe in the DOM would reload it).
 const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
-    const { source, position, notice } = useNowPlaying()
+    const {
+        source, position, notice, handoff, current, radio, radioHint, setRadio, dismissRadioHint, dismissHandoff,
+    } = useNowPlaying()
     const [closing, setClosing] = useState(false)
     const closingRef = useRef(false)
     const dialogRef = useRef(null)
@@ -123,8 +126,29 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                             <span className={styles.console__headerLabel} aria-hidden="true">{headerLabel(source, position)}</span>
                         )}
                         {/* Always mounted, so screen readers hear each new notice. */}
-                        <span className="sr-only" role="status" aria-live="polite">{notice ?? ''}</span>
+                        <span className="sr-only" role="status" aria-live="polite">{notice ?? handoff ?? ''}</span>
                         <div className={styles.console__headerActions}>
+                            <button
+                                className={radio.enabled ? `${styles.btn__close} ${styles.radioOn}` : styles.btn__close}
+                                onClick={() => setRadio(!radio.enabled)}
+                                disabled={radio.status === 'unavailable'}
+                                aria-pressed={radio.enabled}
+                                aria-label="Radio"
+                                title={radio.status === 'unavailable'
+                                    ? "Radio isn't available on this server"
+                                    : radio.enabled ? 'Radio on: similar tracks play when your queue ends' : 'Radio off: playback stops when your queue ends'}
+                            >
+                                <MdRadio aria-hidden="true" />
+                            </button>
+                            {radioHint && (
+                                <div className={`${styles.radioHint} hud-frame`} role="note">
+                                    <p>
+                                        Radio is on: when your queue ends, similar tracks keep playing,
+                                        each showing why it was picked. Turn it off here anytime.
+                                    </p>
+                                    <button type="button" onClick={dismissRadioHint}>Got it</button>
+                                </div>
+                            )}
                             <button
                                 ref={toggleButtonRef}
                                 className={styles.btn__close}
@@ -144,6 +168,16 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                             </button>
                         </div>
                     </div>
+
+                    {handoff && !notice && (
+                        <div className={styles.handoff}>
+                            <span>{handoff}</span>
+                            <button type="button" onClick={() => setRadio(false)}>Turn off</button>
+                            <button type="button" onClick={dismissHandoff} aria-label="Dismiss">
+                                <FaTimes aria-hidden="true" />
+                            </button>
+                        </div>
+                    )}
 
                     {/* Grid, not stacked rows (see .faceplate in player.module.css):
                         [video/thumbnail] [transport] [globe] side by side, with the
@@ -176,6 +210,13 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                                 <a href="https://github.com/levmetal/PLAYERSOUND" target="_blank" rel="noreferrer">
                                     run the repo locally for no ads
                                 </a>
+                                {' '}·{' '}
+                            </span>
+                        )}
+                        {current?.origin === 'radio' && (
+                            // Required by the Last.fm API terms wherever their data is shown.
+                            <span>
+                                <a href="https://www.last.fm" target="_blank" rel="noreferrer">Powered by AudioScrobbler</a>
                                 {' '}·{' '}
                             </span>
                         )}

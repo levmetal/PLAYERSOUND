@@ -1,16 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { get, set } from 'idb-keyval'
 import queueReducer, {
     initialQueueState,
     currentVideo,
+    currentItem,
     nextVideo,
     prevVideo,
     queuePosition,
     hasNext,
     hasPrev,
 } from "../core/queue/queueReducer";
+import { radioRequest, radioHandoff, pickSeeds } from "../core/queue/radio";
+import { discover, resolveCandidates } from "../utils/discoverClient";
 
 // How long "Skipped …" stays in the console header.
 const NOTICE_MS = 4000
+
+const SETTINGS_KEY = 'playersound:settings'
+const DEFAULT_SETTINGS = { version: 1, radio: true, radioHintSeen: false }
 
 // App-wide "now playing" state, mounted once in pages/_app.js above every
 // page. The player itself (components/modal.jsx) renders from here, not from
@@ -19,7 +26,8 @@ const NOTICE_MS = 4000
 //
 // What plays is a queue (core/queue/queueReducer.js): the list a track was
 // started from — the visible search results, or a playlist — so ⏮/⏭ and
-// auto-advance walk that list.
+// auto-advance walk that list. With radio on, suggestions are fetched here
+// whenever core/queue/radio.js says the queue is running low.
 //
 // `expanded` switches the same mounted player between the full console
 // (modal) and the docked mini-player; it never remounts the player, so the
@@ -31,7 +39,13 @@ export function NowPlayingProvider({ children }) {
     const [queue, dispatch] = useReducer(queueReducer, initialQueueState)
     const [expanded, setExpanded] = useState(false)
     const [notice, setNotice] = useState(null)
+    // "Your queue ended — radio from … continues", until the track changes.
+    const [handoff, setHandoff] = useState(null)
+    const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+    const settingsLoaded = useRef(false)
+    const [clock, setClock] = useState(0)
     const queueRef = useRef(queue)
+    const previousQueue = useRef(queue)
     queueRef.current = queue
 
     useEffect(() => {
@@ -39,6 +53,62 @@ export function NowPlayingProvider({ children }) {
         const timer = setTimeout(() => setNotice(null), NOTICE_MS)
         return () => clearTimeout(timer)
     }, [notice])
+
+    // Settings: read once, then written on every change.
+    useEffect(() => {
+        get(SETTINGS_KEY)
+            .then((stored) => {
+                if (stored?.version !== 1) return
+                setSettings((current) => ({ ...current, ...stored }))
+                dispatch({ type: 'SET_RADIO', payload: { enabled: stored.radio !== false } })
+            })
+            .catch(() => {})
+            .finally(() => { settingsLoaded.current = true })
+    }, [])
+    useEffect(() => {
+        if (settingsLoaded.current) set(SETTINGS_KEY, settings).catch(() => {})
+    }, [settings])
+
+    // Radio: whenever the queue changes (or a wait runs out), ask what to fetch.
+    useEffect(() => {
+        const request = radioRequest(queue, Date.now())
+        if (!request) return
+        const { generation } = request
+        dispatch({ type: 'RADIO_REQUESTED', payload: { generation } })
+        const call = request.kind === 'resolve'
+            ? resolveCandidates({ candidates: request.candidates, count: request.count, exclude: request.exclude })
+            : discover({ seeds: request.seeds, exclude: request.exclude })
+        call.then((result) => {
+            const now = Date.now()
+            if (!result.ok) {
+                dispatch({ type: 'RADIO_FAILED', payload: { generation, now, unavailable: result.unavailable } })
+            } else if (request.kind === 'resolve') {
+                dispatch({ type: 'RADIO_RESOLVED', payload: {
+                    generation, now, requested: request.candidates, candidates: result.data.candidates, retryAfter: result.data.retryAfter,
+                } })
+            } else {
+                dispatch({ type: 'RADIO_BATCH', payload: {
+                    generation, now, status: result.data.status, candidates: result.data.candidates, retryAfter: result.data.retryAfter,
+                } })
+            }
+        })
+    }, [queue, clock])
+
+    // A wait (rate limit, failed request) re-checks once it's over.
+    const { retryAt } = queue.radio
+    useEffect(() => {
+        if (retryAt === null) return undefined
+        const timer = setTimeout(() => setClock((n) => n + 1), Math.max(0, retryAt - Date.now()))
+        return () => clearTimeout(timer)
+    }, [retryAt])
+
+    useEffect(() => {
+        const before = previousQueue.current
+        previousQueue.current = queue
+        if (currentItem(before) === currentItem(queue)) return
+        const seed = radioHandoff(before, queue)
+        setHandoff(seed ? `Your queue ended — radio from "${seed}" continues.` : null)
+    }, [queue])
 
     // Starting the track that's already loaded keeps its playback position
     // (Player is keyed by the track id, see components/modal.jsx) and just
@@ -61,6 +131,25 @@ export function NowPlayingProvider({ children }) {
         dispatch({ type: 'ENQUEUE', payload: { video } })
         setNotice(`Added to queue: "${video.title}"`)
     }, [])
+    const startRadio = useCallback((video) => {
+        dispatch({ type: 'START_RADIO', payload: { seeds: [video], label: video.title } })
+        setSettings((current) => (current.radio ? current : { ...current, radio: true }))
+        setExpanded(true)
+    }, [])
+    const startPlaylistRadio = useCallback((tracks, name) => {
+        dispatch({ type: 'START_RADIO', payload: { seeds: pickSeeds(tracks), label: name } })
+        setSettings((current) => (current.radio ? current : { ...current, radio: true }))
+        setExpanded(true)
+    }, [])
+    const setRadio = useCallback((enabled) => {
+        dispatch({ type: 'SET_RADIO', payload: { enabled } })
+        setSettings((current) => ({ ...current, radio: enabled, radioHintSeen: true }))
+        if (!enabled) setHandoff(null)
+    }, [])
+    const dismissRadioHint = useCallback(() => {
+        setSettings((current) => ({ ...current, radioHintSeen: true }))
+    }, [])
+    const dismissHandoff = useCallback(() => setHandoff(null), [])
     const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
     const prev = useCallback(() => dispatch({ type: 'PREV' }), [])
     // A track YouTube won't play: move past it, and say so only when there
@@ -78,21 +167,31 @@ export function NowPlayingProvider({ children }) {
         dispatch({ type: 'CLEAR' })
         setExpanded(false)
         setNotice(null)
+        setHandoff(null)
     }, [])
 
     const value = useMemo(
         () => ({
             item: currentVideo(queue),
+            current: currentItem(queue),
             nextItem: nextVideo(queue),
             prevItem: prevVideo(queue),
             position: queuePosition(queue),
             source: queue.source,
+            radio: queue.radio,
+            radioHint: queue.radio.enabled && queue.radio.status !== 'unavailable' && !settings.radioHintSeen,
             notice,
+            handoff,
             expanded,
             playQueue,
             open,
             playNext,
             enqueue,
+            startRadio,
+            startPlaylistRadio,
+            setRadio,
+            dismissRadioHint,
+            dismissHandoff,
             next,
             prev,
             skipUnplayable,
@@ -100,7 +199,8 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
-        [queue, notice, expanded, playQueue, open, playNext, enqueue, next, prev, skipUnplayable, minimize, expand, stop]
+        [queue, settings.radioHintSeen, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
+            startPlaylistRadio, setRadio, dismissRadioHint, dismissHandoff, next, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

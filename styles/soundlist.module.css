@@ -760,6 +760,9 @@
 }
 
 .rowMenu__actions button {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
     width: 100%;
     background: transparent;
     border: none;

@@ -1,5 +1,6 @@
 import styles from "../styles/soundlist.module.css"
 import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp, FaEllipsisH } from 'react-icons/fa'
+import { MdRadio } from 'react-icons/md'
 import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
 import { useNowPlaying } from "../context/nowPlayingContext"
 import { useEffect, useRef, useState } from "react";
@@ -28,7 +29,7 @@ const focusSiblingRow = (current, step) => {
 const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => {
 
     const dispatch = useDispatchContext()
-    const { item: nowPlaying, open, playNext, enqueue } = useNowPlaying()
+    const { item: nowPlaying, open, playNext, enqueue, startRadio, radio } = useNowPlaying()
     const playlists = usePlaylists()
     const isCurrent = nowPlaying?.id === item.id
 
@@ -233,16 +234,25 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                             menuClosing ? styles.playlistMenuClosing : '',
                         ].filter(Boolean).join(' ')}
                     >
-                        {!isCurrent && (
-                            <ul className={styles.rowMenu__actions}>
+                        <ul className={styles.rowMenu__actions}>
+                            {!isCurrent && (
+                                <>
+                                    <li>
+                                        <button type="button" onClick={() => queueAction(playNext)}>Play next</button>
+                                    </li>
+                                    <li>
+                                        <button type="button" onClick={() => queueAction(enqueue)}>Add to queue</button>
+                                    </li>
+                                </>
+                            )}
+                            {radio.status !== 'unavailable' && (
                                 <li>
-                                    <button type="button" onClick={() => queueAction(playNext)}>Play next</button>
+                                    <button type="button" onClick={() => queueAction(startRadio)}>
+                                        <MdRadio aria-hidden="true" /> Start radio from this
+                                    </button>
                                 </li>
-                                <li>
-                                    <button type="button" onClick={() => queueAction(enqueue)}>Add to queue</button>
-                                </li>
-                            </ul>
-                        )}
+                            )}
+                        </ul>
                         <p className={styles.rowMenu__heading}>Add to playlist</p>
                         <ul className={styles.playlistMenu__list}>
                             {playlists.map((playlist) => (
