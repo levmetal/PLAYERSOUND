@@ -19,17 +19,31 @@ const SIMILAR = lastfm('track.getSimilar').similartracks.track.map((t) => ({
 const TRACK_TAGS = lastfm('track.getTopTags').toptags.tag.map((t) => ({ name: t.name, count: Number(t.count) }))
 const ARTIST_TAGS = lastfm('artist.getTopTags').toptags.tag.map((t) => ({ name: t.name, count: Number(t.count) }))
 const SIMILAR_ARTISTS = lastfm('artist.getSimilar').similarartists.artist.map((a) => ({ name: a.name, match: Number(a.match) }))
+const toHits = (body) => body.results.trackmatches.track.map((t) => ({ artist: t.artist, title: t.name, listeners: Number(t.listeners) }))
+const SEARCH_REVERSED = toHits(lastfm('track.search.reversed')) // "Titi Me Pregunto Bad Bunny 2022"
+const SEARCH_WEAK = toHits(lastfm('track.search')) // "Daft Punk Digital Love": ≤ 2 372 listeners
+const TITI_REVERSED = byTitle('Titi Me Pregunto - Bad Bunny') // third-party upload, reversed title
 const TAG_TOP = lastfm('tag.getTopTracks').tracks.track.map((t) => ({ artist: t.artist.name, title: t.name, rank: Number(t['@attr'].rank) }))
 
 // Fake MusicCatalog: Daft Punk has everything recorded; Soda Stereo has no
 // similar tracks and no track tags, which exercises both fallbacks.
 const fakeCatalog = ({ fail = false } = {}) => {
-    const calls = { similarTracks: [], similarArtists: [], artistTopTracks: [], trackTags: [], artistTags: [], tagTopTracks: [] }
+    const calls = { similarTracks: [], similarArtists: [], artistTopTracks: [], trackTags: [], artistTags: [], tagTopTracks: [], searchTrack: [] }
     const guard = () => { if (fail) throw new Error('Last.fm down') }
     return {
         calls,
         catalog: {
-            similarTracks: async (track, limit) => { guard(); calls.similarTracks.push([track, limit]); return track.artist === 'Daft Punk' ? SIMILAR : [] },
+            similarTracks: async (track, limit) => {
+                guard()
+                calls.similarTracks.push([track, limit])
+                if (track.artist === 'Daft Punk') return SIMILAR
+                // What Last.fm knows once the reversed title is corrected (live answer, trimmed).
+                if (track.artist === 'Bad Bunny' && track.title === 'Tití Me Preguntó') {
+                    return [{ artist: 'Bad Bunny', title: 'NUEVAYoL', match: 1, playcount: 1 }, { artist: 'Daddy Yankee', title: 'Gasolina', match: 0.4, playcount: 1 }]
+                }
+                return []
+            },
+            searchTrack: async (text, limit) => { calls.searchTrack.push([text, limit]); return text.startsWith('Titi Me Pregunto') ? SEARCH_REVERSED : SEARCH_WEAK },
             similarArtists: async (artist, limit) => { calls.similarArtists.push([artist, limit]); return SIMILAR_ARTISTS.slice(0, limit) },
             artistTopTracks: async (artist, limit) => {
                 calls.artistTopTracks.push([artist, limit])
@@ -143,4 +157,30 @@ test('respects the limit', async () => {
 test('a Last.fm failure propagates', async () => {
     const { service } = setup({ fail: true })
     await assert.rejects(service.discover({ seeds: [DIGITAL_LOVE] }), /Last.fm down/)
+})
+
+test("R5: a reversed title Last.fm doesn't know is corrected through its search", async () => {
+    const { service, calls } = setup()
+    const result = await service.discover({ seeds: [TITI_REVERSED] })
+    assert.deepEqual(calls.searchTrack, [['Titi Me Pregunto Bad Bunny 2022', 5]])
+    assert.deepEqual(
+        { ...result.seedTracks[0], tags: undefined },
+        { artist: 'Bad Bunny', title: 'Tití Me Preguntó', rule: 'R5', confidence: 'low', tags: undefined },
+    )
+    assert.deepEqual(result.candidates.map((c) => c.title), ['NUEVAYoL', 'Gasolina'])
+    assert.deepEqual(calls.similarArtists, [])
+})
+
+test('search hits under 10 000 listeners never correct a seed', async () => {
+    const { service, calls } = setup()
+    const result = await service.discover({ seeds: [LIGERA] })
+    assert.equal(calls.searchTrack.length, 1)
+    assert.equal(result.seedTracks[0].rule, 'R3')
+    assert.deepEqual(calls.similarArtists, [['Soda Stereo', 5]])
+})
+
+test('a seed Last.fm knows as written never triggers a search', async () => {
+    const { service, calls } = setup()
+    await service.discover({ seeds: [DIGITAL_LOVE] })
+    assert.deepEqual(calls.searchTrack, [])
 })

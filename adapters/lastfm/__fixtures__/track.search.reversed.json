@@ -1,0 +1,150 @@
+{
+  "results": {
+    "opensearch:Query": {
+      "#text": "",
+      "role": "request",
+      "searchTerms": "Titi Me Pregunto Bad Bunny 2022",
+      "startPage": "1"
+    },
+    "opensearch:totalResults": "102",
+    "opensearch:startIndex": "0",
+    "opensearch:itemsPerPage": "5",
+    "trackmatches": {
+      "track": [
+        {
+          "name": "Tití Me Preguntó",
+          "artist": "Bad Bunny",
+          "url": "https://www.last.fm/music/Bad+Bunny/_/Tit%C3%AD+Me+Pregunt%C3%B3",
+          "streamable": "0",
+          "listeners": "1078310",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": "3872dd6c-b59b-4298-b343-619dc62bb8b7"
+        },
+        {
+          "name": "Titi Me Preguntó",
+          "artist": "Bad Bunny",
+          "url": "https://www.last.fm/music/Bad+Bunny/_/Titi+Me+Pregunt%C3%B3",
+          "streamable": "0",
+          "listeners": "33628",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Tití Me Preguntó - Live",
+          "artist": "Bad Bunny",
+          "url": "https://www.last.fm/music/Bad+Bunny/_/Tit%C3%AD+Me+Pregunt%C3%B3+-+Live",
+          "streamable": "0",
+          "listeners": "4503",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Titi Me Pregunto",
+          "artist": "Bad Bunny",
+          "url": "https://www.last.fm/music/Bad+Bunny/_/Titi+Me+Pregunto",
+          "streamable": "0",
+          "listeners": "316",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Tití Me Preguntó (Video Oficial)",
+          "artist": "Bad Bunny",
+          "url": "https://www.last.fm/music/Bad+Bunny/_/Tit%C3%AD+Me+Pregunt%C3%B3+(Video+Oficial)",
+          "streamable": "0",
+          "listeners": "648",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        }
+      ]
+    },
+    "@attr": {
+      "for": "Titi Me Pregunto Bad Bunny 2022"
+    }
+  }
+}

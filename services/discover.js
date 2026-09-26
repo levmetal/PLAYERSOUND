@@ -14,19 +14,37 @@ const FALLBACK_TRACKS = 3
 const TAGGED_ARTISTS = 15
 const RESOLVE_COUNT = 5
 const RESOLVE_ATTEMPTS = 10
+// R5: a Last.fm search hit is trusted as a correction only this popular —
+// real junk hits for a garbled title sit in the hundreds or low thousands.
+const SEARCH_MIN_LISTENERS = 10000
+const SEARCH_LIMIT = 5
 
 /**
  * @param {{ catalog: any, resolver: { resolveTop(candidates: any[], options: any): Promise<any[]> } }} deps
  */
 export function createDiscoverService({ catalog, resolver }) {
-    async function similarFor({ artist, title }) {
-        const track = { artist, title }
+    // Similar tracks for a seed, plus the seed as Last.fm knows it: when the
+    // title as written isn't known (reversed "Track - Artist" uploads, extra
+    // words), a popular enough search hit corrects it (R5).
+    async function similarFor(seed) {
+        const track = { artist: seed.artist, title: seed.title }
         const similar = await catalog.similarTracks(track, SIMILAR_LIMIT)
-        if (similar.length) return similar
+        if (similar.length) return { seed, similar }
+
+        const hits = await catalog.searchTrack(`${track.artist} ${track.title}`, SEARCH_LIMIT)
+        const hit = hits.find((h) => h.listeners >= SEARCH_MIN_LISTENERS)
+        if (hit) {
+            const corrected = { artist: hit.artist, title: hit.title }
+            const correctedSimilar = await catalog.similarTracks(corrected, SIMILAR_LIMIT)
+            if (correctedSimilar.length) {
+                return { seed: { ...corrected, rule: 'R5', confidence: 'low' }, similar: correctedSimilar }
+            }
+        }
+
         // Obscure tracks often have no similar tracks but their artist does.
         const artists = await catalog.similarArtists(track.artist, FALLBACK_ARTISTS)
         const tops = await Promise.all(artists.map((artist) => catalog.artistTopTracks(artist.name, FALLBACK_TRACKS)))
-        return tops.flatMap((tracks, i) => tracks.map((t) => ({ ...t, match: artists[i].match })))
+        return { seed, similar: tops.flatMap((tracks, i) => tracks.map((t) => ({ ...t, match: artists[i].match }))) }
     }
 
     async function tagsFor({ artist, title }) {
@@ -88,10 +106,12 @@ export function createDiscoverService({ catalog, resolver }) {
         }
         if (!seedTracks.length) return { status: 'unidentified', seedTracks: [], candidates: [] }
 
-        const [similarLists, tagLists] = await Promise.all([
-            Promise.all(seedTracks.map(similarFor)),
-            Promise.all(seedTracks.map(tagsFor)),
-        ])
+        // Similar lists first: R5 may correct a seed, and its tags must be the
+        // corrected track's.
+        const found = await Promise.all(seedTracks.map(similarFor))
+        const effectiveSeeds = found.map((f) => f.seed)
+        const similarLists = found.map((f) => f.similar)
+        const tagLists = await Promise.all(effectiveSeeds.map(tagsFor))
 
         // Several seeds: sum each tag's counts so genres they share add up.
         const summed = new Map()
@@ -99,17 +119,17 @@ export function createDiscoverService({ catalog, resolver }) {
         const seedTags = normalizeTags([...summed].map(([name, count]) => ({ name, count })))
 
         const candidates = await rankAndResolve({
-            candidates: mergeCandidates(seedTracks.map((seed, i) => ({ seed, candidates: similarLists[i] }))),
+            candidates: mergeCandidates(effectiveSeeds.map((seed, i) => ({ seed, candidates: similarLists[i] }))),
             seedTags,
             affinity,
-            excludeKeys: [...excludeKeys, ...seedTracks.map((s) => trackKey(s.artist, s.title))],
+            excludeKeys: [...excludeKeys, ...[...seedTracks, ...effectiveSeeds].map((s) => trackKey(s.artist, s.title))],
             excludeVideoIds: [...excludeVideoIds, ...seedVideoIds],
             limit,
         })
 
         return {
             status: 'ok',
-            seedTracks: seedTracks.map((track, i) => ({ ...track, tags: tagLists[i].map((tag) => tag.name) })),
+            seedTracks: effectiveSeeds.map((track, i) => ({ ...track, tags: tagLists[i].map((tag) => tag.name) })),
             candidates,
         }
     }
