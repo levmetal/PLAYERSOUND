@@ -1,10 +1,15 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from "react";
 import { get, set } from 'idb-keyval'
-import playlistReducer, { defaultPlaylists, FAVORITES_ID } from "./libraryReducer";
+import libraryReducer, { defaultPlaylists, FAVORITES_ID } from "../../core/library/libraryReducer";
 
 export { FAVORITES_ID }
 
 const STORAGE_KEY = 'playersound:playlists'
+
+// crypto.randomUUID only exists in secure contexts (https, localhost); a dev
+// server opened over the LAN from a phone is plain http.
+const newPlaylistId = () =>
+    globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 
 export const PlaylistsContext = createContext(defaultPlaylists)
 export const PlaylistsDispatchContext = createContext(null)
@@ -25,15 +30,20 @@ export function useSoundContext() {
 }
 
 export function SoundProvider({ children }) {
-    const [state, dispatch] = useReducer(playlistReducer, defaultPlaylists)
+    const [state, dispatch] = useReducer(libraryReducer, defaultPlaylists)
     const hydrated = useRef(false)
     // Tracks whether a real (non-HYDRATE) action landed before the async read
     // below resolved, so hydration doesn't clobber a user's in-flight change
     // by unconditionally overwriting state with the older stored snapshot.
     const interacted = useRef(false)
 
+    // The reducer is pure, so a new playlist's id is minted here.
     function dispatchTracked(action) {
         if (action.type !== 'HYDRATE') interacted.current = true
+        if (action.type === 'CREATE_PLAYLIST' && !action.payload.id) {
+            dispatch({ ...action, payload: { ...action.payload, id: newPlaylistId() } })
+            return
+        }
         dispatch(action)
     }
 

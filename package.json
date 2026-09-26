@@ -22,7 +22,6 @@
     "react-dom": "18.2.0",
     "react-icons": "^4.4.0",
     "scrape-youtube": "^2.3.2",
-    "uuid": "^9.0.0",
     "youtubei.js": "^18.0.0"
   },
   "devDependencies": {

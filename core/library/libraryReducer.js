@@ -1,7 +1,13 @@
-import { v4 as uuidv4 } from 'uuid'
+// Playlists: an array of { id, name, tracks }, always starting with
+// Favorites. Pure — new playlist ids come in with the action, so the reducer
+// never generates randomness itself.
+
+/** @typedef {import('../types.js').Video} Video */
+/** @typedef {{ id: string, name: string, tracks: Video[] }} Playlist */
 
 export const FAVORITES_ID = 'favorites'
 
+/** @type {Playlist[]} */
 export const defaultPlaylists = [{ id: FAVORITES_ID, name: 'Favorites', tracks: [] }]
 
 function addTrack(state, playlistId, track) {
@@ -20,7 +26,12 @@ function removeTrack(state, playlistId, trackId) {
     )
 }
 
-export default function playlistReducer(state, action) {
+/**
+ * @param {Playlist[]} state
+ * @param {{ type: string, payload?: any }} action
+ * @returns {Playlist[]}
+ */
+export default function libraryReducer(state, action) {
     switch (action.type) {
         case 'HYDRATE':
             return action.payload
@@ -38,11 +49,12 @@ export default function playlistReducer(state, action) {
             return removeTrack(state, action.payload.playlistId, action.payload.trackId)
 
         case 'CREATE_PLAYLIST': {
-            const { name, track } = action.payload
-            return [...state, { id: uuidv4(), name, tracks: track ? [track] : [] }]
+            const { id, name, track } = action.payload
+            return [...state, { id, name, tracks: track ? [track] : [] }]
         }
 
         case 'DELETE_PLAYLIST':
+            if (action.payload === FAVORITES_ID) return state
             return state.filter((playlist) => playlist.id !== action.payload)
 
         default:
