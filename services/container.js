@@ -5,7 +5,7 @@ import { createScrapeSearch } from '../adapters/youtube/scrapeSearch.js'
 import { createMemoryCache } from '../adapters/cache/memoryCache.js'
 import { createRuntimeCache } from '../adapters/cache/runtimeCache.js'
 import { withCache } from '../adapters/cache/withCache.js'
-import { createLastfmMusic } from '../adapters/lastfm/lastfmMusic.js'
+import { createLastfmMusic, LastfmError } from '../adapters/lastfm/lastfmMusic.js'
 import { trackKey } from '../core/discovery/rankCandidates.js'
 import { createSearchService } from './search.js'
 import { createResolveCandidates } from './resolveCandidates.js'
@@ -70,6 +70,8 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         search: createSearchService({ videoSearch }),
         resolver,
         discover: catalog ? createDiscoverService({ catalog, resolver }) : undefined,
+        // Routes answer 502 for these instead of 500, without importing adapters.
+        isSourceError: (error) => error instanceof LastfmError,
     }
 }
 

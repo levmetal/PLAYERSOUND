@@ -52,3 +52,10 @@ test('discovery is on with a Last.fm key', () => {
     assert.equal(typeof container.discover.discover, 'function')
     assert.equal(typeof container.resolver.resolveTop, 'function')
 })
+
+test('tells a music-data source failure apart from other errors', async () => {
+    const { LastfmError } = await import('../adapters/lastfm/lastfmMusic.js')
+    const container = createContainer({ edition: 'public', lastfmApiKey: 'k' })
+    assert.equal(container.isSourceError(new LastfmError(29, 'Rate limit exceeded')), true)
+    assert.equal(container.isSourceError(new Error('bug')), false)
+})
