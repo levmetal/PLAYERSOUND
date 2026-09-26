@@ -15,7 +15,9 @@ export default async function discoverHandler(req, res) {
   try {
     const result = await container.discover.discover(request.value)
     res.setHeader('Server-Timing', `discover;dur=${Date.now() - started}`)
-    return res.status(200).json(result)
+    // While YouTube rate-limits us, candidates come back without videos; say when to ask again.
+    const blocked = container.youtubeBlockedFor()
+    return res.status(200).json(blocked ? { ...result, retryAfter: Math.ceil(blocked / 1000) } : result)
   } catch (error) {
     console.error('discover error:', error)
     if (container.isSourceError(error)) return res.status(502).json({ error: 'Music data is unavailable right now.' })

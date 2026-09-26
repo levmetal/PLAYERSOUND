@@ -45,7 +45,8 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
     const cacheKind = vercel ? 'runtime' : 'memory'
     const cache = vercel ? createRuntimeCache() : sharedMemoryCache()
 
-    const videoSearch = withCache(createScrapeSearch(), {
+    const youtubeSearch = createScrapeSearch()
+    const videoSearch = withCache(youtubeSearch, {
         cache,
         prefix: 'yt',
         methods: { search: { ttl: HOUR, key: (term) => term.toLowerCase() } },
@@ -72,6 +73,9 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         discover: catalog ? createDiscoverService({ catalog, resolver }) : undefined,
         // Routes answer 502 for these instead of 500, without importing adapters.
         isSourceError: (error) => error instanceof LastfmError,
+        // YouTube's bot protection: routes answer 503 / add retryAfter instead.
+        isRateLimited: (error) => error?.code === 'rate-limited',
+        youtubeBlockedFor: () => youtubeSearch.blockedFor(),
     }
 }
 

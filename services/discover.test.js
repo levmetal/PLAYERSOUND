@@ -80,7 +80,7 @@ test('seeds that are not songs come back unidentified without calling Last.fm', 
     assert.deepEqual(calls.similarTracks, [])
 })
 
-test('one seed returns ranked candidates with reasons, the first 5 playable', async () => {
+test('one seed returns ranked candidates with reasons, the first 3 playable', async () => {
     const { service } = setup()
     const result = await service.discover({ seeds: [DIGITAL_LOVE] })
     assert.equal(result.status, 'ok')
@@ -89,7 +89,8 @@ test('one seed returns ranked candidates with reasons, the first 5 playable', as
         { artist: 'Daft Punk', title: 'Digital Love', rule: 'R3', confidence: 'medium', tags: ['electronic', 'dance', 'poptron'] },
     )
     assert.equal(result.candidates.length, 20)
-    assert.ok(result.candidates.slice(0, 5).every((c) => c.video))
+    assert.ok(result.candidates.slice(0, 3).every((c) => c.video))
+    assert.equal(result.candidates[3].video, null)
     assert.ok(result.candidates.every((c) => c.reason.seed === 'Digital Love'))
     const scores = result.candidates.map((c) => c.score)
     assert.deepEqual(scores, [...scores].sort((a, b) => b - a))

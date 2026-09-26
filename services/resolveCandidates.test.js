@@ -115,3 +115,32 @@ test('resolveTop goes through an injected resolve (so it can be cached)', async 
     assert.deepEqual(result.map((c) => c.video?.id), [DIGITAL_LOVE.id])
     assert.equal(resolver.resolve, resolve)
 })
+
+test('a search that throws counts as a failed candidate, not a failed request', async () => {
+    const flaky = new TypeError("Cannot read properties of undefined (reading 'split')")
+    const videoSearch = {
+        search: async (term) => {
+            if (term === 'Nobody Nothing') throw flaky
+            return term === 'Daft Punk Digital Love' ? [DIGITAL_LOVE] : []
+        },
+    }
+    const result = await createResolveCandidates({ videoSearch }).resolveTop([MISSING, DL], { count: 1 })
+    assert.deepEqual(result.map((c) => c.video?.id), [DIGITAL_LOVE.id])
+})
+
+test('when YouTube rate-limits, resolving stops and nothing is dropped', async () => {
+    const limited = Object.assign(new Error('YouTube is limiting automated searches right now.'), { code: 'rate-limited' })
+    const asked = []
+    const videoSearch = {
+        search: async (term) => {
+            asked.push(term)
+            if (term === 'Daft Punk Digital Love') return [DIGITAL_LOVE]
+            throw limited
+        },
+    }
+    const result = await createResolveCandidates({ videoSearch, concurrency: 1 }).resolveTop([DL, LIG, CR], { count: 3 })
+    assert.deepEqual(asked, ['Daft Punk Digital Love', 'Soda Stereo De Música Ligera'])
+    assert.deepEqual(result.map((c) => [c.title, c.video?.id ?? null]), [
+        ['Digital Love', DIGITAL_LOVE.id], ['De Música Ligera', null], ['Creep', null],
+    ])
+})

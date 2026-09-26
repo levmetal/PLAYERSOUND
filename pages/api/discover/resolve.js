@@ -17,7 +17,8 @@ export default async function resolveHandler(req, res) {
     const resolved = await container.resolver.resolveTop(candidates, {
       count, excludeVideoIds: exclude, maxAttempts: candidates.length,
     })
-    return res.status(200).json({ candidates: resolved })
+    const blocked = container.youtubeBlockedFor()
+    return res.status(200).json(blocked ? { candidates: resolved, retryAfter: Math.ceil(blocked / 1000) } : { candidates: resolved })
   } catch (error) {
     console.error('discover/resolve error:', error)
     return res.status(500).json({ error: 'Discovery failed.' })

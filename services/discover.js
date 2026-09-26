@@ -12,7 +12,7 @@ const SIMILAR_LIMIT = 50
 const FALLBACK_ARTISTS = 5
 const FALLBACK_TRACKS = 3
 const TAGGED_ARTISTS = 15
-const RESOLVE_COUNT = 5
+const RESOLVE_COUNT = 3
 const RESOLVE_ATTEMPTS = 10
 // R5: a Last.fm search hit is trusted as a correction only this popular —
 // real junk hits for a garbled title sit in the hundreds or low thousands.

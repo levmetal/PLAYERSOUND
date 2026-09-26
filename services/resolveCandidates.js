@@ -7,6 +7,7 @@ import resolveTrack from '../core/track/resolveTrack.js'
 /** @typedef {import('../core/types.js').Video} Video */
 
 const MAX_TRACK_SECONDS = 900
+const RATE_LIMITED = Symbol('rate-limited')
 
 // Accent-, case- and punctuation-insensitive form for comparing names.
 const loose = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
@@ -46,13 +47,24 @@ export function createResolveCandidates({ videoSearch, concurrency = 3, resolve:
         let next = 0
         let resolved = 0
 
-        while (resolved < count && next < candidates.length && next < maxAttempts) {
+        let limited = false
+        while (!limited && resolved < count && next < candidates.length && next < maxAttempts) {
             const size = Math.min(concurrency, count - resolved, candidates.length - next, maxAttempts - next)
             const batch = candidates.slice(next, next + size).map((candidate, i) => ({ index: next + i, candidate }))
             next += size
-            const videos = await Promise.all(batch.map(({ candidate }) => resolve(candidate)))
+            // A search that still fails after the adapter's retries costs this
+            // one candidate, not the whole response. A rate limit is different:
+            // the candidates are fine, YouTube isn't answering — stop, keep them.
+            const videos = await Promise.all(batch.map(({ candidate }) => resolve(candidate).catch((error) => {
+                if (error?.code === 'rate-limited') {
+                    limited = true
+                    return RATE_LIMITED
+                }
+                return null
+            })))
             batch.forEach(({ index }, i) => {
                 const video = videos[i]
+                if (video === RATE_LIMITED) return
                 if (video && !used.has(video.id)) {
                     used.add(video.id)
                     outcome.set(index, video)

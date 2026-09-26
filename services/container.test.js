@@ -59,3 +59,11 @@ test('tells a music-data source failure apart from other errors', async () => {
     assert.equal(container.isSourceError(new LastfmError(29, 'Rate limit exceeded')), true)
     assert.equal(container.isSourceError(new Error('bug')), false)
 })
+
+test('recognizes a YouTube rate limit and reports no block at start', async () => {
+    const { YoutubeRateLimitError } = await import('../adapters/youtube/scrapeSearch.js')
+    const container = createContainer({ edition: 'public' })
+    assert.equal(container.isRateLimited(new YoutubeRateLimitError()), true)
+    assert.equal(container.isRateLimited(new Error('other')), false)
+    assert.equal(container.youtubeBlockedFor(), 0)
+})

@@ -33,7 +33,12 @@ const Search = memo(function Search() {
     // This fetch runs in the browser, so a relative path already resolves
     // against this app's own origin.
     fetch(`${apiBase}/api/search/${encodeURIComponent(search)}`)
-      .then((response) => {
+      .then(async (response) => {
+        if (response.status === 503) {
+          // YouTube is rate-limiting searches: show the server's explanation.
+          const body = await response.json().catch(() => ({}))
+          throw Object.assign(new Error('rate limited'), { userMessage: body.error })
+        }
         if (!response.ok) throw new Error(`search API responded ${response.status}`)
         return response.json()
       })
@@ -44,7 +49,7 @@ const Search = memo(function Search() {
       .catch((error) => {
         if (cancelled) return
         console.error(`search page error for "${search}":`, error)
-        setState({ status: 'done', data: [], error: 'Search failed. Try again in a moment.' })
+        setState({ status: 'done', data: [], error: error.userMessage || 'Search failed. Try again in a moment.' })
       })
 
     return () => {
