@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createContainer } from './container.js'
 
 test('public edition can discover but not download', () => {
-    const container = createContainer({ edition: 'public' })
+    const container = createContainer({ edition: 'public', lastfmApiKey: 'k' })
     assert.equal(container.can('discover'), true)
     assert.equal(container.can('download'), false)
     assert.deepEqual(container.capabilities.playback, ['iframe'])
@@ -18,7 +18,7 @@ test('no edition or an unknown one falls back to public', () => {
 })
 
 test('local edition can also download and play local files first', () => {
-    const container = createContainer({ edition: 'local' })
+    const container = createContainer({ edition: 'local', lastfmApiKey: 'k' })
     assert.equal(container.can('discover'), true)
     assert.equal(container.can('download'), true)
     assert.deepEqual(container.capabilities.playback, ['localFile', 'native', 'iframe'])
@@ -38,4 +38,17 @@ test('uses the in-memory cache outside Vercel', () => {
 
 test('uses the Vercel Runtime Cache on Vercel', () => {
     assert.equal(createContainer({ edition: 'public', vercel: true }).cacheKind, 'runtime')
+})
+
+test('discovery is off without a Last.fm key', () => {
+    const container = createContainer({ edition: 'public' })
+    assert.equal(container.can('discover'), false)
+    assert.equal(container.discover, undefined)
+})
+
+test('discovery is on with a Last.fm key', () => {
+    const container = createContainer({ edition: 'public', lastfmApiKey: 'k' })
+    assert.equal(container.can('discover'), true)
+    assert.equal(typeof container.discover.discover, 'function')
+    assert.equal(typeof container.resolver.resolveTop, 'function')
 })
