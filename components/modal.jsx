@@ -5,14 +5,14 @@ import GlobePanel from '../components/globePanel'
 import QueuePanel from '../components/queuePanel'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
-import { MdRadio } from 'react-icons/md'
+import { MdWaves } from 'react-icons/md'
 
 // Matches the console-out/backdrop-out keyframe durations in player.module.css —
 // keeps the expanded console on screen long enough to play its own ease-in
 // exit before it collapses into the mini-player (or goes away on stop).
 const CLOSE_ANIMATION_MS = 200
 
-const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'RADIO', tag: 'TAG' }
+const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'SIMILAR VIBE', tag: 'VIBE' }
 const pad2 = (n) => String(n).padStart(2, '0')
 
 // "NOW PLAYING // PLAYLIST: FAVORITES // TRK 03/12" for a queue, the plain
@@ -134,18 +134,18 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                                 onClick={() => setRadio(!radio.enabled)}
                                 disabled={radio.status === 'unavailable'}
                                 aria-pressed={radio.enabled}
-                                aria-label="Radio"
+                                aria-label="Autoplay similar vibe"
                                 title={radio.status === 'unavailable'
-                                    ? "Radio isn't available on this server"
-                                    : radio.enabled ? 'Radio on: similar tracks play when your queue ends' : 'Radio off: playback stops when your queue ends'}
+                                    ? "Similar vibe isn't available on this server"
+                                    : radio.enabled ? 'Autoplay on: tracks with a similar vibe play when your queue ends' : 'Autoplay off: playback stops when your queue ends'}
                             >
-                                <MdRadio aria-hidden="true" />
+                                <MdWaves aria-hidden="true" />
                             </button>
                             {radioHint && (
                                 <div className={`${styles.radioHint} hud-frame`} role="note">
                                     <p>
-                                        Radio is on: when your queue ends, similar tracks keep playing,
-                                        each showing why it was picked. Turn it off here anytime.
+                                        Autoplay is on: when your queue ends, tracks with a similar vibe
+                                        keep playing, each showing why it was picked. Turn it off here anytime.
                                     </p>
                                     <button type="button" onClick={dismissRadioHint}>Got it</button>
                                 </div>
@@ -173,7 +173,7 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                     {handoff && !notice && (
                         <div className={styles.handoff}>
                             <span>{handoff}</span>
-                            <button type="button" onClick={() => setRadio(false)}>Turn off</button>
+                            <button type="button" onClick={() => setRadio(false)}>Stop autoplay</button>
                             <button type="button" onClick={dismissHandoff} aria-label="Dismiss">
                                 <FaTimes aria-hidden="true" />
                             </button>

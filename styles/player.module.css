@@ -521,6 +521,14 @@
     padding: 0;
 }
 
+.tagChips__label {
+    align-self: center;
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--phosphor-secondary-alt);
+}
+
 .tagChips button {
     border: 1px solid var(--phosphor-secondary);
     background: transparent;

@@ -6,7 +6,7 @@ import { useSoundContext, useDispatchContext } from "../context/libraryContext/l
 import usePlaybackEngine from "../hooks/usePlaybackEngine";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import MarqueeText from './marqueeText';
-import { MdRadio } from 'react-icons/md';
+import { MdWaves } from 'react-icons/md';
 import resolveTrack from "../core/track/resolveTrack";
 
 // Purely decorative — a neon VU-meter bar-graph. Not driven by real audio
@@ -53,7 +53,7 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, startTagRadio } = useNowPlaying();
+    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, startTagRadio, source } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
     // With radio on, say up front when this track can't seed it.
@@ -295,19 +295,20 @@ const Player = ({ item }) => {
                     <MarqueeText text={item.title} className={styles.player__title} />
                     {reason && (
                         <p className={styles.reasonLine}>
-                            <MdRadio aria-hidden="true" />
+                            <MdWaves aria-hidden="true" />
                             <span className={styles.reasonLine__text}>
-                                {reason.seed ? `Similar to ${reason.seed}` : 'From radio'}
+                                {reason.seed ? `Similar vibe to ${reason.seed}` : source?.type === 'tag' ? `Vibe: ${source.label}` : 'Similar vibe'}
                                 {reason.sharedTags.length > 0 && ` · ${reason.sharedTags.join(', ')}`}
                             </span>
                             <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
                         </p>
                     )}
                     {tags.length > 0 && (
-                        <ul className={styles.tagChips} aria-label="Tags from Last.fm">
+                        <ul className={styles.tagChips} aria-label="More like these tags, from Last.fm">
+                            <li className={styles.tagChips__label} aria-hidden="true">More like:</li>
                             {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
                                 <li key={tag}>
-                                    <button type="button" onClick={() => startTagRadio(tag)} title={`Start ${tag} radio`}>
+                                    <button type="button" onClick={() => startTagRadio(tag)} title={`Play more ${tag}`}>
                                         {tag}
                                     </button>
                                 </li>

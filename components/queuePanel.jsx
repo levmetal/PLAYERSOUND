@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { FaPlay, FaPlus } from 'react-icons/fa'
-import { MdRadio } from 'react-icons/md'
+import { MdWaves } from 'react-icons/md'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { discover } from '../utils/discoverClient'
@@ -9,8 +9,8 @@ import resolveTrack from '../core/track/resolveTrack'
 const LASTFM = <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
 
 // Under the expanded player's faceplate (hidden in the mini-player). With
-// radio on, the suggestions already are the similar tracks, so it lists what
-// plays next; with radio off it offers similar tracks on request instead.
+// autoplay on, the suggestions already are the similar-vibe tracks, so it
+// lists what plays next; with it off it offers them on request instead.
 const QueuePanel = ({ item }) => {
     const { upNext, radio, jumpTo } = useNowPlaying()
 
@@ -22,7 +22,7 @@ const QueuePanel = ({ item }) => {
             <h3 className={styles.queuePanel__title}>Up next</h3>
             {user.length === 0 && suggested.length === 0 && (
                 <p className={styles.queuePanel__empty}>
-                    {radio.loading ? 'Finding similar tracks…' : radio.status === 'exhausted' ? 'Radio ran out of new tracks.' : 'Nothing queued.'}
+                    {radio.loading ? 'Finding tracks with a similar vibe…' : radio.status === 'exhausted' ? 'No more tracks with this vibe right now.' : 'Nothing queued.'}
                 </p>
             )}
             {user.length > 0 && (
@@ -38,7 +38,7 @@ const QueuePanel = ({ item }) => {
             {suggested.length > 0 && (
                 <>
                     <p className={styles.queuePanel__group}>
-                        <MdRadio aria-hidden="true" /> From radio <span className={styles.queuePanel__credit}>· {LASTFM}</span>
+                        <MdWaves aria-hidden="true" /> Similar vibe <span className={styles.queuePanel__credit}>· {LASTFM}</span>
                     </p>
                     <ol className={styles.queueList}>
                         {suggested.map(({ item: queued, index }) => (
@@ -109,8 +109,8 @@ const SimilarSection = ({ item }) => {
     if (state.status === 'unavailable') return null
 
     return (
-        <section className={styles.queuePanel} aria-label="Similar to this">
-            <h3 className={styles.queuePanel__title}>Similar to this</h3>
+        <section className={styles.queuePanel} aria-label="Similar vibe">
+            <h3 className={styles.queuePanel__title}>Similar vibe</h3>
             {!identified ? (
                 <p className={styles.queuePanel__empty}>We couldn&apos;t identify this song.</p>
             ) : state.status === 'idle' ? (
@@ -118,10 +118,10 @@ const SimilarSection = ({ item }) => {
                     Show similar
                 </button>
             ) : state.status === 'loading' ? (
-                <p className={styles.queuePanel__empty} role="status">Finding similar tracks…</p>
+                <p className={styles.queuePanel__empty} role="status">Finding tracks with a similar vibe…</p>
             ) : state.status === 'error' ? (
                 <p className={styles.queuePanel__empty} role="status">
-                    Couldn&apos;t load similar tracks.{' '}
+                    Couldn&apos;t load tracks with a similar vibe.{' '}
                     <button type="button" className={styles.queuePanel__button} onClick={() => setState({ status: 'loading', candidates: [] })}>Retry</button>
                 </p>
             ) : state.status === 'limited' ? (
@@ -129,7 +129,7 @@ const SimilarSection = ({ item }) => {
                     YouTube is limiting searches right now — try again in {state.minutes} min.
                 </p>
             ) : state.candidates.length === 0 ? (
-                <p className={styles.queuePanel__empty} role="status">No similar tracks found.</p>
+                <p className={styles.queuePanel__empty} role="status">No tracks with a similar vibe found.</p>
             ) : (
                 <>
                     <p className={styles.queuePanel__group}>

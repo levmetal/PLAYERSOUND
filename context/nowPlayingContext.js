@@ -43,7 +43,7 @@ export function NowPlayingProvider({ children }) {
     const [queue, dispatch] = useReducer(queueReducer, initialQueueState)
     const [expanded, setExpanded] = useState(false)
     const [notice, setNotice] = useState(null)
-    // "Your queue ended — radio from … continues", until the track changes.
+    // "Your queue ended — playing a similar vibe to …", until the track changes.
     const [handoff, setHandoff] = useState(null)
     const [settings, setSettings] = useState(DEFAULT_SETTINGS)
     const settingsLoaded = useRef(false)
@@ -140,7 +140,7 @@ export function NowPlayingProvider({ children }) {
         if (currentItem(before) === currentItem(queue)) return
         elapsedRef.current = 0
         const seed = radioHandoff(before, queue)
-        setHandoff(seed ? `Your queue ended — radio from "${seed}" continues.` : null)
+        setHandoff(seed ? `Your queue ended — playing a similar vibe to "${seed}".` : null)
     }, [queue])
 
     // Starting the track that's already loaded keeps its playback position

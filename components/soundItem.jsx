@@ -1,6 +1,6 @@
 import styles from "../styles/soundlist.module.css"
 import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp, FaEllipsisH } from 'react-icons/fa'
-import { MdRadio } from 'react-icons/md'
+import { MdWaves } from 'react-icons/md'
 import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
 import { useNowPlaying } from "../context/nowPlayingContext"
 import { useEffect, useRef, useState } from "react";
@@ -148,7 +148,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
     const uploaded = showStats ? formatUploaded(item.uploaded) : null
     const showThumb = Boolean(item.thumbnail) && !thumbFailed
     const menuId = `row-menu-${item.id}`
-    // Radio needs to know the song; only worked out once the menu is open.
+    // Similar vibe needs to know the song; only worked out once the menu is open.
     const identified = menuOpen && resolveTrack(item) !== null
 
     const rowClass = [
@@ -259,7 +259,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                                         disabled={!identified}
                                         aria-describedby={identified ? undefined : `${menuId}-unidentified`}
                                     >
-                                        <MdRadio aria-hidden="true" /> Start radio from this
+                                        <MdWaves aria-hidden="true" /> Find similar vibe
                                     </button>
                                     {!identified && (
                                         <p id={`${menuId}-unidentified`} className={styles.rowMenu__note}>
