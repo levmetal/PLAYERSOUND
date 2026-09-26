@@ -1,0 +1,150 @@
+{
+  "results": {
+    "opensearch:Query": {
+      "#text": "",
+      "role": "request",
+      "searchTerms": "Daft Punk Digital Love",
+      "startPage": "1"
+    },
+    "opensearch:totalResults": "1159",
+    "opensearch:startIndex": "0",
+    "opensearch:itemsPerPage": "5",
+    "trackmatches": {
+      "track": [
+        {
+          "name": "Daft Punk Digital Love",
+          "artist": "Daft Punk Digital Love",
+          "url": "https://www.last.fm/music/Daft+Punk+Digital+Love/_/Daft+Punk+Digital+Love",
+          "streamable": "0",
+          "listeners": "307",
+          "image": [
+            {
+              "#text": "",
+              "size": "small"
+            },
+            {
+              "#text": "",
+              "size": "medium"
+            },
+            {
+              "#text": "",
+              "size": "large"
+            },
+            {
+              "#text": "",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Daft Punk - Digital Love",
+          "artist": "Daft Punk",
+          "url": "https://www.last.fm/music/Daft+Punk/_/Daft+Punk+-+Digital+Love",
+          "streamable": "0",
+          "listeners": "2372",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Daft Punk Digital Love",
+          "artist": "Daft Punk",
+          "url": "https://www.last.fm/music/Daft+Punk/_/Daft+Punk+Digital+Love",
+          "streamable": "0",
+          "listeners": "175",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Daft Punk - Digital Love (Official audio)",
+          "artist": "Daft Punk",
+          "url": "https://www.last.fm/music/Daft+Punk/_/Daft+Punk+-+Digital+Love+(Official+audio)",
+          "streamable": "0",
+          "listeners": "183",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        },
+        {
+          "name": "Daft Punk - Digital Love",
+          "artist": "<Unknown>",
+          "url": "https://www.last.fm/music/%3CUnknown%3E/_/Daft+Punk+-+Digital+Love",
+          "streamable": "0",
+          "listeners": "153",
+          "image": [
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/34s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "small"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/64s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "medium"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "large"
+            },
+            {
+              "#text": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+              "size": "extralarge"
+            }
+          ],
+          "mbid": ""
+        }
+      ]
+    },
+    "@attr": {
+      "for": "Daft Punk Digital Love"
+    }
+  }
+}
