@@ -32,6 +32,7 @@ export function useSoundContext() {
 export function SoundProvider({ children }) {
     const [state, dispatch] = useReducer(libraryReducer, defaultPlaylists)
     const hydrated = useRef(false)
+    const persistRequested = useRef(false)
     // Tracks whether a real (non-HYDRATE) action landed before the async read
     // below resolved, so hydration doesn't clobber a user's in-flight change
     // by unconditionally overwriting state with the older stored snapshot.
@@ -70,6 +71,12 @@ export function SoundProvider({ children }) {
     useEffect(() => {
         if (!hydrated.current) return
         set(STORAGE_KEY, state)
+        // Ask once per session for storage the browser won't evict under
+        // pressure — without it, playlists can vanish with cleared site data.
+        if (!persistRequested.current) {
+            persistRequested.current = true
+            navigator.storage?.persist?.().catch(() => {})
+        }
     }, [state])
 
     return (

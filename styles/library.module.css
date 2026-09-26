@@ -177,6 +177,51 @@
     transform: none;
 }
 
+/* Export/import, parked below the lists so it never competes with them. */
+.backupRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    padding: 1rem 0 3rem;
+    border-top: 1px solid var(--phosphor-secondary);
+}
+
+.backupLabel {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+    margin-right: .4rem;
+}
+
+.backupBtn {
+    composes: pixel-depth from global;
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: .75rem;
+    padding: .35rem .9rem;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+}
+
+.backupBtn:hover {
+    background: var(--primarycolor);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+.backupStatus {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--lowPrimaryColor);
+}
+
 .emptyState {
     color: var(--lowPrimaryColor);
     text-transform: uppercase;

@@ -2,6 +2,8 @@
 // Favorites. Pure — new playlist ids come in with the action, so the reducer
 // never generates randomness itself.
 
+import { mergePlaylists } from './exportFormat.js'
+
 /** @typedef {import('../types.js').Video} Video */
 /** @typedef {{ id: string, name: string, tracks: Video[] }} Playlist */
 
@@ -52,6 +54,9 @@ export default function libraryReducer(state, action) {
             const { id, name, track } = action.payload
             return [...state, { id, name, tracks: track ? [track] : [] }]
         }
+
+        case 'IMPORT':
+            return mergePlaylists(state, action.payload.playlists).playlists
 
         case 'DELETE_PLAYLIST':
             if (action.payload === FAVORITES_ID) return state

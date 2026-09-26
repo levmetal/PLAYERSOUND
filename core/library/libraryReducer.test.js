@@ -69,3 +69,11 @@ test('HYDRATE replaces the state with the stored playlists', () => {
 test('an unknown action returns the same state object', () => {
     assert.equal(libraryReducer(withP, { type: 'NOPE' }), withP)
 })
+
+test('IMPORT merges a backup into the current playlists', () => {
+    const state = reduce(withP,
+        { type: 'ADD_TO_FAVORITES', payload: A },
+        { type: 'IMPORT', payload: { playlists: [{ id: FAVORITES_ID, name: 'Favorites', tracks: [A, B] }] } })
+    assert.deepEqual(favorites(state), [A, B])
+    assert.deepEqual(tracksOf(state, P), [])
+})

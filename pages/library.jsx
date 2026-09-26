@@ -1,9 +1,31 @@
 import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FaPlay } from "react-icons/fa";
 import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libraryContext/libraryContext";
 import { useNowPlaying } from "../context/nowPlayingContext";
+import { toExport, parseImport, mergePlaylists } from "../core/library/exportFormat";
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+// The listener's own calendar date, not UTC's, for the backup file name.
+const localDate = (date) =>
+    [date.getFullYear(), date.getMonth() + 1, date.getDate()].map((n) => String(n).padStart(2, '0')).join('-')
+
+const IMPORT_ERRORS = {
+    'not-json': "That file is damaged or incomplete.",
+    'invalid-playlists': "That file is damaged or incomplete.",
+    'not-playersound': "That file isn't a PlayerSound backup.",
+    'unsupported-version': "That backup was made by a newer version of PlayerSound.",
+}
+
+function importSummary({ playlists, tracks }) {
+    if (!playlists && !tracks) return 'Already up to date — nothing new in that file.'
+    const parts = []
+    if (playlists) parts.push(plural(playlists, 'playlist'))
+    if (tracks) parts.push(plural(tracks, 'track'))
+    return `Imported ${parts.join(' and ')}.`
+}
 
 const Library = () => {
 
@@ -12,6 +34,8 @@ const Library = () => {
     const { playQueue } = useNowPlaying()
     const [selectedId, setSelectedId] = useState(FAVORITES_ID)
     const [newPlaylistName, setNewPlaylistName] = useState("")
+    const [backupStatus, setBackupStatus] = useState("")
+    const importInputRef = useRef(null)
     const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedId) ?? playlists[0]
 
     // The whole playlist is the queue, from the first track or the clicked one.
@@ -25,6 +49,31 @@ const Library = () => {
         if (!name) return
         dispatch({ type: "CREATE_PLAYLIST", payload: { name } })
         setNewPlaylistName("")
+    }
+
+    const exportPlaylists = () => {
+        const now = new Date()
+        const blob = new Blob([JSON.stringify(toExport(playlists, now), null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `playersound-playlists-${localDate(now)}.json`
+        link.click()
+        URL.revokeObjectURL(url)
+        setBackupStatus(`Exported ${plural(playlists.length, 'playlist')}.`)
+    }
+
+    const importPlaylists = async (e) => {
+        const file = e.target.files?.[0]
+        e.target.value = ''
+        if (!file) return
+        const result = parseImport(await file.text())
+        if (!result.ok) {
+            setBackupStatus(IMPORT_ERRORS[result.error])
+            return
+        }
+        setBackupStatus(importSummary(mergePlaylists(playlists, result.playlists).added))
+        dispatch({ type: 'IMPORT', payload: { playlists: result.playlists } })
     }
 
     const deletePlaylist = (id) => {
@@ -104,6 +153,22 @@ const Library = () => {
                         ))
                     )}
                 </ul>
+
+                <div className={styles.backupRow}>
+                    <span className={styles.backupLabel}>Backup</span>
+                    <button type="button" className={styles.backupBtn} onClick={exportPlaylists}>Export</button>
+                    <button type="button" className={styles.backupBtn} onClick={() => importInputRef.current?.click()}>Import</button>
+                    <input
+                        ref={importInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        className="sr-only"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onChange={importPlaylists}
+                    />
+                    <p className={styles.backupStatus} role="status" aria-live="polite">{backupStatus}</p>
+                </div>
             </div>
     )
 }
