@@ -1,17 +1,12 @@
-import { searchVideos } from "../../../lib/searchVideos";
+import container from "../../../services/container";
 
-
-export default async function (req, res) {
-  const { query } = req
-  const { searchTerm } = query
+export default async function searchHandler(req, res) {
+  const { searchTerm } = req.query
 
   try {
-    res.status(200).json(await searchVideos(searchTerm))
-
+    res.status(200).json(await container.search.search(searchTerm))
   } catch (error) {
     console.error(`search error for "${searchTerm}":`, error);
     res.status(500).json({ error: error.message })
-
   }
-
 }
