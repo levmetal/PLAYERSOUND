@@ -19,7 +19,7 @@ import signalsReducer, { initialSignals, discoverSignals } from "../core/signals
 const NOTICE_MS = 4000
 
 const SETTINGS_KEY = 'playersound:settings'
-const DEFAULT_SETTINGS = { version: 1, radio: true, radioHintSeen: false }
+const DEFAULT_SETTINGS = { version: 1, radio: true }
 const SIGNALS_KEY = 'playersound:signals'
 const HISTORY_KEY = 'playersound:history'
 
@@ -189,11 +189,8 @@ export function NowPlayingProvider({ children }) {
     }, [])
     const setRadio = useCallback((enabled) => {
         dispatch({ type: 'SET_RADIO', payload: { enabled } })
-        setSettings((current) => ({ ...current, radio: enabled, radioHintSeen: true }))
+        setSettings((current) => ({ ...current, radio: enabled }))
         if (!enabled) setHandoff(null)
-    }, [])
-    const dismissRadioHint = useCallback(() => {
-        setSettings((current) => ({ ...current, radioHintSeen: true }))
     }, [])
     const dismissHandoff = useCallback(() => setHandoff(null), [])
     // ⏭ is a judgement on the track (a skip if early); ⏮, stop and picking
@@ -246,10 +243,9 @@ export function NowPlayingProvider({ children }) {
             position: queuePosition(queue),
             source: queue.source,
             radio: queue.radio,
-            upNext: upNext(queue),
+            upNext: upNext(queue, Date.now()),
             tags: currentTags(queue),
             signals: discoverSignals(signals),
-            radioHint: queue.radio.enabled && queue.radio.status !== 'unavailable' && !settings.radioHintSeen,
             notice,
             handoff,
             expanded,
@@ -263,7 +259,6 @@ export function NowPlayingProvider({ children }) {
             jumpTo,
             playNow,
             setRadio,
-            dismissRadioHint,
             dismissHandoff,
             next,
             finished,
@@ -275,8 +270,8 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
-        [queue, signals, settings.radioHintSeen, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, startTagRadio, jumpTo, playNow, setRadio, dismissRadioHint, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
+        [queue, clock, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
+            startPlaylistRadio, startTagRadio, jumpTo, playNow, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

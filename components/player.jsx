@@ -308,7 +308,12 @@ const Player = ({ item }) => {
                             <li className={styles.tagChips__label} aria-hidden="true">More like:</li>
                             {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
                                 <li key={tag}>
-                                    <button type="button" onClick={() => startTagRadio(tag)} title={`Play more ${tag}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => startTagRadio(tag)}
+                                        aria-pressed={source?.type === 'tag' && source.label === tag}
+                                        title={`Play more ${tag}`}
+                                    >
                                         {tag}
                                     </button>
                                 </li>

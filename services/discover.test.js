@@ -96,6 +96,12 @@ test('one seed returns ranked candidates with reasons, the first 3 playable', as
     assert.deepEqual(scores, [...scores].sort((a, b) => b - a))
 })
 
+test('tries at most 5 YouTube matches per batch, for 3 playable', async () => {
+    const { service, resolver } = setup()
+    await service.discover({ seeds: [DIGITAL_LOVE] })
+    assert.deepEqual(resolver.calls.map(({ count, maxAttempts }) => ({ count, maxAttempts })), [{ count: 3, maxAttempts: 5 }])
+})
+
 test('asks for 50 similar tracks and tags for at most 15 distinct candidate artists', async () => {
     const { service, calls } = setup()
     await service.discover({ seeds: [DIGITAL_LOVE] })

@@ -358,3 +358,21 @@ test('upNext lists a user pick queued after radio items under the user', () => {
     assert.deepEqual(next.user.map(({ item }) => item.video.id), [E.id])
     assert.deepEqual(next.radio.map(({ item }) => item.video.id), [C.id])
 })
+
+// --- waiting for YouTube ---
+
+test('upNext lists candidates still waiting for a video, at most 5', () => {
+    const titles = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6']
+    const state = batch(startRadio(), { candidates: [c(B), ...titles.map((t) => c(null, t))] })
+    const next = upNext(state, NOW)
+    assert.deepEqual(next.radio.map(({ item }) => item.video.id), [B.id])
+    assert.deepEqual(next.waiting.map((w) => w.title), ['W1', 'W2', 'W3', 'W4', 'W5'])
+    assert.equal(next.waitMinutes, null)
+})
+
+test('while rate-limited, upNext says how many minutes are left', () => {
+    const state = batch(startRadio(), { candidates: [c(null, 'W1')], retryAfter: 600 })
+    assert.equal(upNext(state, NOW).waitMinutes, 10)
+    assert.equal(upNext(state, NOW + 540001).waitMinutes, 1)
+    assert.equal(upNext(state, NOW + 600000).waitMinutes, null)
+})

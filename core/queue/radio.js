@@ -93,12 +93,16 @@ export function pickSeeds(tracks, n = 5) {
     return Array.from({ length: n }, (_, i) => tracks[Math.round((i * (tracks.length - 1)) / (n - 1))])
 }
 
+const MAX_WAITING_SHOWN = 5
+
 /**
  * The playable items after the current one, split by who chose them, with
- * their queue index (for JUMP_TO).
+ * their queue index (for JUMP_TO); plus the suggestions still waiting for a
+ * video, so a rate limit never looks like "nothing found".
  * @param {QueueState} state
+ * @param {number} [now]
  */
-export function upNext(state) {
+export function upNext(state, now = 0) {
     const user = []
     const radio = []
     for (let index = state.index + 1; index < state.items.length; index++) {
@@ -106,7 +110,9 @@ export function upNext(state) {
         if (state.unplayable.includes(item.video.id)) continue
         ;(item.origin === 'radio' ? radio : user).push({ item, index })
     }
-    return { user, radio }
+    const { retryAt, pending } = state.radio
+    const waitMinutes = retryAt !== null && retryAt > now ? Math.ceil((retryAt - now) / 60000) : null
+    return { user, radio, waiting: pending.slice(0, MAX_WAITING_SHOWN), waitMinutes }
 }
 
 /**

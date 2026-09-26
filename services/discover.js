@@ -13,7 +13,8 @@ const FALLBACK_ARTISTS = 5
 const FALLBACK_TRACKS = 3
 const TAGGED_ARTISTS = 15
 const RESOLVE_COUNT = 3
-const RESOLVE_ATTEMPTS = 10
+// Each attempt is a YouTube search; YouTube rate-limits us past a few dozen.
+const RESOLVE_ATTEMPTS = 5
 // R5: a Last.fm search hit is trusted as a correction only this popular —
 // real junk hits for a garbled title sit in the hundreds or low thousands.
 const SEARCH_MIN_LISTENERS = 10000

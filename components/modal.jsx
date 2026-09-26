@@ -34,7 +34,7 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled
 // (moving an iframe in the DOM would reload it).
 const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
     const {
-        source, position, notice, handoff, current, radio, radioHint, setRadio, dismissRadioHint, dismissHandoff,
+        source, position, notice, handoff, current, radio, setRadio, dismissHandoff,
     } = useNowPlaying()
     const [closing, setClosing] = useState(false)
     const closingRef = useRef(false)
@@ -129,8 +129,10 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                         {/* Always mounted, so screen readers hear each new notice. */}
                         <span className="sr-only" role="status" aria-live="polite">{notice ?? handoff ?? ''}</span>
                         <div className={styles.console__headerActions}>
+                            {/* The mini-player's Autoplay switch; expanded, it sits with
+                                the list it controls (components/queuePanel.jsx). */}
                             <button
-                                className={radio.enabled ? `${styles.btn__close} ${styles.radioOn}` : styles.btn__close}
+                                className={radio.enabled ? `${styles.btn__close} ${styles.radioOn} ${styles.miniAutoplay}` : `${styles.btn__close} ${styles.miniAutoplay}`}
                                 onClick={() => setRadio(!radio.enabled)}
                                 disabled={radio.status === 'unavailable'}
                                 aria-pressed={radio.enabled}
@@ -140,16 +142,8 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                                     : radio.enabled ? 'Autoplay on: tracks with a similar vibe play when your queue ends' : 'Autoplay off: playback stops when your queue ends'}
                             >
                                 <MdWaves aria-hidden="true" />
+                                <span className={styles.miniAutoplay__text}>Autoplay</span>
                             </button>
-                            {radioHint && (
-                                <div className={`${styles.radioHint} hud-frame`} role="note">
-                                    <p>
-                                        Autoplay is on: when your queue ends, tracks with a similar vibe
-                                        keep playing, each showing why it was picked. Turn it off here anytime.
-                                    </p>
-                                    <button type="button" onClick={dismissRadioHint}>Got it</button>
-                                </div>
-                            )}
                             <button
                                 ref={toggleButtonRef}
                                 className={styles.btn__close}
@@ -198,9 +192,9 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                         {description && (
                             <p className={styles.infoStrip}>{description}</p>
                         )}
-
-                        <QueuePanel item={item} />
                     </div>
+
+                    <QueuePanel item={item} />
 
                     <div className={styles.console__footer}>
                         {process.env.NEXT_PUBLIC_PLAYBACK_MODE === 'iframe' && (

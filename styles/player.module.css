@@ -38,7 +38,13 @@
     /* A ceiling, not a target: the grid faceplate (below) needs ~400px, well
        under this at normal heights. .faceplate's own overflow-y:auto is the
        fallback for a viewport too short even for this. */
-    max-height: 90dvh;
+    max-height: calc(100dvh - 1.25rem);
+    /* Opens to nearly the full viewport: the faceplate keeps its natural
+       height and the list area (Up next / Similar vibe) takes the rest.
+       The mini-player overrides both. */
+    height: calc(100dvh - 1.25rem);
+    /* Short viewports: the whole console scrolls rather than squeezing the list. */
+    overflow-y: auto;
     background: var(--phosphor-box-bg);
     border-top: var(--border-crt);
     box-shadow: 0 -4px 24px rgba(var(--phosphor-primary-rgb), 0.2);
@@ -130,8 +136,8 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem 1.4rem;
+    flex: none;
     overflow-x: hidden;
-    overflow-y: auto;
 }
 
 .console__footer {
@@ -192,34 +198,6 @@
     color: var(--accent);
 }
 
-/* First-run tip, hung under the header's buttons (above them in the mini). */
-.console__headerActions {
-    position: relative;
-}
-
-.radioHint {
-    composes: pixel-depth-static from global;
-    position: absolute;
-    top: calc(100% + .5rem);
-    right: 0;
-    z-index: 2;
-    width: 17rem;
-    padding: .6rem .7rem;
-    background-color: var(--phosphor-box-bg);
-    border: var(--border-crt);
-    box-shadow: var(--glow-box);
-    text-transform: none;
-    letter-spacing: normal;
-    text-shadow: none;
-}
-
-.radioHint p {
-    margin: 0 0 .5rem;
-    font-size: .8rem;
-    line-height: 1.4;
-}
-
-.radioHint button,
 .handoff button {
     border: var(--border-crt);
     background: transparent;
@@ -232,7 +210,6 @@
     cursor: pointer;
 }
 
-.radioHint button:hover,
 .handoff button:hover {
     background: var(--primarycolor);
     color: var(--bg);
@@ -539,6 +516,12 @@
     letter-spacing: 1px;
     padding: .1rem .45rem;
     cursor: pointer;
+}
+
+.tagChips button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--glow-accent);
 }
 
 .tagChips button:hover,
@@ -1017,8 +1000,13 @@
     .console {
         margin-left: 0;
         width: 100%;
+        /* Clear the top nav bar (it sits above the backdrop). */
+        height: calc(100dvh - var(--mobile-nav-height));
+        max-height: calc(100dvh - var(--mobile-nav-height));
     }
 }
+
+
 
 @media screen and (max-width:700px) {
     /* One column at phone width: window centered on top, transport below.
@@ -1109,6 +1097,7 @@
     width: auto;
     height: var(--mini-player-height);
     max-height: none;
+    overflow: visible;
     box-sizing: border-box;
     flex-direction: row;
     align-items: stretch;
@@ -1349,8 +1338,28 @@
 
 /* The mini has room for two lines: a radio track's reason replaces the channel. */
 .consoleMini .tagChips,
-.consoleMini .queuePanel {
+.consoleMini .listArea,
+.miniAutoplay__text {
     display: none;
+}
+
+/* Expanded, the Autoplay switch lives with the list; the header copy of it
+   is the mini-player's, shown there with its label. */
+.console:not(.consoleMini) .miniAutoplay {
+    display: none;
+}
+
+.consoleMini .miniAutoplay {
+    width: auto;
+    gap: .35rem;
+    padding: 0 .5rem;
+}
+
+.consoleMini .miniAutoplay__text {
+    display: inline;
+    font-size: .6rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .consoleMini .metaTextReason h2 {
@@ -1362,11 +1371,6 @@
     justify-content: flex-start;
     margin: 0;
     font-size: .6rem;
-}
-
-.consoleMini .radioHint {
-    top: auto;
-    bottom: calc(100% + .6rem);
 }
 
 .consoleMini .handoff {
@@ -1443,19 +1447,49 @@
     }
 }
 
-/* ===================== Up next / Similar to this =====================
-   Full-width strip under the faceplate (expanded only); the faceplate's
-   own overflow-y:auto scrolls it on short viewports. */
-.queuePanel {
-    grid-column: 1 / -1;
+/* ===================== List area: Up next + Similar vibe =====================
+   Fills the console under the faceplate (the console now opens to nearly
+   full height) and scrolls on its own; blocks sit side by side when there
+   is room for two. Expanded only. */
+.listArea {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    align-content: start;
+    gap: 1rem 1.6rem;
+    padding: .9rem 1.4rem 1rem;
     border-top: 1px solid var(--phosphor-secondary);
-    padding-top: .7rem;
+}
+
+.listBlock {
     min-width: 0;
 }
 
-.queuePanel__title {
-    margin: 0 0 .4rem;
-    font-size: .8rem;
+/* Similar vibe takes the wider share when both blocks show. */
+.listBlockVibe {
+    grid-column: span 1;
+}
+
+.listBlock__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "title    switch"
+        "subtitle switch";
+    align-items: center;
+    column-gap: 1rem;
+    margin-bottom: .5rem;
+}
+
+.listBlock__title {
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+    font-size: .85rem;
     font-weight: normal;
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
@@ -1463,32 +1497,39 @@
     text-shadow: var(--glow-text);
 }
 
-.queuePanel__group {
-    display: flex;
-    align-items: center;
-    gap: .35rem;
-    margin: .5rem 0 .25rem;
+.listBlock__title svg {
+    color: var(--accent);
+}
+
+.listBlock__subtitle {
+    grid-area: subtitle;
+    margin: .15rem 0 0;
+    font-size: .75rem;
+    color: var(--phosphor-secondary-alt);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.listBlock__note {
+    margin: .3rem 0;
+    font-size: .8rem;
+    color: var(--phosphor-secondary-alt);
+}
+
+.listBlock__credit {
+    margin: .5rem 0 0;
     font-size: .65rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--phosphor-secondary-alt);
 }
 
-.queuePanel__group svg {
-    color: var(--accent);
-}
-
-.queuePanel__credit a {
+.listBlock__credit a {
     color: var(--phosphor-secondary-alt);
 }
 
-.queuePanel__empty {
-    margin: 0;
-    font-size: .8rem;
-    color: var(--phosphor-secondary-alt);
-}
-
-.queuePanel__button {
+.listBlock__button {
     border: var(--border-crt);
     background: transparent;
     color: var(--primarycolor);
@@ -1496,13 +1537,101 @@
     font-size: .75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: .25rem .8rem;
+    padding: .35rem .9rem;
     cursor: pointer;
 }
 
-.queuePanel__button:hover {
+.listBlock__button:hover {
     background: var(--primarycolor);
     color: var(--bg);
+}
+
+/* Autoplay: a labelled switch plus one line saying what it does. */
+.autoplay {
+    grid-area: switch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .2rem;
+}
+
+.autoplay__switch {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .2rem .25rem .2rem .6rem;
+    cursor: pointer;
+}
+
+.autoplay__state {
+    min-width: 2.2rem;
+    padding: .1rem .35rem;
+    text-align: center;
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--phosphor-secondary-alt);
+}
+
+/* On is a state, so it takes the cyan accent (like a saved ♥). */
+.autoplay__switchOn .autoplay__state {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: var(--glow-accent);
+}
+
+.autoplay__switch:hover,
+.autoplay__switch:focus-visible {
+    border-color: var(--primarycolor);
+    box-shadow: var(--glow-box);
+    outline: none;
+}
+
+.autoplay__hint {
+    font-size: .65rem;
+    color: var(--phosphor-secondary-alt);
+    text-align: right;
+}
+
+.queueRowWaiting .queueRow__main {
+    cursor: default;
+    opacity: .55;
+}
+
+.queueRowSkeleton .queueRow__main {
+    cursor: default;
+    gap: .35rem;
+    padding: .5rem .3rem;
+}
+
+.skeletonBar {
+    display: block;
+    width: 70%;
+    height: .7rem;
+    background: rgba(var(--phosphor-primary-rgb), 0.12);
+    animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeletonBarShort {
+    width: 40%;
+    height: .5rem;
+}
+
+@keyframes skeleton-pulse {
+    0%, 100% { opacity: .5; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeletonBar {
+        animation: none;
+    }
 }
 
 .queueList {
@@ -1577,4 +1706,32 @@
 .queueRow__action:hover {
     background: var(--primarycolor);
     color: var(--bg);
+}
+
+/* Phones: one scroll (the console's), not a list scrolling inside it; the
+   Autoplay switch drops under the block title. */
+@media screen and (max-width: 700px) {
+    .listArea {
+        flex: none;
+        overflow: visible;
+        min-height: 0;
+        padding: .8rem;
+    }
+
+    .listBlock__header {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "title"
+            "subtitle"
+            "switch";
+        row-gap: .4rem;
+    }
+
+    .autoplay {
+        align-items: flex-start;
+    }
+
+    .autoplay__hint {
+        text-align: left;
+    }
 }
