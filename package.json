@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "node --test \"core/**/*.test.js\" \"services/**/*.test.js\" \"adapters/**/*.test.js\"",
     "test:audio": "node scripts/test-audio-endpoint.mjs",
+    "test:discover": "node scripts/test-discover.mjs",
     "postinstall": "patch-package"
   },
   "engines": {
