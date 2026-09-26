@@ -15,6 +15,15 @@
  */
 
 /**
+ * A video identified as a song. `rule` names the resolveTrack rule that matched.
+ * @typedef {Object} Track
+ * @property {string} artist
+ * @property {string} title
+ * @property {'R1' | 'R2' | 'R3' | 'R4'} rule
+ * @property {'high' | 'medium'} confidence
+ */
+
+/**
  * @typedef {Object} QueueItem
  * @property {Video} video
  * @property {'user' | 'radio'} origin   only 'user' until radio exists
