@@ -12,6 +12,7 @@ import queueReducer, {
 } from "../core/queue/queueReducer";
 import { radioRequest, radioHandoff, pickSeeds } from "../core/queue/radio";
 import { discover, resolveCandidates } from "../utils/discoverClient";
+import resolveTrack from "../core/track/resolveTrack";
 
 // How long "Skipped …" stays in the console header.
 const NOTICE_MS = 4000
@@ -136,8 +137,11 @@ export function NowPlayingProvider({ children }) {
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
         setExpanded(true)
     }, [])
+    // Only songs Last.fm can be asked about make useful seeds.
     const startPlaylistRadio = useCallback((tracks, name) => {
-        dispatch({ type: 'START_RADIO', payload: { seeds: pickSeeds(tracks), label: name } })
+        const seeds = pickSeeds(tracks.filter((track) => resolveTrack(track) !== null))
+        if (!seeds.length) return
+        dispatch({ type: 'START_RADIO', payload: { seeds, label: name } })
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
         setExpanded(true)
     }, [])

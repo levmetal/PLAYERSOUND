@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import { formatViews } from "../utils/formatViews";
 import { formatUploaded } from "../utils/sortSearchResults";
+import resolveTrack from "../core/track/resolveTrack";
 
 // A context menu shouldn't animate on entrance, only on exit — this just
 // keeps it mounted long enough to play playlistMenuClosing's ease-in fade
@@ -144,6 +145,8 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
     const uploaded = showStats ? formatUploaded(item.uploaded) : null
     const showThumb = Boolean(item.thumbnail) && !thumbFailed
     const menuId = `row-menu-${item.id}`
+    // Radio needs to know the song; only worked out once the menu is open.
+    const identified = menuOpen && resolveTrack(item) !== null
 
     const rowClass = [
         styles.row,
@@ -247,9 +250,19 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                             )}
                             {radio.status !== 'unavailable' && (
                                 <li>
-                                    <button type="button" onClick={() => queueAction(startRadio)}>
+                                    <button
+                                        type="button"
+                                        onClick={() => queueAction(startRadio)}
+                                        disabled={!identified}
+                                        aria-describedby={identified ? undefined : `${menuId}-unidentified`}
+                                    >
                                         <MdRadio aria-hidden="true" /> Start radio from this
                                     </button>
+                                    {!identified && (
+                                        <p id={`${menuId}-unidentified`} className={styles.rowMenu__note}>
+                                            We couldn&apos;t identify this song
+                                        </p>
+                                    )}
                                 </li>
                             )}
                         </ul>

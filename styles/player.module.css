@@ -484,6 +484,10 @@
     color: var(--phosphor-primary);
 }
 
+.reasonLineDim {
+    color: var(--phosphor-secondary-alt);
+}
+
 .reasonLine svg {
     flex: none;
     color: var(--accent);

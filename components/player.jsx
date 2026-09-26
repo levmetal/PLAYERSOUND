@@ -7,6 +7,7 @@ import usePlaybackEngine from "../hooks/usePlaybackEngine";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import MarqueeText from './marqueeText';
 import { MdRadio } from 'react-icons/md';
+import resolveTrack from "../core/track/resolveTrack";
 
 // Purely decorative — a neon VU-meter bar-graph. Not driven by real audio
 // analysis, same spirit as the loader's fake telemetry readouts. The expanded
@@ -49,9 +50,11 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, prev, nextItem, prevItem, skipUnplayable, current } = useNowPlaying();
+    const { next, prev, nextItem, prevItem, skipUnplayable, current, radio } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
+    // With radio on, say up front when this track can't seed it.
+    const unidentified = !reason && radio.enabled && resolveTrack(item) === null;
 
     // Two interchangeable playback engines behind one interface, because our own resolver only reaches
     // YouTube reliably from a residential IP.
@@ -295,6 +298,11 @@ const Player = ({ item }) => {
                                 {reason.sharedTags.length > 0 && ` · ${reason.sharedTags.join(', ')}`}
                             </span>
                             <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
+                        </p>
+                    )}
+                    {unidentified && (
+                        <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>
+                            <span className={styles.reasonLine__text}>We couldn&apos;t identify this song</span>
                         </p>
                     )}
                 </div>

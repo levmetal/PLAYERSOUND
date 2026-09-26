@@ -7,6 +7,7 @@ import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libra
 import { useNowPlaying } from "../context/nowPlayingContext";
 import { toExport, parseImport, mergePlaylists } from "../core/library/exportFormat";
 import shuffle from "../core/queue/shuffle";
+import resolveTrack from "../core/track/resolveTrack";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 
@@ -40,6 +41,7 @@ const Library = () => {
     const importInputRef = useRef(null)
     const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedId) ?? playlists[0]
     const isEmpty = selectedPlaylist.tracks.length === 0
+    const canSeedRadio = selectedPlaylist.tracks.some((track) => resolveTrack(track) !== null)
 
     // The whole playlist is the queue, from the first track or the clicked one.
     const playFrom = (index) => {
@@ -153,8 +155,10 @@ const Library = () => {
                                 type="button"
                                 className={styles.playAll}
                                 onClick={() => startPlaylistRadio(selectedPlaylist.tracks, selectedPlaylist.name)}
-                                disabled={isEmpty}
-                                title="Play tracks like the ones in this playlist"
+                                disabled={!canSeedRadio}
+                                title={isEmpty || canSeedRadio
+                                    ? 'Play tracks like the ones in this playlist'
+                                    : "We couldn't identify any song in this playlist"}
                             >
                                 <MdRadio aria-hidden="true" /> Radio
                             </button>

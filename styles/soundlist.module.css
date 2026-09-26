@@ -783,6 +783,22 @@
     outline: none;
 }
 
+.rowMenu__actions button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--primarycolor);
+}
+
+.rowMenu__note {
+    margin: 0 0 .2rem;
+    padding: 0 .3rem;
+    color: var(--phosphor-secondary-alt);
+    font-size: .7rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
 .rowMenu__heading {
     margin: 0 0 .35rem 0;
     color: var(--phosphor-secondary);
