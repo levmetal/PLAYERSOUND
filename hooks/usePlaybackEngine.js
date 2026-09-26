@@ -35,7 +35,13 @@ function loadIframeApi() {
 // exist). `containerRef` is only used by the iframe engine; the native
 // engine's <audio> element is self-contained and needs no visible mount
 // point.
-export default function usePlaybackEngine({ videoId, onEnded, metadata }) {
+//
+// Every track starts playing on its own once loaded: a player only ever
+// mounts because of an explicit play (a row click, Play all, ⏮/⏭) or the
+// queue auto-advancing. If the browser blocks autoplay, the track just stays
+// loaded with ▶ ready. `onNext`/`onPrev` are null when the queue has nothing
+// in that direction.
+export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onPrev = null, metadata }) {
     const [fellBackToIframe, setFellBackToIframe] = useState(false);
     const engine = PLAYBACK_MODE === 'iframe' || fellBackToIframe ? 'iframe' : 'native';
 
@@ -51,6 +57,12 @@ export default function usePlaybackEngine({ videoId, onEnded, metadata }) {
     const ytPlayerRef = useRef(null);
     const onEndedRef = useRef(onEnded);
     onEndedRef.current = onEnded;
+    const onNextRef = useRef(onNext);
+    onNextRef.current = onNext;
+    const onPrevRef = useRef(onPrev);
+    onPrevRef.current = onPrev;
+    const hasNext = Boolean(onNext);
+    const hasPrev = Boolean(onPrev);
 
     useEffect(() => {
         setReady(false);
@@ -111,7 +123,7 @@ export default function usePlaybackEngine({ videoId, onEnded, metadata }) {
                     // YouTube's controls on just doubled up on controls for the
                     // same video with no benefit. disablekb stops the iframe from
                     // also reacting to space/arrow keys behind our own transport.
-                    playerVars: { playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3 },
+                    playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3 },
                     host: 'https://www.youtube-nocookie.com',
                     events: {
                         onReady: () => setReady(true),
@@ -164,6 +176,17 @@ export default function usePlaybackEngine({ videoId, onEnded, metadata }) {
             navigator.mediaSession.setActionHandler('seekforward', null);
         };
     }, [engine, metadata?.title, metadata?.artist, metadata?.artworkUrl]);
+
+    // Lock-screen ⏮/⏭ only show up when there's somewhere to go.
+    useEffect(() => {
+        if (engine !== 'native' || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+        navigator.mediaSession.setActionHandler('nexttrack', hasNext ? () => onNextRef.current?.() : null);
+        navigator.mediaSession.setActionHandler('previoustrack', hasPrev ? () => onPrevRef.current?.() : null);
+        return () => {
+            navigator.mediaSession.setActionHandler('nexttrack', null);
+            navigator.mediaSession.setActionHandler('previoustrack', null);
+        };
+    }, [engine, hasNext, hasPrev]);
 
     useEffect(() => {
         if (engine !== 'native' || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;

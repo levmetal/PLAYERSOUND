@@ -1,15 +1,23 @@
 import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
 import { useState } from "react";
+import { FaPlay } from "react-icons/fa";
 import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libraryContext/libraryContext";
+import { useNowPlaying } from "../context/nowPlayingContext";
 
 const Library = () => {
 
     const playlists = usePlaylists()
     const dispatch = useDispatchContext()
+    const { playQueue } = useNowPlaying()
     const [selectedId, setSelectedId] = useState(FAVORITES_ID)
     const [newPlaylistName, setNewPlaylistName] = useState("")
     const selectedPlaylist = playlists.find((playlist) => playlist.id === selectedId) ?? playlists[0]
+
+    // The whole playlist is the queue, from the first track or the clicked one.
+    const playFrom = (index) => {
+        playQueue(selectedPlaylist.tracks, index, { type: 'playlist', label: selectedPlaylist.name })
+    }
 
     const createPlaylist = (e) => {
         e.preventDefault()
@@ -65,14 +73,32 @@ const Library = () => {
                     </form>
                 </div>
 
+                <div className={styles.playlistHeader}>
+                    <h2 className={styles.playlistHeader__name}>
+                        {selectedPlaylist.name}{' '}
+                        <span className={styles.playlistCount}>
+                            ({selectedPlaylist.tracks.length} {selectedPlaylist.tracks.length === 1 ? 'track' : 'tracks'})
+                        </span>
+                    </h2>
+                    <button
+                        type="button"
+                        className={styles.playAll}
+                        onClick={() => playFrom(0)}
+                        disabled={selectedPlaylist.tracks.length === 0}
+                    >
+                        <FaPlay aria-hidden="true" /> Play all
+                    </button>
+                </div>
+
                 <ul className={styles.list__container}>
                     {selectedPlaylist.tracks.length === 0 ? (
                         <p className={styles.emptyState}>No tracks saved here yet.</p>
                     ) : (
-                        selectedPlaylist.tracks.map(sound => (
+                        selectedPlaylist.tracks.map((sound, index) => (
                             <SoundItem
                                 key={sound.id}
                                 item={sound}
+                                onPlay={() => playFrom(index)}
                                 showStats={false}
                             />
                         ))

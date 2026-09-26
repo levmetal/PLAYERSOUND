@@ -125,6 +125,58 @@
     color: var(--bg);
 }
 
+/* Selected playlist's name + Play all, above its tracks. */
+.playlistHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid var(--phosphor-secondary);
+}
+
+.playlistHeader__name {
+    margin: 0;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primarycolor);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.playAll {
+    composes: pixel-depth from global;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: .8rem;
+    padding: .45rem 1rem;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+}
+
+.playAll:hover:not(:disabled) {
+    background: var(--primarycolor);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
+}
+
+.playAll:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .emptyState {
     color: var(--lowPrimaryColor);
     text-transform: uppercase;

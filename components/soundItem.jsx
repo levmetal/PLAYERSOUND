@@ -24,7 +24,9 @@ const focusSiblingRow = (current, step) => {
     rows[rows.indexOf(current) + step]?.focus()
 }
 
-const SoundItem = ({ item, showStats = true, highlightStat = null }) => {
+// `onPlay` lets the list decide what a click queues (its visible results, a
+// playlist); without it the row plays on its own.
+const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => {
 
     const dispatch = useDispatchContext()
     const { item: nowPlaying, open } = useNowPlaying()
@@ -168,7 +170,7 @@ const SoundItem = ({ item, showStats = true, highlightStat = null }) => {
                     type="button"
                     data-row-primary
                     className={styles.row__primary}
-                    onClick={() => open(item)}
+                    onClick={onPlay ?? (() => open(item))}
                     onKeyDown={handleRowKeys}
                     aria-label={isCurrent ? `Now playing: ${title}. Open player` : `Play ${title}`}
                     title={title}

@@ -87,14 +87,14 @@ function Loading() {
 }
 
 // Lives here, outside <Layout>'s page content, so the player isn't unmounted
-// by route changes. Keyed by track id: a different track gets a fresh player
-// (engine, position, playing state), the same track keeps its instance.
+// by route changes. Not keyed by track: moving through the queue swaps only
+// the Player inside it (see components/modal.jsx), so the console itself —
+// expanded/mini state, focus, entrance animation — stays put.
 function NowPlayingHost() {
   const { item, expanded, minimize, expand, stop } = useNowPlaying()
   if (!item) return null
   return (
     <Modal
-      key={item.id}
       item={item}
       expanded={expanded}
       onMinimize={minimize}

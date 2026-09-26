@@ -736,13 +736,14 @@
     color: var(--bg);
 }
 
+/* Prev · Rew · Play · Fwd · Next — sized by its buttons, not a fixed width. */
 .button__group {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 11rem;
+    width: auto;
     height: auto;
-    gap: 1.4rem;
+    gap: 1rem;
 }
 
 .button {
@@ -763,6 +764,20 @@
     background: var(--phosphor-primary);
     color: var(--bg);
     box-shadow: var(--glow-box);
+}
+
+/* ⏮/⏭ at either end of the queue: dimmed and inert, but kept in place so
+   the transport never shifts sideways between tracks. */
+.trackUnit .button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.trackUnit .button:disabled:hover {
+    background: transparent;
+    color: var(--primarycolor);
+    box-shadow: var(--pixel-shadow-rest);
 }
 
 .volShow {
@@ -874,7 +889,7 @@
     }
 
     .button__group {
-        width: 7rem;
+        width: auto;
         gap: .4rem;
     }
 
@@ -1196,6 +1211,7 @@
     .consoleMini .masterTimer,
     .consoleMini .favUnit,
     .consoleMini .seekUnit,
+    .consoleMini .prevUnit,
     .consoleMini .volumeGroup {
         display: none;
     }

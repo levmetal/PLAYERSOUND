@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { FaCheck } from "react-icons/fa";
 import styles from "../styles/soundlist.module.css"
 import SoundItem from "./soundItem";
+import { useNowPlaying } from "../context/nowPlayingContext";
 import {
   SORT_OPTIONS,
   DURATION_FILTERS,
@@ -24,6 +25,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 // playing after leaving this page.
 const SoundList = ({ query = '', status = 'done', results = [], error = null, onRetry }) => {
   const router = useRouter()
+  const { playQueue } = useNowPlaying()
   const inputRef = useRef(null)
   const [draft, setDraft] = useState(query)
 
@@ -44,6 +46,16 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     () => (groupByChannelOn ? groupByChannel(processedResults) : null),
     [groupByChannelOn, processedResults]
   )
+
+  // What ⏮/⏭ walk: the results in the order they're shown right now.
+  const playOrder = useMemo(
+    () => (grouped ? grouped.flatMap((group) => group.items) : processedResults),
+    [grouped, processedResults]
+  )
+
+  const playFrom = (item) => {
+    playQueue(playOrder, playOrder.indexOf(item), { type: 'search', label: query })
+  }
 
   const done = status === 'done'
   const filtersActive = sortKey !== DEFAULT_SORT || durationKey !== DEFAULT_DURATION || groupByChannelOn
@@ -84,7 +96,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
   }
 
   const renderRows = (items) => items.map((item) => (
-    <SoundItem key={item.id} item={item} highlightStat={sortKey} />
+    <SoundItem key={item.id} item={item} onPlay={() => playFrom(item)} highlightStat={sortKey} />
   ))
 
   let body

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp, FaSpinner } from 'react-icons/fa';
+import { FaPlay, FaForward, FaBackward, FaPause, FaRegHeart, FaHeart, FaVolumeUp, FaSpinner, FaStepBackward, FaStepForward } from 'react-icons/fa';
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import styles from '../styles/player.module.css';
 import { useSoundContext, useDispatchContext } from "../context/libraryContext/libraryContext";
 import usePlaybackEngine from "../hooks/usePlaybackEngine";
+import { useNowPlaying } from "../context/nowPlayingContext";
 import MarqueeText from './marqueeText';
 
 // Purely decorative — a neon VU-meter bar-graph. Not driven by real audio
@@ -47,12 +48,15 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
+    const { next, prev, nextItem, prevItem } = useNowPlaying();
 
     // Two interchangeable playback engines behind one interface, because our own resolver only reaches
     // YouTube reliably from a residential IP.
     const engine = usePlaybackEngine({
         videoId: item.id,
         onEnded: () => onEndedRef.current(),
+        onNext: nextItem ? next : null,
+        onPrev: prevItem ? prev : null,
         metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
     });
     const { playing } = engine;
@@ -172,7 +176,12 @@ const Player = ({ item }) => {
         onChangeBar();
     };
 
+    // Auto-advance through the queue; after its last item, stop and rewind.
     onEndedRef.current = () => {
+        if (nextItem) {
+            next();
+            return;
+        }
         engine.seek(0);
         updateElapsed(0);
         syncBar(0);
@@ -290,8 +299,21 @@ const Player = ({ item }) => {
                 </div>
                 <div className={styles.button__group}>
                     {engine.engine === 'native' && (
-                        <audio ref={engine.audioRef} src={engine.audioUrl} preload="auto" />
+                        <audio ref={engine.audioRef} src={engine.audioUrl} preload="auto" autoPlay />
                     )}
+
+                    <div className={`${styles.controlUnit} ${styles.trackUnit} ${styles.prevUnit}`}>
+                        <button
+                            className={styles.button}
+                            onClick={prev}
+                            disabled={!prevItem}
+                            aria-label={prevItem ? `Previous track: ${prevItem.title}` : 'Previous track'}
+                            title={prevItem ? `Previous: ${prevItem.title}` : 'No previous track'}
+                        >
+                            <FaStepBackward aria-hidden="true" />
+                        </button>
+                        <span className={styles.controlLabel}>Prev</span>
+                    </div>
 
                     <div className={`${styles.controlUnit} ${styles.seekUnit}`}>
                         <button className={styles.button} onClick={BackTime} aria-label="Back 10 seconds">
@@ -325,6 +347,19 @@ const Player = ({ item }) => {
                             <FaForward className={styles.forward} />
                         </button>
                         <span className={styles.controlLabel}>Fwd</span>
+                    </div>
+
+                    <div className={`${styles.controlUnit} ${styles.trackUnit}`}>
+                        <button
+                            className={styles.button}
+                            onClick={next}
+                            disabled={!nextItem}
+                            aria-label={nextItem ? `Next track: ${nextItem.title}` : 'Next track'}
+                            title={nextItem ? `Next: ${nextItem.title}` : 'No next track'}
+                        >
+                            <FaStepForward aria-hidden="true" />
+                        </button>
+                        <span className={styles.controlLabel}>Next</span>
                     </div>
                 </div>
 

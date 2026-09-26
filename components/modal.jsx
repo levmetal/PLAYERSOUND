@@ -2,12 +2,25 @@ import { useEffect, useRef, useState } from "react"
 import styles from '../styles/player.module.css'
 import Player from '../components/player'
 import GlobePanel from '../components/globePanel'
+import { useNowPlaying } from '../context/nowPlayingContext'
 import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
 
 // Matches the console-out/backdrop-out keyframe durations in player.module.css —
 // keeps the expanded console on screen long enough to play its own ease-in
 // exit before it collapses into the mini-player (or goes away on stop).
 const CLOSE_ANIMATION_MS = 200
+
+const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST' }
+const pad2 = (n) => String(n).padStart(2, '0')
+
+// "NOW PLAYING // PLAYLIST: FAVORITES // TRK 03/12" for a queue, the plain
+// signal-lock label for a lone track.
+const headerLabel = (source, position) => {
+    if (!position || position.total < 2) return 'NOW PLAYING // SIG. LOCK'
+    const prefix = SOURCE_PREFIX[source?.type]
+    const from = prefix ? `${prefix}: ${source.label} // ` : ''
+    return `NOW PLAYING // ${from}TRK ${pad2(position.current)}/${pad2(position.total)}`
+}
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
 
@@ -18,6 +31,7 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled
 // YouTube iframe inside Player keep playing untouched across the switch
 // (moving an iframe in the DOM would reload it).
 const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
+    const { source, position } = useNowPlaying()
     const [closing, setClosing] = useState(false)
     const closingRef = useRef(false)
     const dialogRef = useRef(null)
@@ -103,7 +117,7 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className={styles.console__header}>
-                        <span className={styles.console__headerLabel} aria-hidden="true">NOW PLAYING // SIG. LOCK</span>
+                        <span className={styles.console__headerLabel} aria-hidden="true">{headerLabel(source, position)}</span>
                         <div className={styles.console__headerActions}>
                             <button
                                 ref={toggleButtonRef}
@@ -132,7 +146,9 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                         scroll into view. Player renders the first two cells itself
                         (it owns the engine, and so which window to show). */}
                     <div className={styles.faceplate}>
-                        <Player item={item} />
+                        {/* Keyed by track: the next track in the queue gets a fresh
+                            engine, position and playing state. */}
+                        <Player key={item.id} item={item} />
 
                         <div className={styles.globeWindow}>
                             <GlobePanel />
