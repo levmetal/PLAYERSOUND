@@ -13,12 +13,15 @@ import queueReducer, {
 import { radioRequest, radioHandoff, pickSeeds } from "../core/queue/radio";
 import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
+import signalsReducer, { initialSignals, discoverSignals } from "../core/signals/signalsReducer";
 
 // How long "Skipped …" stays in the console header.
 const NOTICE_MS = 4000
 
 const SETTINGS_KEY = 'playersound:settings'
 const DEFAULT_SETTINGS = { version: 1, radio: true, radioHintSeen: false }
+const SIGNALS_KEY = 'playersound:signals'
+const HISTORY_KEY = 'playersound:history'
 
 // App-wide "now playing" state, mounted once in pages/_app.js above every
 // page. The player itself (components/modal.jsx) renders from here, not from
@@ -45,6 +48,14 @@ export function NowPlayingProvider({ children }) {
     const [settings, setSettings] = useState(DEFAULT_SETTINGS)
     const settingsLoaded = useRef(false)
     const [clock, setClock] = useState(0)
+    // Taste signals (core/signals): read by radio requests through a ref, so
+    // a new skip or like never triggers a fetch by itself.
+    const [signals, signalsDispatch] = useReducer(signalsReducer, initialSignals)
+    const signalsLoaded = useRef(false)
+    const signalsRef = useRef(signals)
+    signalsRef.current = signals
+    // Seconds into the current track, reported by the Player once a second.
+    const elapsedRef = useRef(0)
     const queueRef = useRef(queue)
     const previousQueue = useRef(queue)
     queueRef.current = queue
@@ -70,15 +81,32 @@ export function NowPlayingProvider({ children }) {
         if (settingsLoaded.current) set(SETTINGS_KEY, settings).catch(() => {})
     }, [settings])
 
+    useEffect(() => {
+        Promise.all([get(SIGNALS_KEY), get(HISTORY_KEY)])
+            .then(([stored, history]) => {
+                signalsDispatch({ type: 'HYDRATE', payload: {
+                    ...(stored?.version === 1 ? { affinity: stored.affinity, excluded: stored.excluded } : {}),
+                    ...(history?.version === 1 ? { history: history.items } : {}),
+                } })
+            })
+            .catch(() => {})
+            .finally(() => { signalsLoaded.current = true })
+    }, [])
+    useEffect(() => {
+        if (!signalsLoaded.current) return
+        set(SIGNALS_KEY, { version: 1, affinity: signals.affinity, excluded: signals.excluded }).catch(() => {})
+        set(HISTORY_KEY, { version: 1, items: signals.history }).catch(() => {})
+    }, [signals])
+
     // Radio: whenever the queue changes (or a wait runs out), ask what to fetch.
     useEffect(() => {
-        const request = radioRequest(queue, Date.now())
+        const request = radioRequest(queue, Date.now(), discoverSignals(signalsRef.current))
         if (!request) return
         const { generation } = request
         dispatch({ type: 'RADIO_REQUESTED', payload: { generation } })
         const call = request.kind === 'resolve'
             ? resolveCandidates({ candidates: request.candidates, count: request.count, exclude: request.exclude })
-            : discover({ seeds: request.seeds, exclude: request.exclude })
+            : discover({ seeds: request.seeds, exclude: request.exclude, affinity: request.affinity })
         call.then((result) => {
             const now = Date.now()
             if (!result.ok) {
@@ -107,6 +135,7 @@ export function NowPlayingProvider({ children }) {
         const before = previousQueue.current
         previousQueue.current = queue
         if (currentItem(before) === currentItem(queue)) return
+        elapsedRef.current = 0
         const seed = radioHandoff(before, queue)
         setHandoff(seed ? `Your queue ended — radio from "${seed}" continues.` : null)
     }, [queue])
@@ -154,7 +183,28 @@ export function NowPlayingProvider({ children }) {
         setSettings((current) => ({ ...current, radioHintSeen: true }))
     }, [])
     const dismissHandoff = useCallback(() => setHandoff(null), [])
-    const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
+    // ⏭ is a judgement on the track (a skip if early); ⏮, stop and picking
+    // another row aren't.
+    const next = useCallback(() => {
+        const item = currentItem(queueRef.current)
+        if (item && hasNext(queueRef.current)) {
+            signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: false, at: Date.now() } })
+        }
+        dispatch({ type: 'NEXT' })
+    }, [])
+    // The track ended on its own: a mild like, then on to the next one.
+    const finished = useCallback(() => {
+        const item = currentItem(queueRef.current)
+        if (item) signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: true, at: Date.now() } })
+        dispatch({ type: 'NEXT' })
+    }, [])
+    // ♥ / add to playlist: counts only for the track that's playing (that's
+    // the one whose radio tags are known).
+    const like = useCallback((videoId) => {
+        const item = currentItem(queueRef.current)
+        if (item?.video.id === videoId) signalsDispatch({ type: 'LIKED', payload: { item } })
+    }, [])
+    const reportTime = useCallback((seconds) => { elapsedRef.current = seconds }, [])
     const prev = useCallback(() => dispatch({ type: 'PREV' }), [])
     // A track YouTube won't play: move past it, and say so only when there
     // was somewhere to move to (a lone track just shows the player's error).
@@ -197,6 +247,9 @@ export function NowPlayingProvider({ children }) {
             dismissRadioHint,
             dismissHandoff,
             next,
+            finished,
+            like,
+            reportTime,
             prev,
             skipUnplayable,
             minimize,
@@ -204,7 +257,7 @@ export function NowPlayingProvider({ children }) {
             stop,
         }),
         [queue, settings.radioHintSeen, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, setRadio, dismissRadioHint, dismissHandoff, next, prev, skipUnplayable, minimize, expand, stop]
+            startPlaylistRadio, setRadio, dismissRadioHint, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

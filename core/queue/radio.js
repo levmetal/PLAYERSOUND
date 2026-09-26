@@ -21,15 +21,17 @@ function playableAhead(state) {
     return count
 }
 
-// Everything queued or found unplayable, plus the radio tracks by name (the
-// same song may come back as a different upload). Newest last, capped.
-function excludeFor(state) {
+// The listener's signals first, then everything queued or found unplayable,
+// plus the radio tracks by name (the same song may come back as a different
+// upload). Capped from the front, so old history goes before the queue does.
+function excludeFor(state, signalsExclude) {
     const entries = []
     for (const item of state.items) {
         entries.push(item.video.id)
         if (item.origin === 'radio') entries.push(trackKey(item.track.artist, item.track.title))
     }
-    return [...new Set([...entries, ...state.unplayable])].slice(-MAX_EXCLUDE)
+    const queued = new Set([...entries, ...state.unplayable])
+    return [...signalsExclude.filter((entry) => !queued.has(entry)), ...queued].slice(-MAX_EXCLUDE)
 }
 
 function lastUserVideo(state) {
@@ -42,23 +44,24 @@ function lastUserVideo(state) {
 /**
  * @param {QueueState} state
  * @param {number} now
+ * @param {{ exclude: string[], affinity: Record<string, number> }} [signals]  from core/signals
  * @returns {null | { kind: 'resolve', candidates: any[], count: number, exclude: string[], generation: number }
- *   | { kind: 'discover', seeds: Video[], exclude: string[], generation: number }}
+ *   | { kind: 'discover', seeds: Video[], exclude: string[], affinity: Record<string, number>, generation: number }}
  */
-export function radioRequest(state, now) {
+export function radioRequest(state, now, signals = { exclude: [], affinity: {} }) {
     const { radio } = state
     if (state.index < 0 || !radio.enabled || radio.loading || radio.status !== 'idle') return null
     if (radio.retryAt !== null && now < radio.retryAt) return null
     if (playableAhead(state) > REFILL_AT) return null
 
-    const exclude = excludeFor(state)
+    const exclude = excludeFor(state, signals.exclude)
     const { generation } = state
     if (radio.pending.length) {
         return { kind: 'resolve', candidates: radio.pending.slice(0, RESOLVE_BATCH), count: RESOLVE_COUNT, exclude, generation }
     }
     const seeds = radio.seeds.length ? radio.seeds : [lastUserVideo(state)].filter(Boolean)
     if (!seeds.length) return null
-    return { kind: 'discover', seeds, exclude, generation }
+    return { kind: 'discover', seeds, exclude, affinity: signals.affinity, generation }
 }
 
 /**

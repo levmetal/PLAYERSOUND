@@ -232,6 +232,26 @@ test('exclude keeps the newest 500 entries', () => {
     assert.ok(!exclude.includes(videos[0].id))
 })
 
+test('signals go ahead of the queue in exclude and affinity rides along with discover', () => {
+    const signals = { exclude: ['kavinsky|nightcall', 'old-video'], affinity: { night: -0.2 } }
+    const request = radioRequest(playList([A]), NOW, signals)
+    assert.deepEqual(request.exclude, ['kavinsky|nightcall', 'old-video', A.id])
+    assert.deepEqual(request.affinity, { night: -0.2 })
+})
+
+test('when over 500, old signals are dropped before anything queued', () => {
+    const signals = { exclude: Array.from({ length: 600 }, (_, i) => `old${i}`), affinity: {} }
+    const { exclude } = radioRequest(playList([A]), NOW, signals)
+    assert.equal(exclude.length, 500)
+    assert.equal(exclude[499], A.id)
+    assert.ok(!exclude.includes('old0'))
+})
+
+test('resolve requests carry no affinity', () => {
+    const waiting = batch(startRadio(), { candidates: [c(null)] })
+    assert.equal(radioRequest(waiting, NOW, { exclude: [], affinity: { night: 1 } }).affinity, undefined)
+})
+
 // --- radioHandoff ---
 
 test("the handoff is reported when playback moves from the user's last pick into radio", () => {

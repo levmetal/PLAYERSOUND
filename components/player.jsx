@@ -50,7 +50,7 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, prev, nextItem, prevItem, skipUnplayable, current, radio } = useNowPlaying();
+    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
     // With radio on, say up front when this track can't seed it.
@@ -115,6 +115,7 @@ const Player = ({ item }) => {
         if (second === lastSecondRef.current) return;
         lastSecondRef.current = second;
         setCurrentTime(second);
+        reportTime(second);
     };
 
     useEffect(() => {
@@ -185,10 +186,8 @@ const Player = ({ item }) => {
 
     // Auto-advance through the queue; after its last item, stop and rewind.
     onEndedRef.current = () => {
-        if (nextItem) {
-            next();
-            return;
-        }
+        finished();
+        if (nextItem) return;
         engine.seek(0);
         updateElapsed(0);
         syncBar(0);
@@ -204,6 +203,7 @@ const Player = ({ item }) => {
             type: "ADD_TO_FAVORITES",
             payload: item,
         });
+        like(item.id);
     };
 
     const delHandle = () => {

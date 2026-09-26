@@ -30,7 +30,7 @@ const focusSiblingRow = (current, step) => {
 const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => {
 
     const dispatch = useDispatchContext()
-    const { item: nowPlaying, open, playNext, enqueue, startRadio, radio } = useNowPlaying()
+    const { item: nowPlaying, open, playNext, enqueue, startRadio, radio, like } = useNowPlaying()
     const playlists = usePlaylists()
     const isCurrent = nowPlaying?.id === item.id
 
@@ -100,6 +100,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
     const isFavorite = isInPlaylist(FAVORITES_ID)
 
     const toggleFavorite = () => {
+        if (!isFavorite) like(item.id)
         dispatch({
             type: isFavorite ? "REMOVE_FROM_FAVORITES" : "ADD_TO_FAVORITES",
             payload: isFavorite ? item.id : item,
@@ -108,6 +109,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
 
     const togglePlaylist = (playlistId) => {
         const alreadyIn = isInPlaylist(playlistId)
+        if (!alreadyIn) like(item.id)
         dispatch({
             type: alreadyIn ? "REMOVE_FROM_PLAYLIST" : "ADD_TO_PLAYLIST",
             payload: alreadyIn
@@ -126,6 +128,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
         const name = newPlaylistName.trim()
         if (!name) return
         dispatch({ type: "CREATE_PLAYLIST", payload: { name, track: item } })
+        like(item.id)
         setNewPlaylistName("")
         closeMenu(true)
     }
