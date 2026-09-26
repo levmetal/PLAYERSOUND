@@ -58,3 +58,8 @@ test('cuts to the limit', () => {
     const tags = toTags(lastfm('artist.getTopTags'))
     assert.equal(normalizeTags(tags, { artists: ['Daft Punk'], limit: 3 }).length, 3)
 })
+
+test('names that differ only by accents merge into the first seen (real Soda Stereo tags)', () => {
+    const tags = [{ name: 'rock en espanol', count: 60 }, { name: 'rock en español', count: 45 }, { name: 'rock', count: 80 }]
+    assert.equal(format(normalizeTags(tags)), 'rock:80, rock en espanol:60')
+})

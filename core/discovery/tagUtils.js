@@ -28,7 +28,8 @@ const STOPLIST = new Set([
 const YEAR_RE = /^\d{4}$/
 const FULL_DECADE_RE = /^\d{2}(\d0)s$/
 
-const squash = (name) => name.replace(/[\s-]+/g, '')
+// Spaces, hyphens and accents don't make a different genre.
+const squash = (name) => name.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\s-]+/g, '')
 
 /**
  * @param {Tag[]} tags
