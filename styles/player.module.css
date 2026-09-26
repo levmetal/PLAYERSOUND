@@ -8,7 +8,9 @@
     min-height: 100dvh;
     width: 100%;
     background: rgba(0, 0, 0, 0.65);
-    z-index: 85;
+    /* Above the search command bar (100): this is a modal that traps focus,
+       so nothing under it should show through; below the route tune (110). */
+    z-index: 105;
     animation: backdrop-in 150ms ease-out;
 }
 
@@ -506,6 +508,37 @@
     font-size: .65rem;
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* Last.fm tags under the title; tapping one starts that tag's radio. */
+.tagChips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .35rem;
+    margin: .4rem 0 0;
+    padding: 0;
+}
+
+.tagChips button {
+    border: 1px solid var(--phosphor-secondary);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .1rem .45rem;
+    cursor: pointer;
+}
+
+.tagChips button:hover,
+.tagChips button:focus-visible {
+    border-color: var(--primarycolor);
+    background: var(--primarycolor);
+    color: var(--bg);
+    outline: none;
 }
 
 .metaText h2 {
@@ -1307,6 +1340,11 @@
 }
 
 /* The mini has room for two lines: a radio track's reason replaces the channel. */
+.consoleMini .tagChips,
+.consoleMini .queuePanel {
+    display: none;
+}
+
 .consoleMini .metaTextReason h2 {
     display: none;
 }
@@ -1395,4 +1433,140 @@
         height: 200px;
         right: .5rem;
     }
+}
+
+/* ===================== Up next / Similar to this =====================
+   Full-width strip under the faceplate (expanded only); the faceplate's
+   own overflow-y:auto scrolls it on short viewports. */
+.queuePanel {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--phosphor-secondary);
+    padding-top: .7rem;
+    min-width: 0;
+}
+
+.queuePanel__title {
+    margin: 0 0 .4rem;
+    font-size: .8rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+}
+
+.queuePanel__group {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: .5rem 0 .25rem;
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--phosphor-secondary-alt);
+}
+
+.queuePanel__group svg {
+    color: var(--accent);
+}
+
+.queuePanel__credit a {
+    color: var(--phosphor-secondary-alt);
+}
+
+.queuePanel__empty {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--phosphor-secondary-alt);
+}
+
+.queuePanel__button {
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .25rem .8rem;
+    cursor: pointer;
+}
+
+.queuePanel__button:hover {
+    background: var(--primarycolor);
+    color: var(--bg);
+}
+
+.queueList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.queueRow {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    border-bottom: 1px solid rgba(var(--phosphor-primary-rgb), 0.15);
+}
+
+.queueRow__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .1rem;
+    background: transparent;
+    border: none;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    text-align: left;
+    padding: .35rem .3rem;
+    cursor: pointer;
+}
+
+.queueRow__main:hover,
+.queueRow__main:focus-visible {
+    background: rgba(var(--phosphor-primary-rgb), 0.1);
+    outline: none;
+}
+
+.queueRow__title,
+.queueRow__meta {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.queueRow__title {
+    font-size: .85rem;
+}
+
+.queueRow__meta {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--phosphor-secondary-alt);
+}
+
+.queueRow__action {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border: var(--border-crt);
+    background: transparent;
+    color: var(--primarycolor);
+    cursor: pointer;
+}
+
+.queueRow__action:hover {
+    background: var(--primarycolor);
+    color: var(--bg);
 }

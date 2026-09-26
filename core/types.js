@@ -53,7 +53,7 @@
 /**
  * Where the queue came from, for the player's header readout.
  * @typedef {Object} QueueSource
- * @property {'track' | 'search' | 'playlist' | 'radio'} type
+ * @property {'track' | 'search' | 'playlist' | 'radio' | 'tag'} type
  * @property {string} label
  */
 
@@ -65,8 +65,9 @@
  * @property {1 | -1} direction      last move: 1 forward (next, auto-advance, new list), -1 back
  * @property {string[]} unplayable   ids that failed to play in this queue
  * @property {number} generation     bumped per new queue; radio results carry the one they were asked for
- * @property {{ enabled: boolean, seeds: Video[], pending: RadioCandidate[], loading: boolean,
- *   status: 'idle' | 'unidentified' | 'exhausted' | 'unavailable', retryAt: number | null }} radio
+ * @property {{ enabled: boolean, seeds: Video[], tags: string[], pending: RadioCandidate[], loading: boolean,
+ *   status: 'idle' | 'unidentified' | 'exhausted' | 'unavailable', retryAt: number | null,
+ *   seedTags: Record<string, string[]> }} radio   tags = tag radio; seedTags = Last.fm tags per seed video id
  */
 
 export {}

@@ -21,7 +21,7 @@ const playList = (list, startIndex, source = SEARCH) =>
 test('initial state is empty with nothing current', () => {
     assert.deepEqual(initialQueueState, {
         items: [], index: -1, source: null, direction: 1, unplayable: [], generation: 0,
-        radio: { enabled: true, seeds: [], pending: [], loading: false, status: 'idle', retryAt: null },
+        radio: { enabled: true, seeds: [], tags: [], pending: [], loading: false, status: 'idle', retryAt: null, seedTags: {} },
     })
     assert.equal(currentVideo(initialQueueState), null)
     assert.equal(hasNext(initialQueueState), false)

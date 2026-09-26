@@ -23,7 +23,9 @@ import { trackKey } from '../discovery/rankCandidates.js'
 const RETRY_MS = 30000
 
 /** @type {QueueState['radio']} */
-const initialRadio = { enabled: true, seeds: [], pending: [], loading: false, status: 'idle', retryAt: null }
+const initialRadio = {
+    enabled: true, seeds: [], tags: [], pending: [], loading: false, status: 'idle', retryAt: null, seedTags: {},
+}
 
 /** @type {QueueState} */
 export const initialQueueState = {
@@ -118,9 +120,11 @@ const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.i
  *   | { type: 'SKIP_UNPLAYABLE', payload: { videoId: string } }
  *   | { type: 'PLAY_NEXT' | 'ENQUEUE', payload: { video: Video } }
  *   | { type: 'START_RADIO', payload: { seeds: Video[], label: string } }
+ *   | { type: 'START_TAG_RADIO', payload: { tag: string } }
+ *   | { type: 'JUMP_TO', payload: { index: number } }
  *   | { type: 'SET_RADIO', payload: { enabled: boolean } }
  *   | { type: 'RADIO_REQUESTED', payload: { generation: number } }
- *   | { type: 'RADIO_BATCH', payload: { generation: number, status: 'ok' | 'unidentified', candidates: RadioCandidate[], retryAfter?: number, now: number } }
+ *   | { type: 'RADIO_BATCH', payload: { generation: number, status: 'ok' | 'unidentified', candidates: RadioCandidate[], retryAfter?: number, now: number, seedTags?: Record<string, string[]> } }
  *   | { type: 'RADIO_RESOLVED', payload: { generation: number, requested: RadioCandidate[], candidates: RadioCandidate[], retryAfter?: number, now: number } }
  *   | { type: 'RADIO_FAILED', payload: { generation: number, now: number, unavailable?: boolean } }} action
  * @returns {QueueState}
@@ -146,6 +150,12 @@ export default function queueReducer(state, action) {
         case 'PREV': {
             const index = prevIndex(state)
             return index < 0 ? state : { ...state, index, direction: -1 }
+        }
+
+        case 'JUMP_TO': {
+            const { index } = action.payload
+            if (index === state.index || index < 0 || index >= state.items.length) return state
+            return { ...state, index, direction: 1 }
         }
 
         case 'SKIP_UNPLAYABLE': {
@@ -175,6 +185,26 @@ export default function queueReducer(state, action) {
             })
         }
 
+        // What's playing keeps playing; everything after it becomes that tag's radio.
+        case 'START_TAG_RADIO': {
+            if (state.index < 0) return state
+            const playing = state.items[state.index]
+            const playingTags = state.radio.seedTags[playing.video.id]
+            return {
+                ...state,
+                items: [playing],
+                index: 0,
+                source: { type: 'tag', label: action.payload.tag },
+                generation: state.generation + 1,
+                radio: {
+                    ...initialRadio,
+                    enabled: true,
+                    tags: [action.payload.tag],
+                    seedTags: playingTags ? { [playing.video.id]: playingTags } : {},
+                },
+            }
+        }
+
         case 'SET_RADIO': {
             const { enabled } = action.payload
             if (enabled === state.radio.enabled) return state
@@ -194,7 +224,7 @@ export default function queueReducer(state, action) {
 
         case 'RADIO_BATCH': {
             if (isStale(state, action.payload)) return state
-            const { status, candidates, retryAfter, now } = action.payload
+            const { status, candidates, retryAfter, now, seedTags } = action.payload
             if (status === 'unidentified') {
                 return { ...state, radio: { ...state.radio, loading: false, status: 'unidentified' } }
             }
@@ -209,6 +239,7 @@ export default function queueReducer(state, action) {
                     loading: false,
                     status: empty ? 'exhausted' : 'idle',
                     retryAt: retryAtFor(retryAfter, now),
+                    seedTags: seedTags ? { ...state.radio.seedTags, ...seedTags } : state.radio.seedTags,
                 },
             }
         }

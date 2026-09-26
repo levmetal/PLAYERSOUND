@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import queueReducer, { initialQueueState, currentVideo, hasNext } from './queueReducer.js'
-import { radioRequest, radioHandoff, pickSeeds } from './radio.js'
+import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags } from './radio.js'
 
 const videos = JSON.parse(readFileSync(new URL('../__fixtures__/videos.json', import.meta.url), 'utf8'))
 const [A, B, C, D, E] = videos
@@ -281,4 +281,80 @@ test('pickSeeds spreads the picks over the playlist, first and last included', (
 
 test('pickSeeds takes every track of a short playlist', () => {
     assert.deepEqual(pickSeeds([A, B, C], 5), [A, B, C])
+})
+
+// --- player sections: jump, tag radio, seed tags, up next ---
+
+const jump = (state, index) => queueReducer(state, { type: 'JUMP_TO', payload: { index } })
+const tagRadio = (state, tag) => queueReducer(state, { type: 'START_TAG_RADIO', payload: { tag } })
+
+test('JUMP_TO plays the item at that index, moving forward', () => {
+    const state = jump(batch(playList([A, B]), { candidates: [c(C)] }), 2)
+    assert.equal(currentVideo(state), C)
+    assert.equal(state.direction, 1)
+})
+
+test('JUMP_TO the current index or out of range returns the same state object', () => {
+    const state = playList([A, B, C], 1)
+    assert.equal(jump(state, 1), state)
+    assert.equal(jump(state, 7), state)
+    assert.equal(jump(state, -1), state)
+})
+
+test('tag radio keeps the current track and replaces what was ahead', () => {
+    const full = batch(startRadio(), { candidates: [c(B), c(C)] })
+    const state = tagRadio(full, 'synthwave')
+    assert.deepEqual(ids(state), [A.id])
+    assert.equal(currentVideo(state), A)
+    assert.deepEqual(state.source, { type: 'tag', label: 'synthwave' })
+    assert.deepEqual(state.radio.tags, ['synthwave'])
+    assert.deepEqual(state.radio.seeds, [])
+    assert.equal(state.radio.enabled, true)
+    assert.notEqual(state.generation, full.generation)
+})
+
+test('tag radio asks for tracks by tag', () => {
+    const request = radioRequest(tagRadio(playList([A]), 'synthwave'), NOW)
+    assert.equal(request.kind, 'discover')
+    assert.deepEqual(request.tags, ['synthwave'])
+    assert.deepEqual(request.seeds, [])
+})
+
+test('no handoff notice for a tag radio', () => {
+    const before = batch(tagRadio(playList([A]), 'synthwave'), { candidates: [c(B)] })
+    assert.equal(radioHandoff(before, queueReducer(before, { type: 'NEXT' })), null)
+})
+
+test('a batch remembers the tags Last.fm gave its seed', () => {
+    const state = batch(startRadio(), { candidates: [c(B)], seedTags: { [A.id]: ['french house'] } })
+    assert.deepEqual(state.radio.seedTags, { [A.id]: ['french house'] })
+    assert.deepEqual(currentTags(state), ['french house'])
+})
+
+test('tag radio keeps the tags of the track that goes on playing', () => {
+    const seeded = batch(startRadio(), { candidates: [c(B)], seedTags: { [A.id]: ['french house', 'disco'] } })
+    assert.deepEqual(currentTags(tagRadio(seeded, 'disco')), ['french house', 'disco'])
+})
+
+test('currentTags: a radio item shows its shared tags, an unknown track none', () => {
+    const onB = queueReducer(batch(startRadio(), { candidates: [c(B)] }), { type: 'NEXT' })
+    assert.deepEqual(currentTags(onB), ['french house'])
+    assert.deepEqual(currentTags(playList([A])), [])
+})
+
+test('upNext splits the playable items ahead by who chose them', () => {
+    const withRadio = batch(playList([A, B]), { candidates: [c(C), c(D)] })
+    const marked = reduce(withRadio, { type: 'JUMP_TO', payload: { index: 3 } }, { type: 'SKIP_UNPLAYABLE', payload: { videoId: D.id } })
+    const state = jump(marked, 1)
+    const next = upNext(state)
+    assert.deepEqual(next.user, [])
+    assert.deepEqual(next.radio.map(({ item, index }) => [item.video.id, index]), [[C.id, 2]])
+})
+
+test('upNext lists a user pick queued after radio items under the user', () => {
+    const withRadio = batch(playList([A]), { candidates: [c(C)] })
+    const state = queueReducer(withRadio, { type: 'ENQUEUE', payload: { video: E } })
+    const next = upNext(state)
+    assert.deepEqual(next.user.map(({ item }) => item.video.id), [E.id])
+    assert.deepEqual(next.radio.map(({ item }) => item.video.id), [C.id])
 })

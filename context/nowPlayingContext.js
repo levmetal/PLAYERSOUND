@@ -10,7 +10,7 @@ import queueReducer, {
     hasNext,
     hasPrev,
 } from "../core/queue/queueReducer";
-import { radioRequest, radioHandoff, pickSeeds } from "../core/queue/radio";
+import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags } from "../core/queue/radio";
 import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
 import signalsReducer, { initialSignals, discoverSignals } from "../core/signals/signalsReducer";
@@ -106,7 +106,7 @@ export function NowPlayingProvider({ children }) {
         dispatch({ type: 'RADIO_REQUESTED', payload: { generation } })
         const call = request.kind === 'resolve'
             ? resolveCandidates({ candidates: request.candidates, count: request.count, exclude: request.exclude })
-            : discover({ seeds: request.seeds, exclude: request.exclude, affinity: request.affinity })
+            : discover({ seeds: request.seeds, tags: request.tags, exclude: request.exclude, affinity: request.affinity })
         call.then((result) => {
             const now = Date.now()
             if (!result.ok) {
@@ -116,8 +116,11 @@ export function NowPlayingProvider({ children }) {
                     generation, now, requested: request.candidates, candidates: result.data.candidates, retryAfter: result.data.retryAfter,
                 } })
             } else {
+                // One seed → its Last.fm tags become the player's tag chips.
+                const seedTrack = request.seeds.length === 1 ? result.data.seedTracks?.[0] : null
                 dispatch({ type: 'RADIO_BATCH', payload: {
                     generation, now, status: result.data.status, candidates: result.data.candidates, retryAfter: result.data.retryAfter,
+                    seedTags: seedTrack ? { [request.seeds[0].id]: seedTrack.tags } : undefined,
                 } })
             }
         })
@@ -173,6 +176,16 @@ export function NowPlayingProvider({ children }) {
         dispatch({ type: 'START_RADIO', payload: { seeds, label: name } })
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
         setExpanded(true)
+    }, [])
+    const startTagRadio = useCallback((tag) => {
+        dispatch({ type: 'START_TAG_RADIO', payload: { tag } })
+        setSettings((current) => (current.radio ? current : { ...current, radio: true }))
+    }, [])
+    const jumpTo = useCallback((index) => dispatch({ type: 'JUMP_TO', payload: { index } }), [])
+    // From "Similar to this": right after the current track, then straight to it.
+    const playNow = useCallback((video) => {
+        dispatch({ type: 'PLAY_NEXT', payload: { video } })
+        dispatch({ type: 'NEXT' })
     }, [])
     const setRadio = useCallback((enabled) => {
         dispatch({ type: 'SET_RADIO', payload: { enabled } })
@@ -233,6 +246,9 @@ export function NowPlayingProvider({ children }) {
             position: queuePosition(queue),
             source: queue.source,
             radio: queue.radio,
+            upNext: upNext(queue),
+            tags: currentTags(queue),
+            signals: discoverSignals(signals),
             radioHint: queue.radio.enabled && queue.radio.status !== 'unavailable' && !settings.radioHintSeen,
             notice,
             handoff,
@@ -243,6 +259,9 @@ export function NowPlayingProvider({ children }) {
             enqueue,
             startRadio,
             startPlaylistRadio,
+            startTagRadio,
+            jumpTo,
+            playNow,
             setRadio,
             dismissRadioHint,
             dismissHandoff,
@@ -256,8 +275,8 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
-        [queue, settings.radioHintSeen, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, setRadio, dismissRadioHint, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
+        [queue, signals, settings.radioHintSeen, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
+            startPlaylistRadio, startTagRadio, jumpTo, playNow, setRadio, dismissRadioHint, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

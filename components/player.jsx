@@ -40,6 +40,9 @@ const VU_BARS = Array.from({ length: 64 }, (_, i) => {
 // below for why a CSS-only version of this doesn't work).
 const VU_FADE_MS = 420;
 
+// Last.fm gives a seed up to ~10 tags; the strongest few are enough to tap.
+const MAX_TAG_CHIPS = 5;
+
 const Player = ({ item }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
@@ -50,7 +53,7 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio } = useNowPlaying();
+    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, startTagRadio } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
     // With radio on, say up front when this track can't seed it.
@@ -299,6 +302,17 @@ const Player = ({ item }) => {
                             </span>
                             <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
                         </p>
+                    )}
+                    {tags.length > 0 && (
+                        <ul className={styles.tagChips} aria-label="Tags from Last.fm">
+                            {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
+                                <li key={tag}>
+                                    <button type="button" onClick={() => startTagRadio(tag)} title={`Start ${tag} radio`}>
+                                        {tag}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                     {unidentified && (
                         <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>

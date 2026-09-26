@@ -46,7 +46,7 @@ function lastUserVideo(state) {
  * @param {number} now
  * @param {{ exclude: string[], affinity: Record<string, number> }} [signals]  from core/signals
  * @returns {null | { kind: 'resolve', candidates: any[], count: number, exclude: string[], generation: number }
- *   | { kind: 'discover', seeds: Video[], exclude: string[], affinity: Record<string, number>, generation: number }}
+ *   | { kind: 'discover', seeds: Video[], tags: string[], exclude: string[], affinity: Record<string, number>, generation: number }}
  */
 export function radioRequest(state, now, signals = { exclude: [], affinity: {} }) {
     const { radio } = state
@@ -59,9 +59,12 @@ export function radioRequest(state, now, signals = { exclude: [], affinity: {} }
     if (radio.pending.length) {
         return { kind: 'resolve', candidates: radio.pending.slice(0, RESOLVE_BATCH), count: RESOLVE_COUNT, exclude, generation }
     }
+    if (radio.tags.length) {
+        return { kind: 'discover', seeds: [], tags: radio.tags, exclude, affinity: signals.affinity, generation }
+    }
     const seeds = radio.seeds.length ? radio.seeds : [lastUserVideo(state)].filter(Boolean)
     if (!seeds.length) return null
-    return { kind: 'discover', seeds, exclude, affinity: signals.affinity, generation }
+    return { kind: 'discover', seeds, tags: [], exclude, affinity: signals.affinity, generation }
 }
 
 /**
@@ -73,7 +76,7 @@ export function radioRequest(state, now, signals = { exclude: [], affinity: {} }
 export function radioHandoff(before, after) {
     const was = before.items[before.index]
     const is = after.items[after.index]
-    if (after.source?.type === 'radio') return null
+    if (after.source?.type === 'radio' || after.source?.type === 'tag') return null
     if (was?.origin !== 'user' || is?.origin !== 'radio') return null
     return is.reason?.seed ?? after.source?.label ?? null
 }
@@ -88,4 +91,33 @@ export function radioHandoff(before, after) {
 export function pickSeeds(tracks, n = 5) {
     if (tracks.length <= n) return [...tracks]
     return Array.from({ length: n }, (_, i) => tracks[Math.round((i * (tracks.length - 1)) / (n - 1))])
+}
+
+/**
+ * The playable items after the current one, split by who chose them, with
+ * their queue index (for JUMP_TO).
+ * @param {QueueState} state
+ */
+export function upNext(state) {
+    const user = []
+    const radio = []
+    for (let index = state.index + 1; index < state.items.length; index++) {
+        const item = state.items[index]
+        if (state.unplayable.includes(item.video.id)) continue
+        ;(item.origin === 'radio' ? radio : user).push({ item, index })
+    }
+    return { user, radio }
+}
+
+/**
+ * Tags to show for the current track: a radio item's shared tags, or the
+ * ones Last.fm gave the track radio was seeded from.
+ * @param {QueueState} state
+ * @returns {string[]}
+ */
+export function currentTags(state) {
+    const item = state.items[state.index]
+    if (!item) return []
+    if (item.origin === 'radio') return item.reason?.sharedTags ?? []
+    return state.radio.seedTags[item.video.id] ?? []
 }

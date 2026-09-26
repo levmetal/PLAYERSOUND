@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import styles from '../styles/player.module.css'
 import Player from '../components/player'
 import GlobePanel from '../components/globePanel'
+import QueuePanel from '../components/queuePanel'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
 import { MdRadio } from 'react-icons/md'
@@ -11,7 +12,7 @@ import { MdRadio } from 'react-icons/md'
 // exit before it collapses into the mini-player (or goes away on stop).
 const CLOSE_ANIMATION_MS = 200
 
-const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'RADIO' }
+const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'RADIO', tag: 'TAG' }
 const pad2 = (n) => String(n).padStart(2, '0')
 
 // "NOW PLAYING // PLAYLIST: FAVORITES // TRK 03/12" for a queue, the plain
@@ -197,6 +198,8 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                         {description && (
                             <p className={styles.infoStrip}>{description}</p>
                         )}
+
+                        <QueuePanel item={item} />
                     </div>
 
                     <div className={styles.console__footer}>
