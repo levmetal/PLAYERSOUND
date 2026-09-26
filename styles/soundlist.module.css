@@ -714,7 +714,7 @@
     box-shadow: var(--glow-box);
     padding: .6rem;
     width: 12rem;
-    max-height: 14rem;
+    max-height: 18rem;
     overflow-y: auto;
 }
 
@@ -746,6 +746,46 @@
     .playlistMenuClosing {
         animation: none;
     }
+}
+
+/* Queue actions: plain text rows above the playlist checklist, separated
+   from it by a dim rule. */
+.rowMenu__actions {
+    list-style: none;
+    margin: 0 0 .5rem 0;
+    padding: 0 0 .5rem 0;
+    border-bottom: 1px solid var(--phosphor-secondary);
+    display: flex;
+    flex-direction: column;
+}
+
+.rowMenu__actions button {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: .3rem .3rem;
+    cursor: pointer;
+}
+
+.rowMenu__actions button:hover,
+.rowMenu__actions button:focus-visible {
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    outline: none;
+}
+
+.rowMenu__heading {
+    margin: 0 0 .35rem 0;
+    color: var(--phosphor-secondary);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .playlistMenu__list {

@@ -26,6 +26,34 @@ function playableFrom(state, index, step) {
     return -1
 }
 
+// Adds `video` as the user's pick at the index `at(state)` returns, moving it
+// there if it's already queued. The current track never moves.
+function addPick(state, video, at) {
+    if (state.index < 0) {
+        return { ...initialQueueState, items: [{ video, origin: 'user' }], index: 0, source: { type: 'track', label: video.title } }
+    }
+    if (currentVideo(state).id === video.id) return state
+    const existing = state.items.findIndex((item) => item.video.id === video.id)
+    const items = state.items.filter((_, i) => i !== existing)
+    const index = existing >= 0 && existing < state.index ? state.index - 1 : state.index
+    const rest = { ...state, items, index }
+    const position = at(rest)
+    return {
+        ...rest,
+        items: [...items.slice(0, position), { video, origin: 'user' }, ...items.slice(position)],
+        unplayable: state.unplayable.filter((id) => id !== video.id),
+    }
+}
+
+const afterCurrent = (state) => state.index + 1
+
+// After the last pick of the user's, so their picks always come before radio's.
+function afterUserPicks(state) {
+    let last = state.index
+    state.items.forEach((item, i) => { if (item.origin === 'user' && i > last) last = i })
+    return last + 1
+}
+
 const nextIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.index, 1))
 const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.index, -1))
 
@@ -33,7 +61,8 @@ const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.i
  * @param {QueueState} state
  * @param {{ type: 'PLAY_LIST', payload: { videos: Video[], startIndex: number, source: import('../types.js').QueueSource } }
  *   | { type: 'NEXT' } | { type: 'PREV' } | { type: 'CLEAR' }
- *   | { type: 'SKIP_UNPLAYABLE', payload: { videoId: string } }} action
+ *   | { type: 'SKIP_UNPLAYABLE', payload: { videoId: string } }
+ *   | { type: 'PLAY_NEXT' | 'ENQUEUE', payload: { video: Video } }} action
  * @returns {QueueState}
  */
 export default function queueReducer(state, action) {
@@ -70,6 +99,12 @@ export default function queueReducer(state, action) {
             if (behind >= 0) return { ...marked, index: behind, direction: -marked.direction }
             return marked
         }
+
+        case 'PLAY_NEXT':
+            return addPick(state, action.payload.video, afterCurrent)
+
+        case 'ENQUEUE':
+            return addPick(state, action.payload.video, afterUserPicks)
 
         case 'CLEAR':
             return initialQueueState

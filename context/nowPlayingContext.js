@@ -51,6 +51,16 @@ export function NowPlayingProvider({ children }) {
         (track) => playQueue([track], 0, { type: 'track', label: track.title }),
         [playQueue]
     )
+    // Picks from a row's ⋯ menu. On an empty queue the track starts in the
+    // mini-player; the player only expands for a direct play.
+    const playNext = useCallback((video) => {
+        dispatch({ type: 'PLAY_NEXT', payload: { video } })
+        setNotice(`Playing next: "${video.title}"`)
+    }, [])
+    const enqueue = useCallback((video) => {
+        dispatch({ type: 'ENQUEUE', payload: { video } })
+        setNotice(`Added to queue: "${video.title}"`)
+    }, [])
     const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
     const prev = useCallback(() => dispatch({ type: 'PREV' }), [])
     // A track YouTube won't play: move past it, and say so only when there
@@ -81,6 +91,8 @@ export function NowPlayingProvider({ children }) {
             expanded,
             playQueue,
             open,
+            playNext,
+            enqueue,
             next,
             prev,
             skipUnplayable,
@@ -88,7 +100,7 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
-        [queue, notice, expanded, playQueue, open, next, prev, skipUnplayable, minimize, expand, stop]
+        [queue, notice, expanded, playQueue, open, playNext, enqueue, next, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

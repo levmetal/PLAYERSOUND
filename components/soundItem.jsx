@@ -1,6 +1,5 @@
 import styles from "../styles/soundlist.module.css"
-import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp } from 'react-icons/fa'
-import { MdPlaylistAdd } from 'react-icons/md'
+import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp, FaEllipsisH } from 'react-icons/fa'
 import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
 import { useNowPlaying } from "../context/nowPlayingContext"
 import { useEffect, useRef, useState } from "react";
@@ -13,8 +12,8 @@ import { formatUploaded } from "../utils/sortSearchResults";
 // (styles/soundlist.module.css) instead of vanishing instantly.
 const MENU_CLOSE_MS = 120
 
-// .playlistMenu's max-height (14rem) plus its offset from the toggle.
-const MENU_SPACE_REM = 14.5
+// .playlistMenu's max-height (18rem) plus its offset from the toggle.
+const MENU_SPACE_REM = 18.5
 
 const remToPx = (rem) => rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
 
@@ -29,7 +28,7 @@ const focusSiblingRow = (current, step) => {
 const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => {
 
     const dispatch = useDispatchContext()
-    const { item: nowPlaying, open } = useNowPlaying()
+    const { item: nowPlaying, open, playNext, enqueue } = useNowPlaying()
     const playlists = usePlaylists()
     const isCurrent = nowPlaying?.id === item.id
 
@@ -74,7 +73,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
     // the toggle), a click anywhere outside closes it.
     useEffect(() => {
         if (!menuOpen || menuClosing) return undefined
-        menuRef.current?.querySelector('input')?.focus()
+        menuRef.current?.querySelector('button, input')?.focus()
 
         const handlePointerDown = (e) => {
             if (!actionsRef.current?.contains(e.target)) closeMenu()
@@ -115,6 +114,11 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
         })
     }
 
+    const queueAction = (action) => {
+        action(item)
+        closeMenu(true)
+    }
+
     const createPlaylistWithTrack = (e) => {
         e.preventDefault()
         const name = newPlaylistName.trim()
@@ -138,7 +142,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
     const views = showStats ? formatViews(item.views) : null
     const uploaded = showStats ? formatUploaded(item.uploaded) : null
     const showThumb = Boolean(item.thumbnail) && !thumbFailed
-    const menuId = `playlist-menu-${item.id}`
+    const menuId = `row-menu-${item.id}`
 
     const rowClass = [
         styles.row,
@@ -210,10 +214,10 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                     onClick={toggleMenu}
                     aria-expanded={menuOpen && !menuClosing}
                     aria-controls={menuOpen ? menuId : undefined}
-                    aria-label="Add to playlist"
-                    title="Add to playlist"
+                    aria-label={`More actions for ${title}`}
+                    title="More actions"
                 >
-                    <MdPlaylistAdd aria-hidden="true" />
+                    <FaEllipsisH aria-hidden="true" />
                 </button>
 
                 {menuOpen && (
@@ -221,7 +225,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                         id={menuId}
                         ref={menuRef}
                         role="group"
-                        aria-label={`Playlists for ${title}`}
+                        aria-label={`Actions for ${title}`}
                         className={[
                             styles.playlistMenu,
                             'hud-frame',
@@ -229,6 +233,17 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                             menuClosing ? styles.playlistMenuClosing : '',
                         ].filter(Boolean).join(' ')}
                     >
+                        {!isCurrent && (
+                            <ul className={styles.rowMenu__actions}>
+                                <li>
+                                    <button type="button" onClick={() => queueAction(playNext)}>Play next</button>
+                                </li>
+                                <li>
+                                    <button type="button" onClick={() => queueAction(enqueue)}>Add to queue</button>
+                                </li>
+                            </ul>
+                        )}
+                        <p className={styles.rowMenu__heading}>Add to playlist</p>
                         <ul className={styles.playlistMenu__list}>
                             {playlists.map((playlist) => (
                                 <li key={playlist.id}>
