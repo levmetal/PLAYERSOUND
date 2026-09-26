@@ -31,7 +31,7 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled
 // YouTube iframe inside Player keep playing untouched across the switch
 // (moving an iframe in the DOM would reload it).
 const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
-    const { source, position } = useNowPlaying()
+    const { source, position, notice } = useNowPlaying()
     const [closing, setClosing] = useState(false)
     const closingRef = useRef(false)
     const dialogRef = useRef(null)
@@ -117,7 +117,13 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className={styles.console__header}>
-                        <span className={styles.console__headerLabel} aria-hidden="true">{headerLabel(source, position)}</span>
+                        {notice ? (
+                            <span className={`${styles.console__headerLabel} ${styles.headerNotice}`} aria-hidden="true">{notice}</span>
+                        ) : (
+                            <span className={styles.console__headerLabel} aria-hidden="true">{headerLabel(source, position)}</span>
+                        )}
+                        {/* Always mounted, so screen readers hear each new notice. */}
+                        <span className="sr-only" role="status" aria-live="polite">{notice ?? ''}</span>
                         <div className={styles.console__headerActions}>
                             <button
                                 ref={toggleButtonRef}

@@ -41,6 +41,8 @@
  * @property {QueueItem[]} items
  * @property {number} index         -1 when empty
  * @property {QueueSource | null} source
+ * @property {1 | -1} direction      last move: 1 forward (next, auto-advance, new list), -1 back
+ * @property {string[]} unplayable   ids that failed to play in this queue
  */
 
 export {}

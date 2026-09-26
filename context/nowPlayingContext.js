@@ -1,11 +1,16 @@
-import { createContext, useCallback, useContext, useMemo, useReducer, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import queueReducer, {
     initialQueueState,
     currentVideo,
     nextVideo,
     prevVideo,
     queuePosition,
+    hasNext,
+    hasPrev,
 } from "../core/queue/queueReducer";
+
+// How long "Skipped …" stays in the console header.
+const NOTICE_MS = 4000
 
 // App-wide "now playing" state, mounted once in pages/_app.js above every
 // page. The player itself (components/modal.jsx) renders from here, not from
@@ -25,6 +30,15 @@ const NowPlayingContext = createContext(null)
 export function NowPlayingProvider({ children }) {
     const [queue, dispatch] = useReducer(queueReducer, initialQueueState)
     const [expanded, setExpanded] = useState(false)
+    const [notice, setNotice] = useState(null)
+    const queueRef = useRef(queue)
+    queueRef.current = queue
+
+    useEffect(() => {
+        if (!notice) return undefined
+        const timer = setTimeout(() => setNotice(null), NOTICE_MS)
+        return () => clearTimeout(timer)
+    }, [notice])
 
     // Starting the track that's already loaded keeps its playback position
     // (Player is keyed by the track id, see components/modal.jsx) and just
@@ -39,11 +53,21 @@ export function NowPlayingProvider({ children }) {
     )
     const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
     const prev = useCallback(() => dispatch({ type: 'PREV' }), [])
+    // A track YouTube won't play: move past it, and say so only when there
+    // was somewhere to move to (a lone track just shows the player's error).
+    const skipUnplayable = useCallback((video) => {
+        const current = queueRef.current
+        if (currentVideo(current)?.id === video.id && (hasNext(current) || hasPrev(current))) {
+            setNotice(`Skipped "${video.title}" — can't be played here`)
+        }
+        dispatch({ type: 'SKIP_UNPLAYABLE', payload: { videoId: video.id } })
+    }, [])
     const minimize = useCallback(() => setExpanded(false), [])
     const expand = useCallback(() => setExpanded(true), [])
     const stop = useCallback(() => {
         dispatch({ type: 'CLEAR' })
         setExpanded(false)
+        setNotice(null)
     }, [])
 
     const value = useMemo(
@@ -53,16 +77,18 @@ export function NowPlayingProvider({ children }) {
             prevItem: prevVideo(queue),
             position: queuePosition(queue),
             source: queue.source,
+            notice,
             expanded,
             playQueue,
             open,
             next,
             prev,
+            skipUnplayable,
             minimize,
             expand,
             stop,
         }),
-        [queue, expanded, playQueue, open, next, prev, minimize, expand, stop]
+        [queue, notice, expanded, playQueue, open, next, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

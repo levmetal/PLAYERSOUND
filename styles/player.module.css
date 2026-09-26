@@ -90,6 +90,13 @@
     text-overflow: ellipsis;
 }
 
+/* Temporary "Skipped …" message in place of the label; brighter than the
+   label so the change registers without adding a new color. */
+.headerNotice {
+    color: var(--phosphor-primary);
+    text-transform: none;
+}
+
 /* Minimize/expand toggle + stop. Minimize (also Escape / backdrop click)
    keeps the music playing in the docked mini-player; only stop ends it. */
 .console__headerActions {

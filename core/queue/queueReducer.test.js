@@ -19,7 +19,7 @@ const playList = (list, startIndex, source = SEARCH) =>
     queueReducer(initialQueueState, { type: 'PLAY_LIST', payload: { videos: list, startIndex, source } })
 
 test('initial state is empty with nothing current', () => {
-    assert.deepEqual(initialQueueState, { items: [], index: -1, source: null })
+    assert.deepEqual(initialQueueState, { items: [], index: -1, source: null, direction: 1, unplayable: [] })
     assert.equal(currentVideo(initialQueueState), null)
     assert.equal(hasNext(initialQueueState), false)
     assert.equal(hasPrev(initialQueueState), false)
@@ -112,4 +112,66 @@ test('peeks at the next and previous videos, null at the ends', () => {
     assert.equal(prevVideo(middle), A)
     assert.equal(prevVideo(playList([A, B, C], 0)), null)
     assert.equal(nextVideo(playList([A, B, C], 2)), null)
+})
+
+// --- Unplayable tracks (embedding disabled, removed, private) ---
+
+const D = videos[3]
+const skip = (state, video) => queueReducer(state, { type: 'SKIP_UNPLAYABLE', payload: { videoId: video.id } })
+const next = (state) => queueReducer(state, { type: 'NEXT' })
+const prev = (state) => queueReducer(state, { type: 'PREV' })
+
+test('an unplayable track is skipped forward after moving forward', () => {
+    assert.equal(currentVideo(skip(playList([A, B, C], 1), B)), C)
+})
+
+test('an unplayable track is skipped backward after moving backward', () => {
+    const cameBack = prev(playList([A, B, C], 2))
+    assert.equal(currentVideo(skip(cameBack, B)), A)
+})
+
+test('with nothing playable ahead, the skip goes back instead', () => {
+    assert.equal(currentVideo(skip(playList([A, B], 1), B)), A)
+})
+
+test('with nothing playable behind, the skip goes forward instead', () => {
+    const atFirst = prev(playList([A, B], 1))
+    assert.equal(currentVideo(skip(atFirst, A)), B)
+})
+
+test('a lone unplayable track stays current', () => {
+    assert.equal(currentVideo(skip(playList([A], 0), A)), A)
+})
+
+test('a skip for a track that is no longer current is ignored', () => {
+    const state = playList([A, B, C], 1)
+    assert.equal(skip(state, A), state)
+})
+
+test('NEXT and PREV jump over tracks already found unplayable', () => {
+    const atD = skip(skip(playList([A, B, C, D], 1), B), C)
+    assert.equal(currentVideo(atD), D)
+    const back = prev(atD)
+    assert.equal(currentVideo(back), A)
+    assert.equal(currentVideo(next(back)), D)
+})
+
+test('an unplayable last track leaves no next', () => {
+    const state = skip(playList([A, B, C], 2), C)
+    assert.equal(currentVideo(state), B)
+    assert.equal(hasNext(state), false)
+    assert.equal(nextVideo(state), null)
+})
+
+test('peeking and availability ignore unplayable tracks on either side', () => {
+    const state = skip(skip(playList([A, B, C], 1), B), C)
+    assert.equal(currentVideo(state), A)
+    assert.equal(hasNext(state), false)
+    assert.equal(hasPrev(state), false)
+})
+
+test('starting a new list clears what was found unplayable', () => {
+    const marked = skip(playList([A, B, C], 1), B)
+    const again = queueReducer(marked, { type: 'PLAY_LIST', payload: { videos: [A, B, C], startIndex: 0, source: SEARCH } })
+    assert.equal(currentVideo(next(again)), B)
 })

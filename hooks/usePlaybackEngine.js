@@ -40,8 +40,9 @@ function loadIframeApi() {
 // mounts because of an explicit play (a row click, Play all, ⏮/⏭) or the
 // queue auto-advancing. If the browser blocks autoplay, the track just stays
 // loaded with ▶ ready. `onNext`/`onPrev` are null when the queue has nothing
-// in that direction.
-export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onPrev = null, metadata }) {
+// in that direction. `onUnplayable` fires when YouTube refuses the video
+// (embedding disabled, removed, private) so the queue can move past it.
+export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onPrev = null, onUnplayable = null, metadata }) {
     const [fellBackToIframe, setFellBackToIframe] = useState(false);
     const engine = PLAYBACK_MODE === 'iframe' || fellBackToIframe ? 'iframe' : 'native';
 
@@ -61,6 +62,8 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
     onNextRef.current = onNext;
     const onPrevRef = useRef(onPrev);
     onPrevRef.current = onPrev;
+    const onUnplayableRef = useRef(onUnplayable);
+    onUnplayableRef.current = onUnplayable;
     const hasNext = Boolean(onNext);
     const hasPrev = Boolean(onPrev);
 
@@ -127,7 +130,10 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
                     host: 'https://www.youtube-nocookie.com',
                     events: {
                         onReady: () => setReady(true),
-                        onError: () => setError("This video can't be played embedded."),
+                        onError: () => {
+                            setError("This video can't be played embedded.");
+                            onUnplayableRef.current?.();
+                        },
                         onStateChange: (event) => {
                             const { PLAYING, PAUSED, ENDED, CUED, UNSTARTED } = YT.PlayerState;
                             // BUFFERING is left alone so a mid-play stall doesn't flicker the button.

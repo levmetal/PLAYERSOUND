@@ -48,7 +48,7 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, prev, nextItem, prevItem } = useNowPlaying();
+    const { next, prev, nextItem, prevItem, skipUnplayable } = useNowPlaying();
 
     // Two interchangeable playback engines behind one interface, because our own resolver only reaches
     // YouTube reliably from a residential IP.
@@ -57,6 +57,7 @@ const Player = ({ item }) => {
         onEnded: () => onEndedRef.current(),
         onNext: nextItem ? next : null,
         onPrev: prevItem ? prev : null,
+        onUnplayable: () => skipUnplayable(item),
         metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
     });
     const { playing } = engine;
