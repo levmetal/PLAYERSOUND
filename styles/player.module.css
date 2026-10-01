@@ -1938,3 +1938,83 @@
         height: 2.5rem;
     }
 }
+
+/* ===================== Queue rows: playing, playlist picker, save queue =====================
+   The playing row looks like the playing row in search: panel background,
+   dimmer cover with a speaker over it, lit number and title, a "Now playing"
+   tag — and no lit bar. */
+.queueRowCurrent {
+    background: var(--bgbox);
+}
+
+.queueRowCurrent:hover {
+    background: var(--bgbox);
+}
+
+.queueRow__thumb {
+    position: relative;
+}
+
+.queueRowCurrent .queueRow__thumb img {
+    filter: grayscale(0) contrast(1) brightness(.45);
+}
+
+.queueRow__playingIcon {
+    position: absolute;
+    font-size: .9rem;
+    color: var(--phosphor-primary);
+}
+
+.queueRowCurrent .queueRow__num {
+    color: var(--phosphor-primary);
+    text-shadow: var(--glow-text);
+}
+
+.queueRowCurrent .queueRow__title {
+    text-shadow: var(--glow-text);
+}
+
+.queueRow__nowTag {
+    margin-right: .5rem;
+    padding: .05rem .35rem;
+    border: 1px solid var(--phosphor-primary);
+    font-size: .6rem;
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+}
+
+/* Add to playlist, open: inverted like a pressed button. */
+.queueRow__actionOpen {
+    background: var(--primarycolor);
+    color: var(--bg);
+}
+
+/* The playlist picker opens under the row, across all its columns, above the
+   row-wide click overlay so using it never plays the track. */
+.queueRow__picker {
+    grid-column: 1 / -1;
+    position: relative;
+    z-index: 2;
+    margin-top: .5rem;
+    padding: .5rem .6rem .6rem;
+    border: 1px solid var(--phosphor-secondary);
+    background: var(--phosphor-box-bg);
+}
+
+/* Save queue as playlist: name field + Save, under the Up next header. */
+.saveQueue {
+    display: flex;
+    gap: .4rem;
+    margin-top: .5rem;
+}
+
+.saveQueue__input {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    padding: .3rem .5rem;
+}

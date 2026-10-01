@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { FaPlay, FaPlus, FaMusic } from 'react-icons/fa'
+import { FaPlay, FaPlus, FaMusic, FaListUl, FaVolumeUp } from 'react-icons/fa'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
+import { useDispatchContext } from '../context/libraryContext/libraryContext'
+import PlaylistPicker from './playlistPicker'
 import resolveTrack from '../core/track/resolveTrack'
 import { formatTrackNumber } from '../core/format/trackNumber'
 import { ConvertSecToMin } from '../utils/convertSecondToMinutes'
@@ -48,8 +50,60 @@ const QueuePanel = ({ item }) => {
     )
 }
 
+// "Save queue as playlist": the tracks you chose, under a name you can change.
+// Opens inline under the header; hidden while there's nothing of yours.
+const SaveQueue = () => {
+    const { queueTracks, queueName } = useNowPlaying()
+    const dispatch = useDispatchContext()
+    const [open, setOpen] = useState(false)
+    const [name, setName] = useState('')
+    const [saved, setSaved] = useState('')
+
+    if (!queueTracks.length) return null
+
+    const toggle = () => {
+        setSaved('')
+        setName(queueName)
+        setOpen(!open)
+    }
+    const save = (e) => {
+        e.preventDefault()
+        const clean = name.trim()
+        if (!clean) return
+        dispatch({ type: 'CREATE_PLAYLIST', payload: { name: clean, tracks: queueTracks } })
+        setSaved(`Saved "${clean}" — ${queueTracks.length} ${queueTracks.length === 1 ? 'track' : 'tracks'}.`)
+        setOpen(false)
+    }
+
+    return (
+        <>
+            <div className={styles.vibeActions}>
+                <button type="button" className={styles.listBlock__button} onClick={toggle} aria-expanded={open}>
+                    Save queue as playlist
+                </button>
+            </div>
+            {open && (
+                <form className={styles.saveQueue} onSubmit={save}>
+                    <label htmlFor="save-queue-name" className="sr-only">Playlist name</label>
+                    <input
+                        id="save-queue-name"
+                        className={styles.saveQueue__input}
+                        type="text"
+                        autoComplete="off"
+                        autoFocus
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <button type="submit" className={styles.listBlock__button}>Save</button>
+                </form>
+            )}
+            <p className={styles.listBlock__note} role="status" aria-live="polite">{saved}</p>
+        </>
+    )
+}
+
 const UpNextBlock = () => {
-    const { upNext, jumpTo, radio, autoplayTarget, setRadio, position } = useNowPlaying()
+    const { item, upNext, jumpTo, radio, autoplayTarget, setRadio, position } = useNowPlaying()
     const [showAll, setShowAll] = useState(false)
     const autoplayAvailable = radio.status !== 'unavailable'
     const hidden = showAll ? 0 : Math.max(0, upNext.user.length - QUEUE_PREVIEW)
@@ -61,22 +115,30 @@ const UpNextBlock = () => {
                 <p className={styles.listBlock__subtitle}>
                     {upNext.user.length ? 'Your picks, in order' : 'Nothing of yours is queued'}
                 </p>
+                <SaveQueue />
             </header>
 
-            {upNext.user.length > 0 && (
-                <ol className={styles.queueList}>
-                    {shown.map(({ item: queued, index }) => (
-                        <QueueRow
-                            key={queued.video.id}
-                            number={formatTrackNumber(index + 1, position?.total)}
-                            video={queued.video}
-                            title={queued.video.title}
-                            meta={queued.video.channel?.name}
-                            onPlay={() => jumpTo(index)}
-                        />
-                    ))}
-                </ol>
-            )}
+            <ol className={styles.queueList}>
+                {item && (
+                    <QueueRow
+                        current
+                        number={formatTrackNumber(position?.current, position?.total)}
+                        video={item}
+                        title={item.title}
+                        meta={item.channel?.name}
+                    />
+                )}
+                {shown.map(({ item: queued, index }) => (
+                    <QueueRow
+                        key={queued.video.id}
+                        number={formatTrackNumber(index + 1, position?.total)}
+                        video={queued.video}
+                        title={queued.video.title}
+                        meta={queued.video.channel?.name}
+                        onPlay={() => jumpTo(index)}
+                    />
+                ))}
+            </ol>
             {upNext.user.length > QUEUE_PREVIEW && (
                 <button type="button" className={styles.queueMore} onClick={() => setShowAll(!showAll)} aria-expanded={showAll}>
                     {showAll ? 'Show fewer' : `Show ${hidden} more in your queue`}
@@ -160,7 +222,7 @@ const AutoplayList = () => {
 }
 
 const VibeBlock = ({ item }) => {
-    const { vibe, playCandidate, retryVibe, browseVibe, autoplayVibe } = useNowPlaying()
+    const { vibe, playCandidate, ensureVideo, retryVibe, browseVibe, autoplayVibe } = useNowPlaying()
     if (vibe.status === 'unavailable') return null
 
     const trackTitle = resolveTrack(item)?.title ?? item.title
@@ -207,6 +269,7 @@ const VibeBlock = ({ item }) => {
                                 busy={candidate.resolving === 'loading'}
                                 onPlay={() => playCandidate(candidate, 'now')}
                                 onAdd={() => playCandidate(candidate, 'queue')}
+                                findVideo={() => ensureVideo(candidate)}
                             />
                         ))}
                     </ol>
@@ -262,35 +325,62 @@ const SkeletonRows = ({ label }) => (
 // readers). `onAdd` adds ➕ (Similar vibe rows). `waiting` rows can't be
 // played yet; `video` is absent for them and for Similar vibe rows until
 // one is found, so those show a placeholder cover and `--:--`.
-const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, waiting = false }) => {
+// The list button (Add to playlist) opens the same picker as a search row's
+// ⋯ menu, inline under the row; a row with no video yet asks `findVideo`
+// for it first. `current` is the track that's playing: marked like the
+// playing row in search, with nothing to play or add.
+const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, waiting = false, current = false, findVideo }) => {
+    const [picking, setPicking] = useState(false)
     const duration = video?.duration > 0 ? ConvertSecToMin(video.duration) : '--:--'
-    const className = [styles.queueRow, waiting && styles.queueRowWaiting, busy && styles.queueRowBusy].filter(Boolean).join(' ')
+    const className = [
+        styles.queueRow,
+        waiting && styles.queueRowWaiting,
+        busy && styles.queueRowBusy,
+        current && styles.queueRowCurrent,
+    ].filter(Boolean).join(' ')
+    const canPick = !waiting && (Boolean(video) || Boolean(findVideo))
+
+    const togglePicker = async () => {
+        if (picking) {
+            setPicking(false)
+            return
+        }
+        if (!video && findVideo && !(await findVideo())) return
+        setPicking(true)
+    }
+
     return (
-        <li className={className}>
-            {!waiting && <div className={styles.queueRow__hit} onClick={busy ? undefined : onPlay} aria-hidden="true" />}
+        <li className={className} aria-current={current ? 'true' : undefined}>
+            {!waiting && !current && <div className={styles.queueRow__hit} onClick={busy ? undefined : onPlay} aria-hidden="true" />}
             <span className={styles.queueRow__num} aria-hidden="true">{number}</span>
             <span className={styles.queueRow__thumb} aria-hidden="true">
                 {video?.thumbnail
                     ? <img src={video.thumbnail} alt="" loading="lazy" />
                     : <FaMusic className={styles.queueRow__thumbIcon} />}
+                {current && <FaVolumeUp className={styles.queueRow__playingIcon} />}
             </span>
             <span className={styles.queueRow__main}>
                 <span className={styles.queueRow__title} title={title}>{title}</span>
-                <span className={styles.queueRow__meta}>{meta}</span>
+                <span className={styles.queueRow__meta}>
+                    {current && <span className={styles.queueRow__nowTag}>Now playing</span>}
+                    {meta}
+                </span>
             </span>
             <span className={video?.duration > 0 ? styles.queueRow__duration : `${styles.queueRow__duration} ${styles.queueRow__durationUnknown}`}>{duration}</span>
             {!waiting && (
                 <span className={styles.queueRow__actions}>
-                    <button
-                        type="button"
-                        className={`${styles.queueRow__action} ${styles.queueRow__actionPlay}`}
-                        onClick={onPlay}
-                        disabled={busy}
-                        aria-label={`Play ${title}`}
-                        title="Play now"
-                    >
-                        <FaPlay aria-hidden="true" />
-                    </button>
+                    {!current && (
+                        <button
+                            type="button"
+                            className={`${styles.queueRow__action} ${styles.queueRow__actionPlay}`}
+                            onClick={onPlay}
+                            disabled={busy}
+                            aria-label={`Play ${title}`}
+                            title="Play now"
+                        >
+                            <FaPlay aria-hidden="true" />
+                        </button>
+                    )}
                     {onAdd && (
                         <button
                             type="button"
@@ -303,7 +393,25 @@ const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, wai
                             <FaPlus aria-hidden="true" />
                         </button>
                     )}
+                    {canPick && (
+                        <button
+                            type="button"
+                            className={picking ? `${styles.queueRow__action} ${styles.queueRow__actionOpen}` : styles.queueRow__action}
+                            onClick={togglePicker}
+                            disabled={busy}
+                            aria-expanded={picking}
+                            aria-label={`Add ${title} to a playlist`}
+                            title="Add to playlist"
+                        >
+                            <FaListUl aria-hidden="true" />
+                        </button>
+                    )}
                 </span>
+            )}
+            {picking && video && (
+                <div className={styles.queueRow__picker}>
+                    <PlaylistPicker video={video} onCreated={() => setPicking(false)} />
+                </div>
             )}
         </li>
     )

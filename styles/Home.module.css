@@ -329,3 +329,14 @@
 .linkMessage:empty {
     display: none;
 }
+
+/* Under the search field: says it takes links too, in full, where the
+   placeholder is too short to. */
+.linkHint {
+    margin: .75rem 0 0;
+    max-width: 35rem;
+    font-family: var(--font-body);
+    font-size: .8rem;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--lowPrimaryColor);
+}

@@ -57,7 +57,7 @@ export default function Home() {
 
               <form className={styles.container__form} onSubmit={handleSubmit} >
 
-                <label htmlFor="home-search" className="sr-only">Search for a sound</label>
+                <label htmlFor="home-search" className="sr-only">Search for a sound, or paste a YouTube video or playlist link</label>
                 <input
                   id="home-search"
                   name="search"
@@ -66,7 +66,7 @@ export default function Home() {
                   className={styles.form__input}
                   value={search}
                   type="text"
-                  placeholder="Let's rock!"
+                  placeholder="Search or paste a YouTube link"
                   disabled={link.pending}
                   aria-describedby="home-link-message"
                   onChange={e => { setSearch(e.target.value); link.clearError() }}
@@ -78,6 +78,9 @@ export default function Home() {
               <p id="home-link-message" className={styles.linkMessage} role="alert">
                 {link.pending ? 'Loading link…' : link.error}
               </p>
+              {!link.pending && !link.error && (
+                <p className={styles.linkHint}>Paste a YouTube video or playlist link to play it or save it.</p>
+              )}
             </div>
             <div className={styles.heroFrame}>
               <DataPixelArc className={styles.heroArc} />

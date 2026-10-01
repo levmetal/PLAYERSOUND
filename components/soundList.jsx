@@ -190,7 +190,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
 
       <div className={`${styles.controls} hud-frame`}>
         <form className={styles.searchRow} role="search" onSubmit={handleSubmit}>
-          <label htmlFor="results-search" className="sr-only">Search</label>
+          <label htmlFor="results-search" className="sr-only">Search, or paste a YouTube video or playlist link</label>
           <span className={styles.prompt} aria-hidden="true">&gt;</span>
           <input
             id="results-search"
@@ -201,7 +201,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
             enterKeyHint="search"
             autoComplete="off"
             spellCheck="false"
-            placeholder="Search sounds, songs, podcasts"
+            placeholder="Search or paste a YouTube link"
             value={draft}
             disabled={link.pending}
             aria-describedby="results-link-message"

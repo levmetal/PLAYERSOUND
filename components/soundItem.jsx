@@ -1,6 +1,7 @@
 import styles from "../styles/soundlist.module.css"
 import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp, FaEllipsisH } from 'react-icons/fa'
 import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
+import PlaylistPicker from "./playlistPicker"
 import { useNowPlaying } from "../context/nowPlayingContext"
 import { useEffect, useRef, useState } from "react";
 import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
@@ -38,7 +39,6 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
     const [menuOpen, setMenuOpen] = useState(false)
     const [menuClosing, setMenuClosing] = useState(false)
     const [menuUp, setMenuUp] = useState(false)
-    const [newPlaylistName, setNewPlaylistName] = useState("")
     const [thumbFailed, setThumbFailed] = useState(false)
 
     const actionsRef = useRef(null)
@@ -108,29 +108,8 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
         })
     }
 
-    const togglePlaylist = (playlistId) => {
-        const alreadyIn = isInPlaylist(playlistId)
-        if (!alreadyIn) like(item.id)
-        dispatch({
-            type: alreadyIn ? "REMOVE_FROM_PLAYLIST" : "ADD_TO_PLAYLIST",
-            payload: alreadyIn
-                ? { playlistId, trackId: item.id }
-                : { playlistId, track: item },
-        })
-    }
-
     const queueAction = (action) => {
         action(item)
-        closeMenu(true)
-    }
-
-    const createPlaylistWithTrack = (e) => {
-        e.preventDefault()
-        const name = newPlaylistName.trim()
-        if (!name) return
-        dispatch({ type: "CREATE_PLAYLIST", payload: { name, track: item } })
-        like(item.id)
-        setNewPlaylistName("")
         closeMenu(true)
     }
 
@@ -282,31 +261,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                                 </li>
                             )}
                         </ul>
-                        <p className={styles.rowMenu__heading}>Add to playlist</p>
-                        <ul className={styles.playlistMenu__list}>
-                            {playlists.map((playlist) => (
-                                <li key={playlist.id}>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={isInPlaylist(playlist.id)}
-                                            onChange={() => togglePlaylist(playlist.id)}
-                                        />
-                                        {playlist.name}
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
-                        <form className={styles.playlistMenu__create} onSubmit={createPlaylistWithTrack}>
-                            <input
-                                type="text"
-                                aria-label="New playlist name"
-                                placeholder="New playlist"
-                                value={newPlaylistName}
-                                onChange={(e) => setNewPlaylistName(e.target.value)}
-                            />
-                            <button type="submit" className="pixel-depth">Add</button>
-                        </form>
+                        <PlaylistPicker video={item} onCreated={() => closeMenu(true)} />
                     </div>
                 )}
             </div>

@@ -14,6 +14,7 @@ import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags, autoplayTar
 import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest } from "../core/discovery/similarReducer";
 import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
+import { savableTracks, defaultPlaylistName } from "../core/queue/saveQueue";
 import signalsReducer, { initialSignals, discoverSignals } from "../core/signals/signalsReducer";
 
 // How long "Skipped …" stays in the console header.
@@ -244,26 +245,30 @@ export function NowPlayingProvider({ children }) {
         dispatch({ type: 'PLAY_NEXT', payload: { video } })
         dispatch({ type: 'NEXT' })
     }, [])
-    // ▶ / ➕ on a Similar vibe row. Its video is found now, with one YouTube
-    // search (cached for 30 days server-side), then it plays or is queued.
-    const playCandidate = useCallback(async (candidate, mode) => {
-        const act = (video) => (mode === 'now' ? playNow(video) : enqueue(video))
-        if (candidate.video) {
-            act(candidate.video)
-            return
-        }
-        if (candidate.resolving === 'loading') return
+    // A Similar vibe row has no video until it's needed (▶, ➕ or Add to
+    // playlist): found now with one YouTube search (cached for 30 days
+    // server-side). Resolves to the video, or null if there isn't one.
+    const ensureVideo = useCallback(async (candidate) => {
+        if (candidate.video) return candidate.video
+        if (candidate.resolving === 'loading') return null
         const { id } = candidate
         similarDispatch({ type: 'CANDIDATE_RESOLVING', payload: { id } })
         const result = await resolveCandidates({ candidates: [{ artist: candidate.artist, title: candidate.title }], count: 1 })
         const video = result.ok ? result.data.candidates?.[0]?.video : null
         if (video) {
             similarDispatch({ type: 'CANDIDATE_RESOLVED', payload: { id, video } })
-            act(video)
-        } else {
-            similarDispatch({ type: 'CANDIDATE_FAILED', payload: { id, limited: Boolean(result.ok && result.data.retryAfter) } })
+            return video
         }
-    }, [playNow, enqueue])
+        similarDispatch({ type: 'CANDIDATE_FAILED', payload: { id, limited: Boolean(result.ok && result.data.retryAfter) } })
+        return null
+    }, [])
+    // ▶ / ➕ on a Similar vibe row: it plays or is queued once its video is found.
+    const playCandidate = useCallback(async (candidate, mode) => {
+        const video = await ensureVideo(candidate)
+        if (!video) return
+        if (mode === 'now') playNow(video)
+        else enqueue(video)
+    }, [ensureVideo, playNow, enqueue])
     const setRadio = useCallback((enabled) => {
         dispatch({ type: 'SET_RADIO', payload: { enabled } })
         setSettings((current) => ({ ...current, radio: enabled }))
@@ -326,6 +331,9 @@ export function NowPlayingProvider({ children }) {
             browseTag: similar.browseTag,
             // The playing track's own Last.fm tags once known; until then a radio track's shared ones.
             tags: vibeTags(similar).length ? vibeTags(similar) : currentTags(queue),
+            // What "Save queue as playlist" would save, and what it would be called.
+            queueTracks: savableTracks(queue),
+            queueName: defaultPlaylistName(queue.source),
             signals: discoverSignals(signals),
             notice,
             handoff,
@@ -340,6 +348,7 @@ export function NowPlayingProvider({ children }) {
             jumpTo,
             playNow,
             playCandidate,
+            ensureVideo,
             browseVibe,
             retryVibe,
             setRadio,
@@ -355,7 +364,7 @@ export function NowPlayingProvider({ children }) {
             stop,
         }),
         [queue, clock, similar, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
+            startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, ensureVideo, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>
