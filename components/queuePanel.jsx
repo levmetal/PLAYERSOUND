@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { FaPlay, FaPlus, FaMusic } from 'react-icons/fa'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
@@ -20,12 +20,33 @@ const CREDIT = (
 //  - Up next: what plays after this track — your picks, then what Autoplay
 //    will add when they run out (and the switch that controls it).
 //  - Similar vibe: tracks like the one playing, always, whatever Autoplay is.
-const QueuePanel = ({ item }) => (
-    <div className={styles.listArea}>
-        <UpNextBlock />
-        <VibeBlock item={item} />
-    </div>
-)
+const QueuePanel = ({ item }) => {
+    const areaRef = useRef(null)
+
+    // The list scrolls on its own, and its scrollbar takes width from the
+    // content only (the faceplate above has none), which pulled the right edge
+    // of the lists in from the globe's. Measured, not assumed — classic and
+    // overlay scrollbars differ — and handed to the CSS to give back as padding.
+    useLayoutEffect(() => {
+        const area = areaRef.current
+        if (!area) return undefined
+        const sync = () => area.style.setProperty('--scrollbar-w', `${area.offsetWidth - area.clientWidth}px`)
+        sync()
+        const observer = new ResizeObserver(sync)
+        observer.observe(area)
+        observer.observe(area.firstElementChild)
+        return () => observer.disconnect()
+    }, [])
+
+    return (
+        <div className={styles.listArea} ref={areaRef}>
+            <div className={styles.listGrid}>
+                <UpNextBlock />
+                <VibeBlock item={item} />
+            </div>
+        </div>
+    )
+}
 
 const UpNextBlock = () => {
     const { upNext, jumpTo, radio, autoplayTarget, setRadio, position } = useNowPlaying()
