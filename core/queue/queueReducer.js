@@ -120,7 +120,7 @@ const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.i
  *   | { type: 'SKIP_UNPLAYABLE', payload: { videoId: string } }
  *   | { type: 'PLAY_NEXT' | 'ENQUEUE', payload: { video: Video } }
  *   | { type: 'START_RADIO', payload: { seeds: Video[], label: string } }
- *   | { type: 'START_TAG_RADIO', payload: { tag: string } }
+ *   | { type: 'AUTOPLAY_VIBE', payload: { tag: string } }
  *   | { type: 'JUMP_TO', payload: { index: number } }
  *   | { type: 'SET_RADIO', payload: { enabled: boolean } }
  *   | { type: 'RADIO_REQUESTED', payload: { generation: number } }
@@ -185,22 +185,23 @@ export default function queueReducer(state, action) {
             })
         }
 
-        // What's playing keeps playing; everything after it becomes that tag's radio.
-        case 'START_TAG_RADIO': {
+        // Autoplay follows a vibe from now on. The listener's own queue stays;
+        // only the suggestions ahead (made for the old target) go.
+        case 'AUTOPLAY_VIBE': {
             if (state.index < 0) return state
-            const playing = state.items[state.index]
-            const playingTags = state.radio.seedTags[playing.video.id]
             return {
                 ...state,
-                items: [playing],
-                index: 0,
-                source: { type: 'tag', label: action.payload.tag },
+                items: state.items.filter((item, i) => i <= state.index || item.origin !== 'radio'),
                 generation: state.generation + 1,
                 radio: {
-                    ...initialRadio,
+                    ...state.radio,
                     enabled: true,
+                    seeds: [],
                     tags: [action.payload.tag],
-                    seedTags: playingTags ? { [playing.video.id]: playingTags } : {},
+                    pending: [],
+                    loading: false,
+                    status: 'idle',
+                    retryAt: null,
                 },
             }
         }

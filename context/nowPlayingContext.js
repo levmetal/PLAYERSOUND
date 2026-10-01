@@ -10,13 +10,18 @@ import queueReducer, {
     hasNext,
     hasPrev,
 } from "../core/queue/queueReducer";
-import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags } from "../core/queue/radio";
+import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags, autoplayTarget } from "../core/queue/radio";
+import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest } from "../core/discovery/similarReducer";
 import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
 import signalsReducer, { initialSignals, discoverSignals } from "../core/signals/signalsReducer";
 
 // How long "Skipped …" stays in the console header.
 const NOTICE_MS = 4000
+
+// A track has to be playing this long before its Similar vibe list is asked
+// for, so skipping through tracks doesn't fire a request for each one.
+const SIMILAR_DELAY_MS = 500
 
 const SETTINGS_KEY = 'playersound:settings'
 const DEFAULT_SETTINGS = { version: 1, radio: true }
@@ -43,7 +48,7 @@ export function NowPlayingProvider({ children }) {
     const [queue, dispatch] = useReducer(queueReducer, initialQueueState)
     const [expanded, setExpanded] = useState(false)
     const [notice, setNotice] = useState(null)
-    // "Your queue ended — playing a similar vibe to …", until the track changes.
+    // "Your queue ended — autoplay continues: …", until the track changes.
     const [handoff, setHandoff] = useState(null)
     const [settings, setSettings] = useState(DEFAULT_SETTINGS)
     const settingsLoaded = useRef(false)
@@ -54,6 +59,9 @@ export function NowPlayingProvider({ children }) {
     const signalsLoaded = useRef(false)
     const signalsRef = useRef(signals)
     signalsRef.current = signals
+    // Similar vibe: the list for the playing track (or a browsed tag), whatever
+    // Autoplay is set to. Last.fm only — a video is found when a row is clicked.
+    const [similar, similarDispatch] = useReducer(similarReducer, initialSimilar)
     // Seconds into the current track, reported by the Player once a second.
     const elapsedRef = useRef(0)
     const queueRef = useRef(queue)
@@ -126,6 +134,54 @@ export function NowPlayingProvider({ children }) {
         })
     }, [queue, clock])
 
+    const playing = currentVideo(queue)
+    const playingId = playing?.id ?? null
+    useEffect(() => {
+        similarDispatch({ type: 'TRACK_CHANGED', payload: { videoId: playingId } })
+    }, [playingId])
+
+    const loadList = useCallback((request) => {
+        const { key } = request
+        similarDispatch({ type: 'LIST_REQUESTED', payload: { key } })
+        discover(request.body).then((result) => {
+            if (!result.ok) {
+                similarDispatch({ type: 'LIST_FAILED', payload: { key, unavailable: result.unavailable } })
+            } else if (result.data.status === 'unidentified') {
+                similarDispatch({ type: 'LIST_UNIDENTIFIED', payload: { key } })
+            } else {
+                similarDispatch({ type: 'LIST_LOADED', payload: {
+                    key, candidates: result.data.candidates, tags: result.data.seedTracks?.[0]?.tags,
+                } })
+            }
+        })
+    }, [])
+
+    // Ask for whatever list is on screen and not there yet. A list that failed
+    // is only asked for again by the Retry button, never in a loop.
+    useEffect(() => {
+        const request = similarRequest(similar, playing, discoverSignals(signalsRef.current))
+        if (!request) return undefined
+        if (request.kind === 'unidentified') {
+            similarDispatch({ type: 'LIST_UNIDENTIFIED', payload: { key: request.key } })
+            return undefined
+        }
+        if (similar.lists[request.key]) return undefined
+        if (request.key.startsWith('tag:')) {
+            loadList(request)
+            return undefined
+        }
+        const timer = setTimeout(() => loadList(request), SIMILAR_DELAY_MS)
+        return () => clearTimeout(timer)
+        // `playing` only matters through its id: the same video is the same list.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [similar, playingId, loadList])
+
+    const browseVibe = useCallback((tag) => similarDispatch({ type: 'BROWSE', payload: { tag } }), [])
+    const retryVibe = useCallback(() => {
+        const request = similarRequest(similar, currentVideo(queueRef.current), discoverSignals(signalsRef.current))
+        if (request?.kind === 'fetch') loadList(request)
+    }, [similar, loadList])
+
     // A wait (rate limit, failed request) re-checks once it's over.
     const { retryAt } = queue.radio
     useEffect(() => {
@@ -140,7 +196,7 @@ export function NowPlayingProvider({ children }) {
         if (currentItem(before) === currentItem(queue)) return
         elapsedRef.current = 0
         const seed = radioHandoff(before, queue)
-        setHandoff(seed ? `Your queue ended — playing a similar vibe to "${seed}".` : null)
+        setHandoff(seed ? `Your queue ended — autoplay continues: ${seed}.` : null)
     }, [queue])
 
     // Starting the track that's already loaded keeps its playback position
@@ -177,16 +233,37 @@ export function NowPlayingProvider({ children }) {
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
         setExpanded(true)
     }, [])
-    const startTagRadio = useCallback((tag) => {
-        dispatch({ type: 'START_TAG_RADIO', payload: { tag } })
+    // Keeps the listener's queue; only what autoplay follows changes.
+    const autoplayVibe = useCallback((tag) => {
+        dispatch({ type: 'AUTOPLAY_VIBE', payload: { tag } })
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
     }, [])
     const jumpTo = useCallback((index) => dispatch({ type: 'JUMP_TO', payload: { index } }), [])
-    // From "Similar to this": right after the current track, then straight to it.
+    // From Similar vibe: right after the current track, then straight to it.
     const playNow = useCallback((video) => {
         dispatch({ type: 'PLAY_NEXT', payload: { video } })
         dispatch({ type: 'NEXT' })
     }, [])
+    // ▶ / ➕ on a Similar vibe row. Its video is found now, with one YouTube
+    // search (cached for 30 days server-side), then it plays or is queued.
+    const playCandidate = useCallback(async (candidate, mode) => {
+        const act = (video) => (mode === 'now' ? playNow(video) : enqueue(video))
+        if (candidate.video) {
+            act(candidate.video)
+            return
+        }
+        if (candidate.resolving === 'loading') return
+        const { id } = candidate
+        similarDispatch({ type: 'CANDIDATE_RESOLVING', payload: { id } })
+        const result = await resolveCandidates({ candidates: [{ artist: candidate.artist, title: candidate.title }], count: 1 })
+        const video = result.ok ? result.data.candidates?.[0]?.video : null
+        if (video) {
+            similarDispatch({ type: 'CANDIDATE_RESOLVED', payload: { id, video } })
+            act(video)
+        } else {
+            similarDispatch({ type: 'CANDIDATE_FAILED', payload: { id, limited: Boolean(result.ok && result.data.retryAfter) } })
+        }
+    }, [playNow, enqueue])
     const setRadio = useCallback((enabled) => {
         dispatch({ type: 'SET_RADIO', payload: { enabled } })
         setSettings((current) => ({ ...current, radio: enabled }))
@@ -244,7 +321,11 @@ export function NowPlayingProvider({ children }) {
             source: queue.source,
             radio: queue.radio,
             upNext: upNext(queue, Date.now()),
-            tags: currentTags(queue),
+            autoplayTarget: autoplayTarget(queue),
+            vibe: viewList(similar),
+            browseTag: similar.browseTag,
+            // The playing track's own Last.fm tags once known; until then a radio track's shared ones.
+            tags: vibeTags(similar).length ? vibeTags(similar) : currentTags(queue),
             signals: discoverSignals(signals),
             notice,
             handoff,
@@ -255,9 +336,12 @@ export function NowPlayingProvider({ children }) {
             enqueue,
             startRadio,
             startPlaylistRadio,
-            startTagRadio,
+            autoplayVibe,
             jumpTo,
             playNow,
+            playCandidate,
+            browseVibe,
+            retryVibe,
             setRadio,
             dismissHandoff,
             next,
@@ -270,8 +354,8 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
-        [queue, clock, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, startTagRadio, jumpTo, playNow, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
+        [queue, clock, similar, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
+            startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

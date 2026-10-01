@@ -1593,10 +1593,67 @@
     outline: none;
 }
 
-.autoplay__hint {
-    font-size: .65rem;
+.autoplayRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem 1rem;
+    margin: .7rem 0 .4rem;
+    padding-top: .6rem;
+    border-top: 1px dashed var(--phosphor-secondary);
+}
+
+.autoplayRow__text {
+    flex: 1 1 12rem;
+    min-width: 0;
+    margin: 0;
+    font-size: .8rem;
     color: var(--phosphor-secondary-alt);
-    text-align: right;
+}
+
+.autoplayRow__text strong {
+    font-weight: normal;
+    color: var(--primarycolor);
+}
+
+/* Tag vibe: the two choices sit where the switch used to. */
+.vibeActions {
+    grid-area: switch;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .4rem;
+}
+
+.queueMore {
+    margin: .4rem 0 0;
+    padding: .2rem 0;
+    background: transparent;
+    border: none;
+    color: var(--phosphor-secondary-alt);
+    font-family: var(--font-body);
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.queueMore:hover,
+.queueMore:focus-visible {
+    color: var(--primarycolor);
+    outline: none;
+}
+
+.queueRow__main:disabled {
+    cursor: progress;
+    opacity: .6;
+}
+
+.queueRow__action:disabled {
+    cursor: progress;
+    opacity: .4;
 }
 
 .queueRowWaiting .queueRow__main {
@@ -1709,7 +1766,7 @@
 }
 
 /* Phones: one scroll (the console's), not a list scrolling inside it; the
-   Autoplay switch drops under the block title. */
+   tag-vibe buttons drop under the block title. */
 @media screen and (max-width: 700px) {
     .listArea {
         flex: none;
@@ -1727,11 +1784,7 @@
         row-gap: .4rem;
     }
 
-    .autoplay {
-        align-items: flex-start;
-    }
-
-    .autoplay__hint {
-        text-align: left;
+    .vibeActions {
+        justify-content: flex-start;
     }
 }

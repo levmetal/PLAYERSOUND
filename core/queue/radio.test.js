@@ -257,7 +257,7 @@ test('resolve requests carry no affinity', () => {
 test("the handoff is reported when playback moves from the user's last pick into radio", () => {
     const before = batch(playList([A]), { candidates: [c(B)] })
     const after = queueReducer(before, { type: 'NEXT' })
-    assert.equal(radioHandoff(before, after), 'Digital Love')
+    assert.equal(radioHandoff(before, after), 'tracks like "Digital Love"')
 })
 
 test('no handoff between user items or between radio items', () => {
@@ -286,7 +286,7 @@ test('pickSeeds takes every track of a short playlist', () => {
 // --- player sections: jump, tag radio, seed tags, up next ---
 
 const jump = (state, index) => queueReducer(state, { type: 'JUMP_TO', payload: { index } })
-const tagRadio = (state, tag) => queueReducer(state, { type: 'START_TAG_RADIO', payload: { tag } })
+const autoplayVibe = (state, tag) => queueReducer(state, { type: 'AUTOPLAY_VIBE', payload: { tag } })
 
 test('JUMP_TO plays the item at that index, moving forward', () => {
     const state = jump(batch(playList([A, B]), { candidates: [c(C)] }), 2)
@@ -301,28 +301,49 @@ test('JUMP_TO the current index or out of range returns the same state object', 
     assert.equal(jump(state, -1), state)
 })
 
-test('tag radio keeps the current track and replaces what was ahead', () => {
-    const full = batch(startRadio(), { candidates: [c(B), c(C)] })
-    const state = tagRadio(full, 'synthwave')
-    assert.deepEqual(ids(state), [A.id])
+test("autoplay vibe drops the radio items ahead but keeps the listener's own queue", () => {
+    const full = batch(playList([A, B]), { candidates: [c(C), c(D)] })
+    const state = autoplayVibe(full, 'synthwave')
+    assert.deepEqual(ids(state), [A.id, B.id])
     assert.equal(currentVideo(state), A)
-    assert.deepEqual(state.source, { type: 'tag', label: 'synthwave' })
+    assert.deepEqual(state.source, full.source)
     assert.deepEqual(state.radio.tags, ['synthwave'])
     assert.deepEqual(state.radio.seeds, [])
+    assert.deepEqual(state.radio.pending, [])
+    assert.equal(state.radio.status, 'idle')
     assert.equal(state.radio.enabled, true)
     assert.notEqual(state.generation, full.generation)
 })
 
-test('tag radio asks for tracks by tag', () => {
-    const request = radioRequest(tagRadio(playList([A]), 'synthwave'), NOW)
+test('autoplay vibe turns autoplay on and lets stopped radio try again', () => {
+    const off = queueReducer(playList([A]), { type: 'SET_RADIO', payload: { enabled: false } })
+    assert.equal(autoplayVibe(off, 'synthwave').radio.enabled, true)
+    const exhausted = batch(playList([A]), { candidates: [] })
+    assert.equal(autoplayVibe(exhausted, 'synthwave').radio.status, 'idle')
+})
+
+test('autoplay vibe keeps the radio track that is playing', () => {
+    const onB = queueReducer(batch(playList([A]), { candidates: [c(B), c(C)] }), { type: 'NEXT' })
+    const state = autoplayVibe(onB, 'synthwave')
+    assert.deepEqual(ids(state), [A.id, B.id])
+    assert.equal(currentVideo(state), B)
+})
+
+test('autoplay vibe with nothing playing returns the same state object', () => {
+    assert.equal(autoplayVibe(initialQueueState, 'synthwave'), initialQueueState)
+})
+
+test('autoplay vibe asks for tracks by tag once the queue runs low', () => {
+    assert.equal(radioRequest(autoplayVibe(playList([A, B, C, D, E]), 'synthwave'), NOW), null)
+    const request = radioRequest(autoplayVibe(playList([A]), 'synthwave'), NOW)
     assert.equal(request.kind, 'discover')
     assert.deepEqual(request.tags, ['synthwave'])
     assert.deepEqual(request.seeds, [])
 })
 
-test('no handoff notice for a tag radio', () => {
-    const before = batch(tagRadio(playList([A]), 'synthwave'), { candidates: [c(B)] })
-    assert.equal(radioHandoff(before, queueReducer(before, { type: 'NEXT' })), null)
+test('the handoff into an autoplay vibe says which vibe', () => {
+    const before = batch(autoplayVibe(playList([A]), 'synthwave'), { candidates: [c(B)] })
+    assert.equal(radioHandoff(before, queueReducer(before, { type: 'NEXT' })), 'the "synthwave" vibe')
 })
 
 test('a batch remembers the tags Last.fm gave its seed', () => {
@@ -331,9 +352,9 @@ test('a batch remembers the tags Last.fm gave its seed', () => {
     assert.deepEqual(currentTags(state), ['french house'])
 })
 
-test('tag radio keeps the tags of the track that goes on playing', () => {
+test('autoplay vibe keeps the tags of the track that is playing', () => {
     const seeded = batch(startRadio(), { candidates: [c(B)], seedTags: { [A.id]: ['french house', 'disco'] } })
-    assert.deepEqual(currentTags(tagRadio(seeded, 'disco')), ['french house', 'disco'])
+    assert.deepEqual(currentTags(autoplayVibe(seeded, 'disco')), ['french house', 'disco'])
 })
 
 test('currentTags: a radio item shows its shared tags, an unknown track none', () => {
@@ -384,16 +405,16 @@ test('autoplayTarget is nothing for an empty queue', () => {
 })
 
 test('autoplayTarget follows the last track the user chose, by its song title', () => {
-    assert.equal(autoplayTarget(playList([A, B], 0)), 'Like "Digital Love"')
+    assert.equal(autoplayTarget(playList([A, B], 0)), 'tracks like "Digital Love"')
 })
 
 test('autoplayTarget names the radio seed, a playlist, or a vibe', () => {
-    assert.equal(autoplayTarget(startRadio([A])), 'Like "Digital Love"')
-    assert.equal(autoplayTarget(startRadio([A, B, C], 'Night drive')), 'Like the playlist "Night drive"')
-    assert.equal(autoplayTarget(tagRadio(playList([A]), 'synthwave')), 'Vibe: synthwave')
+    assert.equal(autoplayTarget(startRadio([A])), 'tracks like "Digital Love"')
+    assert.equal(autoplayTarget(startRadio([A, B, C], 'Night drive')), 'tracks like the playlist "Night drive"')
+    assert.equal(autoplayTarget(autoplayVibe(playList([A]), 'synthwave')), 'the "synthwave" vibe')
 })
 
 test('autoplayTarget falls back to the video title when the song is not identifiable', () => {
     const SET = videos.find((v) => v.title.includes('Boiler Room: London'))
-    assert.equal(autoplayTarget(playList([SET])), `Like "${SET.title}"`)
+    assert.equal(autoplayTarget(playList([SET])), `tracks like "${SET.title}"`)
 })

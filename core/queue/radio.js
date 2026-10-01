@@ -69,17 +69,17 @@ export function radioRequest(state, now, signals = { exclude: [], affinity: {} }
 }
 
 /**
- * The seed title when playback just moved from the user's own picks into
- * radio's (their queue ran out), else null.
+ * What autoplay continues with (see autoplayTarget) when playback just moved
+ * from the user's own picks into radio's (their queue ran out), else null.
  * @param {QueueState} before
  * @param {QueueState} after
  */
 export function radioHandoff(before, after) {
     const was = before.items[before.index]
     const is = after.items[after.index]
-    if (after.source?.type === 'radio' || after.source?.type === 'tag') return null
+    if (after.source?.type === 'radio') return null
     if (was?.origin !== 'user' || is?.origin !== 'radio') return null
-    return is.reason?.seed ?? after.source?.label ?? null
+    return autoplayTarget(after) ?? is.reason?.seed ?? null
 }
 
 /**
@@ -137,9 +137,9 @@ export function currentTags(state) {
 export function autoplayTarget(state) {
     if (state.index < 0) return null
     const { radio } = state
-    if (radio.tags.length) return `Vibe: ${radio.tags[0]}`
-    if (radio.seeds.length > 1) return `Like the playlist "${state.source?.label ?? ''}"`
+    if (radio.tags.length) return `the "${radio.tags[0]}" vibe`
+    if (radio.seeds.length > 1) return `tracks like the playlist "${state.source?.label ?? ''}"`
     const seed = radio.seeds[0] ?? lastUserVideo(state)
     if (!seed) return null
-    return `Like "${resolveTrack(seed)?.title ?? seed.title}"`
+    return `tracks like "${resolveTrack(seed)?.title ?? seed.title}"`
 }

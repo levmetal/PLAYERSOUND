@@ -53,7 +53,7 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, startTagRadio, source } = useNowPlaying();
+    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, browseVibe, browseTag } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
     // With radio on, say up front when this track can't seed it.
@@ -297,7 +297,7 @@ const Player = ({ item }) => {
                         <p className={styles.reasonLine}>
                             <MdWaves aria-hidden="true" />
                             <span className={styles.reasonLine__text}>
-                                {reason.seed ? `Similar vibe to ${reason.seed}` : source?.type === 'tag' ? `Vibe: ${source.label}` : 'Similar vibe'}
+                                {reason.seed ? `Similar vibe to ${reason.seed}` : radio.tags.length ? `Vibe: ${radio.tags[0]}` : 'Similar vibe'}
                                 {reason.sharedTags.length > 0 && ` · ${reason.sharedTags.join(', ')}`}
                             </span>
                             <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
@@ -310,9 +310,9 @@ const Player = ({ item }) => {
                                 <li key={tag}>
                                     <button
                                         type="button"
-                                        onClick={() => startTagRadio(tag)}
-                                        aria-pressed={source?.type === 'tag' && source.label === tag}
-                                        title={`Play more ${tag}`}
+                                        onClick={() => browseVibe(tag)}
+                                        aria-pressed={browseTag === tag || radio.tags[0] === tag}
+                                        title={`Show more like ${tag}`}
                                     >
                                         {tag}
                                     </button>
