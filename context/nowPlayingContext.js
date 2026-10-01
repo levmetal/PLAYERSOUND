@@ -201,7 +201,7 @@ export function NowPlayingProvider({ children }) {
     }, [queue])
 
     // Starting the track that's already loaded keeps its playback position
-    // (Player is keyed by the track id, see components/modal.jsx) and just
+    // (the engine only loads a track whose id changed) and just
     // adopts the new list as the queue.
     const playQueue = useCallback((videos, startIndex, source) => {
         dispatch({ type: 'PLAY_LIST', payload: { videos, startIndex, source } })

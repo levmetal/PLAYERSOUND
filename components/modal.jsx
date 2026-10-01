@@ -179,9 +179,11 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                         scroll into view. Player renders the first two cells itself
                         (it owns the engine, and so which window to show). */}
                     <div className={styles.faceplate}>
-                        {/* Keyed by track: the next track in the queue gets a fresh
-                            engine, position and playing state. */}
-                        <Player key={item.id} item={item} />
+                        {/* Not keyed by track: one Player (and one YouTube player /
+                            <audio>) for the whole listening session, so the next track
+                            starts even while the tab is in the background. It resets
+                            its own per-track state when `item` changes. */}
+                        <Player item={item} />
 
                         <div className={styles.globeWindow}>
                             <GlobePanel />

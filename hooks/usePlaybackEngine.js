@@ -36,8 +36,15 @@ function loadIframeApi() {
 // engine's <audio> element is self-contained and needs no visible mount
 // point.
 //
-// Every track starts playing on its own once loaded: a player only ever
-// mounts because of an explicit play (a row click, Play all, ⏮/⏭) or the
+// One engine for the whole listening session: Player isn't remounted per
+// track, so a track change keeps the same YouTube player (loadVideoById) or
+// the same <audio> element (new src). That matters in the background: a
+// YouTube player created while the tab is hidden won't start until the tab is
+// visible again, while the one that's already playing switches videos and
+// keeps going.
+//
+// Every track starts playing on its own once loaded: a track only ever
+// loads because of an explicit play (a row click, Play all, ⏮/⏭) or the
 // queue auto-advancing. If the browser blocks autoplay, the track just stays
 // loaded with ▶ ready. `onNext`/`onPrev` are null when the queue has nothing
 // in that direction. `onUnplayable` fires when YouTube refuses the video
@@ -66,9 +73,20 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
     onUnplayableRef.current = onUnplayable;
     const hasNext = Boolean(onNext);
     const hasPrev = Boolean(onPrev);
+    // The track asked for most recently, and the one the YouTube player has
+    // actually been given — they differ while the player is still being built.
+    const videoIdRef = useRef(videoId);
+    videoIdRef.current = videoId;
+    const loadedIdRef = useRef(null);
+    // The YouTube player only reports onReady once, when it's built; after
+    // that it stays usable for every track it's handed.
+    const ytReadyRef = useRef(false);
 
+    // A new track: nothing's playing yet and the last track's error is gone.
+    // A reused YouTube player is still ready (no new onReady will come); the
+    // <audio> element reports readiness again through canplay.
     useEffect(() => {
-        setReady(false);
+        setReady(engine === 'iframe' && ytReadyRef.current);
         setError(null);
         setPlaying(false);
     }, [videoId, engine]);
@@ -110,7 +128,7 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
         };
     }, [engine, videoId]);
 
-    // --- iframe engine: mount YouTube's own player into containerRef ---
+    // --- iframe engine: build YouTube's own player into containerRef, once ---
     useEffect(() => {
         if (engine !== 'iframe') return;
         let cancelled = false;
@@ -118,8 +136,10 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
         loadIframeApi()
             .then((YT) => {
                 if (cancelled || !containerRef.current) return;
+                const firstId = videoIdRef.current;
+                loadedIdRef.current = firstId;
                 ytPlayerRef.current = new YT.Player(containerRef.current, {
-                    videoId,
+                    videoId: firstId,
                     // controls: 0 hides YouTube's own play/pause/seek/volume bar —
                     // our own transport (components/player.jsx) already drives this
                     // player via play/pause/seek/setVolume below, so leaving
@@ -129,7 +149,15 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
                     playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3 },
                     host: 'https://www.youtube-nocookie.com',
                     events: {
-                        onReady: () => setReady(true),
+                        onReady: (event) => {
+                            ytReadyRef.current = true;
+                            setReady(true);
+                            // The track changed while the player was being built.
+                            if (videoIdRef.current !== loadedIdRef.current) {
+                                loadedIdRef.current = videoIdRef.current;
+                                event.target.loadVideoById(videoIdRef.current);
+                            }
+                        },
                         onError: () => {
                             setError("This video can't be played embedded.");
                             onUnplayableRef.current?.();
@@ -150,7 +178,16 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
             cancelled = true;
             ytPlayerRef.current?.destroy?.();
             ytPlayerRef.current = null;
+            ytReadyRef.current = false;
+            loadedIdRef.current = null;
         };
+    }, [engine]);
+
+    // --- iframe engine: a new track goes into the same player ---
+    useEffect(() => {
+        if (engine !== 'iframe' || !ytReadyRef.current || loadedIdRef.current === videoId) return;
+        loadedIdRef.current = videoId;
+        ytPlayerRef.current?.loadVideoById(videoId);
     }, [engine, videoId]);
 
     // --- MediaSession: lock-screen/notification controls. Only wired for the

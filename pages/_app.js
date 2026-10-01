@@ -87,9 +87,9 @@ function Loading() {
 }
 
 // Lives here, outside <Layout>'s page content, so the player isn't unmounted
-// by route changes. Not keyed by track: moving through the queue swaps only
-// the Player inside it (see components/modal.jsx), so the console itself —
-// expanded/mini state, focus, entrance animation — stays put.
+// by route changes. Not keyed by track: moving through the queue only hands
+// the Player inside it a new item (see components/modal.jsx), so the console
+// itself — expanded/mini state, focus, entrance animation — stays put.
 function NowPlayingHost() {
   const { item, expanded, minimize, expand, stop } = useNowPlaying()
   if (!item) return null
