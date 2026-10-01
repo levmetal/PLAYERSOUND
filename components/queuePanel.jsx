@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { FaPlay, FaPlus, FaMusic } from 'react-icons/fa'
-import { MdWaves } from 'react-icons/md'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import resolveTrack from '../core/track/resolveTrack'
@@ -147,7 +146,7 @@ const VibeBlock = ({ item }) => {
     return (
         <section className={`${styles.listBlock} ${styles.listBlockVibe}`} aria-label="Similar vibe">
             <header className={styles.listBlock__header}>
-                <h3 className={styles.listBlock__title}><MdWaves aria-hidden="true" /> Similar vibe</h3>
+                <h3 className={styles.listBlock__title}>Similar vibe</h3>
                 <p className={styles.listBlock__subtitle}>
                     {vibe.kind === 'tag' ? `Vibe: ${vibe.tag}` : `Like "${trackTitle}"`}
                 </p>

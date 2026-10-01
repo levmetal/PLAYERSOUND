@@ -1,6 +1,5 @@
 import styles from "../styles/soundlist.module.css"
 import { FaPlay, FaHeart, FaRegHeart, FaCheck, FaVolumeUp, FaEllipsisH } from 'react-icons/fa'
-import { MdWaves } from 'react-icons/md'
 import { useDispatchContext, usePlaylists, FAVORITES_ID } from "../context/libraryContext/libraryContext"
 import { useNowPlaying } from "../context/nowPlayingContext"
 import { useEffect, useRef, useState } from "react";
@@ -273,7 +272,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                                         disabled={!identified}
                                         aria-describedby={identified ? undefined : `${menuId}-unidentified`}
                                     >
-                                        <MdWaves aria-hidden="true" /> Find similar vibe
+                                        Find similar vibe
                                     </button>
                                     {!identified && (
                                         <p id={`${menuId}-unidentified`} className={styles.rowMenu__note}>

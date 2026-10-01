@@ -468,11 +468,6 @@
     color: var(--phosphor-secondary-alt);
 }
 
-.reasonLine svg {
-    flex: none;
-    color: var(--phosphor-primary);
-}
-
 .reasonLine__text {
     min-width: 0;
     white-space: nowrap;
@@ -1508,10 +1503,6 @@
     letter-spacing: var(--letter-spacing-wide);
     color: var(--primarycolor);
     text-shadow: var(--glow-text);
-}
-
-.listBlock__title svg {
-    color: var(--phosphor-primary);
 }
 
 .listBlock__subtitle {

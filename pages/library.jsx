@@ -2,7 +2,6 @@ import styles from '../styles/library.module.css'
 import SoundItem from "../components/soundItem";
 import { useRef, useState } from "react";
 import { FaPlay, FaRandom } from "react-icons/fa";
-import { MdWaves } from "react-icons/md";
 import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libraryContext/libraryContext";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import { toExport, parseImport, mergePlaylists } from "../core/library/exportFormat";
@@ -161,7 +160,7 @@ const Library = () => {
                                     ? 'Play tracks with a similar vibe to this playlist'
                                     : "We couldn't identify any song in this playlist"}
                             >
-                                <MdWaves aria-hidden="true" /> Similar vibe
+                                Similar vibe
                             </button>
                         )}
                     </div>

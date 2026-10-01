@@ -5,7 +5,6 @@ import GlobePanel from '../components/globePanel'
 import QueuePanel from '../components/queuePanel'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
-import { MdWaves } from 'react-icons/md'
 
 // Matches the console-out/backdrop-out keyframe durations in player.module.css —
 // keeps the expanded console on screen long enough to play its own ease-in
@@ -141,7 +140,6 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                                     ? "Similar vibe isn't available on this server"
                                     : radio.enabled ? 'Autoplay on: tracks with a similar vibe play when your queue ends' : 'Autoplay off: playback stops when your queue ends'}
                             >
-                                <MdWaves aria-hidden="true" />
                                 <span className={styles.miniAutoplay__text}>Autoplay</span>
                             </button>
                             <button

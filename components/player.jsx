@@ -6,7 +6,6 @@ import { useSoundContext, useDispatchContext } from "../context/libraryContext/l
 import usePlaybackEngine from "../hooks/usePlaybackEngine";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import MarqueeText from './marqueeText';
-import { MdWaves } from 'react-icons/md';
 import resolveTrack from "../core/track/resolveTrack";
 
 // Purely decorative — a neon VU-meter bar-graph. Not driven by real audio
@@ -295,7 +294,6 @@ const Player = ({ item }) => {
                     <MarqueeText text={item.title} className={styles.player__title} />
                     {reason && (
                         <p className={styles.reasonLine}>
-                            <MdWaves aria-hidden="true" />
                             <span className={styles.reasonLine__text}>
                                 {reason.seed ? `Similar vibe to ${reason.seed}` : radio.tags.length ? `Vibe: ${radio.tags[0]}` : 'Similar vibe'}
                                 {reason.sharedTags.length > 0 && ` · ${reason.sharedTags.join(', ')}`}
