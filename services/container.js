@@ -7,7 +7,9 @@ import { createRuntimeCache } from '../adapters/cache/runtimeCache.js'
 import { withCache } from '../adapters/cache/withCache.js'
 import { createLastfmMusic, LastfmError } from '../adapters/lastfm/lastfmMusic.js'
 import { trackKey } from '../core/discovery/rankCandidates.js'
+import { createOembedLookup } from '../adapters/youtube/oembedLookup.js'
 import { createSearchService } from './search.js'
+import { createLookupVideoService } from './lookupVideo.js'
 import { createResolveCandidates } from './resolveCandidates.js'
 import { createDiscoverService } from './discover.js'
 
@@ -15,6 +17,8 @@ const EDITIONS = {
     public: { discover: true, download: false, playback: ['iframe'] },
     local: { discover: true, download: true, playback: ['localFile', 'native', 'iframe'] },
 }
+
+const LOOKUP_FAILURES = new Set(['invalid-id', 'unplayable', 'not-found', 'unavailable'])
 
 const HOUR = 60 * 60
 const DAY = 24 * HOUR
@@ -52,6 +56,13 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         methods: { search: { ttl: HOUR, key: (term) => term.toLowerCase() } },
     })
 
+    // Only successful lookups are cached (withCache skips throws), for as long as search matches.
+    const videoLookup = withCache(createOembedLookup(), {
+        cache,
+        prefix: 'yt',
+        methods: { video: { ttl: 30 * DAY, key: (id) => id } },
+    })
+
     const matcher = createResolveCandidates({ videoSearch })
     const { resolve } = withCache({ resolve: matcher.resolve }, {
         cache,
@@ -69,10 +80,13 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         cacheKind,
         can: (name) => capabilities[name] === true,
         search: createSearchService({ videoSearch }),
+        video: createLookupVideoService({ videoLookup }),
         resolver,
         discover: catalog ? createDiscoverService({ catalog, resolver }) : undefined,
         // Routes answer 502 for these instead of 500, without importing adapters.
         isSourceError: (error) => error instanceof LastfmError,
+        // Why a video lookup failed ('invalid-id' | 'unplayable' | 'not-found' | 'unavailable'), else null.
+        lookupFailure: (error) => (LOOKUP_FAILURES.has(error?.code) ? error.code : null),
         // YouTube's bot protection: routes answer 503 / add retryAfter instead.
         isRateLimited: (error) => error?.code === 'rate-limited',
         youtubeBlockedFor: () => youtubeSearch.blockedFor(),

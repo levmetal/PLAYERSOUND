@@ -5,6 +5,7 @@ import styles from "../styles/soundlist.module.css"
 import SoundItem from "./soundItem";
 import { useNowPlaying } from "../context/nowPlayingContext";
 import { formatTrackNumber } from "../core/format/trackNumber";
+import useLinkSubmit from "../hooks/useLinkSubmit";
 import {
   SORT_OPTIONS,
   DURATION_FILTERS,
@@ -27,6 +28,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 const SoundList = ({ query = '', status = 'done', results = [], error = null, onRetry }) => {
   const router = useRouter()
   const { playQueue } = useNowPlaying()
+  const link = useLinkSubmit()
   const inputRef = useRef(null)
   const [draft, setDraft] = useState(query)
 
@@ -76,11 +78,18 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     inputRef.current?.select()
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const term = draft.trim()
     if (!term) {
       focusSearch()
+      return
+    }
+    // A pasted YouTube video link plays; the results on screen stay as they are.
+    const outcome = await link.submit(term)
+    if (outcome === 'failed') return
+    if (outcome === 'played') {
+      setDraft(query)
       return
     }
     // Same term again: the URL wouldn't change, so re-run the fetch instead.
@@ -194,11 +203,18 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
             spellCheck="false"
             placeholder="Search sounds, songs, podcasts"
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            disabled={link.pending}
+            aria-describedby="results-link-message"
+            onChange={(e) => { setDraft(e.target.value); link.clearError() }}
           />
-          <button type="submit" className={styles.searchBtn}>Search</button>
+          <button type="submit" className={styles.searchBtn} disabled={link.pending}>
+            {link.pending ? 'Loading…' : 'Search'}
+          </button>
           <p className={styles.resultCount} role="status" aria-live="polite">{countText}</p>
         </form>
+        <p id="results-link-message" className={styles.linkMessage} role="alert">
+          {link.pending ? 'Loading link…' : link.error}
+        </p>
 
         <div className={styles.filterRow}>
           <div className={styles.segmentGroup} role="radiogroup" aria-labelledby="sort-label">

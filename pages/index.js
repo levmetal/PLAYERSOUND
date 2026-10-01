@@ -4,16 +4,25 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import DataPixelArc from '../components/dataPixelArc'
 import Head from 'next/head'
+import useLinkSubmit from '../hooks/useLinkSubmit'
 
 export default function Home() {
 
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const link = useLinkSubmit()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const term = search.trim()
     if (!term) return
+    // A pasted YouTube video link plays instead of being searched for.
+    const outcome = await link.submit(term)
+    if (outcome === 'failed') return
+    if (outcome === 'played') {
+      setSearch("")
+      return
+    }
     // Encoded so "/", "?", "#" etc. stay part of the term instead of
     // changing the route (e.g. "AC/DC" becoming /search/AC/DC → 404).
     router.push(`/search/${encodeURIComponent(term)}`)
@@ -58,10 +67,17 @@ export default function Home() {
                   value={search}
                   type="text"
                   placeholder="Let's rock!"
-                  onChange={e => setSearch(e.target.value)}
+                  disabled={link.pending}
+                  aria-describedby="home-link-message"
+                  onChange={e => { setSearch(e.target.value); link.clearError() }}
                 />
-                <button className={styles.form__button} type="submit" >Search</button>
+                <button className={styles.form__button} type="submit" disabled={link.pending}>
+                  {link.pending ? 'Loading…' : 'Search'}
+                </button>
               </form>
+              <p id="home-link-message" className={styles.linkMessage} role="alert">
+                {link.pending ? 'Loading link…' : link.error}
+              </p>
             </div>
             <div className={styles.heroFrame}>
               <DataPixelArc className={styles.heroArc} />

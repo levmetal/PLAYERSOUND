@@ -313,3 +313,19 @@
         padding: 0;
     }
 }
+/* Says what happened to a pasted link ("Loading link…" or why it can't play).
+   Empty = nothing rendered, so the form doesn't gain a gap. */
+.linkMessage {
+    margin: .75rem 0 0;
+    max-width: 100%;
+    font-family: var(--font-body);
+    font-size: .8rem;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+    overflow-wrap: anywhere;
+}
+
+.linkMessage:empty {
+    display: none;
+}

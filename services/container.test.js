@@ -67,3 +67,18 @@ test('recognizes a YouTube rate limit and reports no block at start', async () =
     assert.equal(container.isRateLimited(new Error('other')), false)
     assert.equal(container.youtubeBlockedFor(), 0)
 })
+
+test('exposes the video lookup service, and every edition can use it', () => {
+    for (const edition of ['public', 'local']) {
+        assert.equal(typeof createContainer({ edition }).video.video, 'function')
+    }
+})
+
+test('lookup failures are told apart for the routes without importing adapters', () => {
+    const container = createContainer({ edition: 'public' })
+    assert.equal(container.lookupFailure(Object.assign(new Error('x'), { code: 'unplayable' })), 'unplayable')
+    assert.equal(container.lookupFailure(Object.assign(new Error('x'), { code: 'not-found' })), 'not-found')
+    assert.equal(container.lookupFailure(Object.assign(new Error('x'), { code: 'unavailable' })), 'unavailable')
+    assert.equal(container.lookupFailure(Object.assign(new Error('x'), { code: 'invalid-id' })), 'invalid-id')
+    assert.equal(container.lookupFailure(new Error('boom')), null)
+})

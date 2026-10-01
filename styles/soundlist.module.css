@@ -1108,3 +1108,17 @@
         flex: none;
     }
 }
+
+/* Same message under the command bar's query line. */
+.linkMessage {
+    margin: .5rem 0 0;
+    font-size: .75rem;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--primarycolor);
+    text-shadow: var(--glow-text);
+    overflow-wrap: anywhere;
+}
+
+.linkMessage:empty {
+    display: none;
+}
