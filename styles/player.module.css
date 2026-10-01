@@ -185,17 +185,18 @@
     cursor: not-allowed;
 }
 
-/* Radio on is a state, so it takes the cyan accent (like a saved ♥). */
+/* Autoplay on: selected = phosphor inversion (cyan is only for saved ♥,
+   current navigation and keyboard focus). */
 .btn__close.radioOn {
-    border-color: var(--accent);
-    background: var(--accent);
+    border-color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
     color: var(--bg);
-    box-shadow: var(--glow-accent);
+    box-shadow: var(--glow-box);
 }
 
 .btn__close.radioOn:hover {
     background: transparent;
-    color: var(--accent);
+    color: var(--phosphor-primary);
 }
 
 .handoff button {
@@ -469,7 +470,7 @@
 
 .reasonLine svg {
     flex: none;
-    color: var(--accent);
+    color: var(--phosphor-primary);
 }
 
 .reasonLine__text {
@@ -528,10 +529,12 @@
     cursor: pointer;
 }
 
+/* The vibe being browsed: selected = phosphor inversion, as in the filters. */
 .tagChips button[aria-pressed="true"] {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: var(--glow-accent);
+    border-color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: var(--glow-box);
 }
 
 .tagChips button:hover,
@@ -1508,7 +1511,7 @@
 }
 
 .listBlock__title svg {
-    color: var(--accent);
+    color: var(--phosphor-primary);
 }
 
 .listBlock__subtitle {
@@ -1540,6 +1543,7 @@
 }
 
 .listBlock__button {
+    composes: pixel-depth from global;
     border: var(--border-crt);
     background: transparent;
     color: var(--primarycolor);
@@ -1566,6 +1570,7 @@
 }
 
 .autoplay__switch {
+    composes: pixel-depth from global;
     display: inline-flex;
     align-items: center;
     gap: .5rem;
@@ -1588,12 +1593,13 @@
     color: var(--phosphor-secondary-alt);
 }
 
-/* On is a state, so it takes the cyan accent (like a saved ♥). */
+/* On = phosphor inversion (cyan is only for saved ♥, current navigation and
+   keyboard focus). */
 .autoplay__switchOn .autoplay__state {
-    border-color: var(--accent);
-    background: var(--accent);
+    border-color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
     color: var(--bg);
-    box-shadow: var(--glow-accent);
+    box-shadow: var(--glow-box);
 }
 
 .autoplay__switch:hover,
@@ -1838,15 +1844,10 @@
     color: var(--bg);
 }
 
-/* ▶ — solid, like the main rows' play button. */
+/* ▶ — bordered like every button, with the bright phosphor border (➕ has the
+   dim one), same as the main rows' play button. Hover inverts (above). */
 .queueRow__actionPlay {
     border-color: var(--phosphor-primary);
-    background: var(--phosphor-primary);
-    color: var(--bg);
-}
-
-.queueRow__actionPlay:hover {
-    background: transparent;
     color: var(--phosphor-primary);
 }
 
@@ -1907,5 +1908,11 @@
     .queueRow__thumb {
         width: 2.2rem;
         height: 2.2rem;
+    }
+
+    /* Finger-sized, like the main rows' buttons. */
+    .queueRow__action {
+        width: 2.5rem;
+        height: 2.5rem;
     }
 }

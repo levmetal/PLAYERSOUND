@@ -434,15 +434,16 @@
 
 /* The track loaded in the player. Phosphor, not cyan: "now playing" isn't
    one of the three cyan accent categories (saved / current nav position /
-   keyboard focus). A lit bar on the left edge + the box fill. */
+   keyboard focus). Said by the box fill and border, the lit number, the
+   speaker on the cover, the NOW PLAYING tag and the inverted speaker button —
+   no bar down the left edge. */
 .rowCurrent {
     background: var(--bgbox);
     border-color: var(--phosphor-secondary);
-    box-shadow: inset 3px 0 0 var(--phosphor-primary);
 }
 
 .rowCurrent:hover {
-    box-shadow: inset 3px 0 0 var(--phosphor-primary), var(--glow-box), var(--pixel-shadow-rest);
+    box-shadow: var(--glow-box), var(--pixel-shadow-rest);
 }
 
 /* Lifts the row with an open menu above the following rows. Each row is its
@@ -675,19 +676,12 @@
     box-shadow: var(--glow-box);
 }
 
-/* ▶ — the row's primary action, always visible: solid phosphor, so it reads
-   as the thing to press. The playing row swaps it for the speaker, lit but
-   hollow. */
+/* ▶ — the row's primary action, always visible. Like every button here it
+   rests as a bordered box and inverts on hover; its border is the bright
+   phosphor (♥ and ⋯ use the dim one), which is what ranks it first. On the
+   playing row it's the speaker, inverted — selected = phosphor inversion. */
 .playBtn {
     border-color: var(--phosphor-primary);
-    background: var(--phosphor-primary);
-    color: var(--bg);
-}
-
-.playBtn:hover {
-    background: transparent;
-    color: var(--phosphor-primary);
-    box-shadow: var(--glow-box);
 }
 
 .playBtn:focus-visible {
@@ -695,14 +689,14 @@
 }
 
 .playBtn.playBtnCurrent {
-    background: transparent;
-    color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
+    color: var(--bg);
     box-shadow: var(--glow-box);
 }
 
 .playBtn.playBtnCurrent:hover {
-    background: var(--phosphor-primary);
-    color: var(--bg);
+    background: transparent;
+    color: var(--phosphor-primary);
 }
 
 /* Saved to Favorites: solid cyan fill — the site's one "you saved this"
