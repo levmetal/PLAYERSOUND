@@ -77,3 +77,9 @@ test('IMPORT merges a backup into the current playlists', () => {
     assert.deepEqual(favorites(state), [A, B])
     assert.deepEqual(tracksOf(state, P), [])
 })
+
+test('creates a playlist seeded with several tracks at once, in order', () => {
+    const B = { id: 'b', title: 'B' }
+    const state = reduce(defaultPlaylists, { type: 'CREATE_PLAYLIST', payload: { id: P, name: 'Imported', tracks: [A, B] } })
+    assert.deepEqual(tracksOf(state, P), [A, B])
+})

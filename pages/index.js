@@ -19,7 +19,7 @@ export default function Home() {
     // A pasted YouTube video link plays instead of being searched for.
     const outcome = await link.submit(term)
     if (outcome === 'failed') return
-    if (outcome === 'played') {
+    if (outcome === 'played' || outcome === 'opened') {
       setSearch("")
       return
     }

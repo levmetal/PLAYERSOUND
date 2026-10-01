@@ -1,0 +1,474 @@
+{
+ "info": {
+  "title": "Popular Music Videos",
+  "author": {
+   "id": "UC-9-kyTW8ZkZNDHQJ6FgpwQ",
+   "name": "Music"
+  },
+  "total_items": "183 videos"
+ },
+ "items": [
+  {
+   "type": "LockupView",
+   "content_id": "fOT0BUpITw8",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "BELLAKEO (Video Oficial) - Peso Pluma, Anitta"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Peso Pluma",
+          "runs": [
+           {
+            "text": "Peso Pluma",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCzrM_068Odho89mTRrrxqbA"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "764M",
+          "runs": [
+           {
+            "text": "764M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/fOT0BUpITw8/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLDIUMo6wmNwCk7_4gaFgstLo8XRVQ",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "3:55"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "LockupView",
+   "content_id": "NFvDHYMzj9U",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "Arcángel - FN8 ( Video Lyric )"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Arcangel",
+          "runs": [
+           {
+            "text": "Arcangel",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCu4bj03KW4CwAsYtHSwMEsQ"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "32M",
+          "runs": [
+           {
+            "text": "32M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/NFvDHYMzj9U/hqdefault.jpg?sqp=-oaymwE2CNACELwBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARhjIGMoYzAP&rs=AOn4CLBfwrF8-B99YkS29S2MbyVfQrPfjQ",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "10:50"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "LockupView",
+   "content_id": "8c7KOGxeY3w",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "Becky G - POR EL CONTRARIO (Performance Video) ft. Ángela Aguilar, Leonardo Aguilar"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Becky G",
+          "runs": [
+           {
+            "text": "Becky G",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCgtNC51EUSgcZ6kKyVoPxKA"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "777M",
+          "runs": [
+           {
+            "text": "777M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/8c7KOGxeY3w/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLAc8FMXFBxT72mBl7UTb-La5RqIWQ",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "3:55"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "LockupView",
+   "content_id": "jWdxXdp8sZI",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "Real Boston Richey - The Type (Official Music Video) ft. YTB Fatt"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Real Boston Richey",
+          "runs": [
+           {
+            "text": "Real Boston Richey",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCpkyspUtZwYhgUkepiREflg"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "41M",
+          "runs": [
+           {
+            "text": "41M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/jWdxXdp8sZI/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLCU4nNiLW-ejwKcP2XK93Pio-SQ_A",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "3:32"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "LockupView",
+   "content_id": "s6cdjJvGM2o",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "La Diabla"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Xavi Oficial",
+          "runs": [
+           {
+            "text": "Xavi Oficial",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCx0lY_L_o5vFPQaLAdBasmQ"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "242M",
+          "runs": [
+           {
+            "text": "242M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/s6cdjJvGM2o/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLDGPlC5azB_kDun7NUUIUxe5nlG9A",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "2:53"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "LockupView",
+   "content_id": "w1-jss2mZlY",
+   "content_type": "VIDEO",
+   "metadata": {
+    "title": {
+     "text": "Drake - You Broke My Heart"
+    },
+    "metadata": {
+     "metadata_rows": [
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "Drake",
+          "runs": [
+           {
+            "text": "Drake",
+            "endpoint": {
+             "payload": {
+              "browseId": "UCByOQJjav0CUDwxCk-jVNRQ"
+             }
+            }
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "metadata_parts": [
+        {
+         "text": {
+          "text": "20M",
+          "runs": [
+           {
+            "text": "20M"
+           }
+          ]
+         }
+        },
+        {
+         "text": {
+          "text": "2y ago",
+          "runs": [
+           {
+            "text": "2y ago"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "content_image": {
+    "image": [
+     {
+      "url": "https://i.ytimg.com/vi/w1-jss2mZlY/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLA6R_WZOL5smHEMstp1zt9pENfD-w",
+      "width": 336,
+      "height": 188
+     }
+    ],
+    "overlays": [
+     {
+      "type": "ThumbnailBottomOverlayView",
+      "badges": [
+       {
+        "icon_name": "MUSIC",
+        "text": "4:53"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

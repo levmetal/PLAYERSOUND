@@ -82,3 +82,7 @@ test('lookup failures are told apart for the routes without importing adapters',
     assert.equal(container.lookupFailure(Object.assign(new Error('x'), { code: 'invalid-id' })), 'invalid-id')
     assert.equal(container.lookupFailure(new Error('boom')), null)
 })
+
+test('exposes the playlist lookup service', () => {
+    assert.equal(typeof createContainer({ edition: 'public' }).playlist.playlist, 'function')
+})

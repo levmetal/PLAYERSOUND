@@ -88,7 +88,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     // A pasted YouTube video link plays; the results on screen stay as they are.
     const outcome = await link.submit(term)
     if (outcome === 'failed') return
-    if (outcome === 'played') {
+    if (outcome === 'played' || outcome === 'opened') {
       setDraft(query)
       return
     }

@@ -51,8 +51,8 @@ export default function libraryReducer(state, action) {
             return removeTrack(state, action.payload.playlistId, action.payload.trackId)
 
         case 'CREATE_PLAYLIST': {
-            const { id, name, track } = action.payload
-            return [...state, { id, name, tracks: track ? [track] : [] }]
+            const { id, name, track, tracks } = action.payload
+            return [...state, { id, name, tracks: tracks ?? (track ? [track] : []) }]
         }
 
         case 'IMPORT':

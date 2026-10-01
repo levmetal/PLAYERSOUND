@@ -1,17 +1,20 @@
 import { useCallback, useState } from 'react'
+import { useRouter } from 'next/router'
 import parseYoutubeLink from '../core/track/parseYoutubeLink'
 import { lookupVideo } from '../utils/videoClient'
 import { useNowPlaying } from '../context/nowPlayingContext'
 
 // What a search field does with a submitted term before searching: a pasted
-// YouTube video link plays at once (a one-track queue), anything that isn't a
-// link is left to the caller's normal search.
+// YouTube video link plays at once (a one-track queue), a playlist link opens
+// its preview page, anything that isn't a link is left to the caller's search.
 //
 // `submit(text)` resolves to
 //   'search' — not a link; the caller searches as usual
 //   'played' — the video is playing; the caller clears/restores its field
+//   'opened' — went to the playlist's page; same for the field
 //   'failed' — a link that couldn't be played; `error` says why, field untouched
 export default function useLinkSubmit() {
+    const router = useRouter()
     const { open } = useNowPlaying()
     const [state, setState] = useState({ pending: false, error: null })
 
@@ -21,10 +24,10 @@ export default function useLinkSubmit() {
             setState({ pending: false, error: null })
             return 'search'
         }
-        // Playlist links are the next piece of this feature (PLAN §6.8, 4b).
         if (link.kind === 'playlist') {
-            setState({ pending: false, error: "Playlist links aren't supported yet. Paste a video link." })
-            return 'failed'
+            setState({ pending: false, error: null })
+            router.push(`/playlist/${encodeURIComponent(link.id)}`)
+            return 'opened'
         }
         setState({ pending: true, error: null })
         const result = await lookupVideo(link.id)
@@ -35,7 +38,7 @@ export default function useLinkSubmit() {
         setState({ pending: false, error: null })
         open(result.video)
         return 'played'
-    }, [open])
+    }, [open, router])
 
     const clearError = useCallback(() => setState((current) => (current.error ? { ...current, error: null } : current)), [])
 

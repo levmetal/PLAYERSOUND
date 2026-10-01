@@ -8,8 +8,10 @@ import { withCache } from '../adapters/cache/withCache.js'
 import { createLastfmMusic, LastfmError } from '../adapters/lastfm/lastfmMusic.js'
 import { trackKey } from '../core/discovery/rankCandidates.js'
 import { createOembedLookup } from '../adapters/youtube/oembedLookup.js'
+import { createInnertubePlaylist } from '../adapters/youtube/innertubePlaylist.js'
 import { createSearchService } from './search.js'
 import { createLookupVideoService } from './lookupVideo.js'
+import { createLookupPlaylistService } from './lookupPlaylist.js'
 import { createResolveCandidates } from './resolveCandidates.js'
 import { createDiscoverService } from './discover.js'
 
@@ -63,6 +65,13 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         methods: { video: { ttl: 30 * DAY, key: (id) => id } },
     })
 
+    // An hour, like search: playlists get edited, unlike a video's title.
+    const playlistLookup = withCache(createInnertubePlaylist(), {
+        cache,
+        prefix: 'yt',
+        methods: { playlist: { ttl: HOUR, key: (id) => id } },
+    })
+
     const matcher = createResolveCandidates({ videoSearch })
     const { resolve } = withCache({ resolve: matcher.resolve }, {
         cache,
@@ -81,6 +90,7 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
         can: (name) => capabilities[name] === true,
         search: createSearchService({ videoSearch }),
         video: createLookupVideoService({ videoLookup }),
+        playlist: createLookupPlaylistService({ playlistLookup }),
         resolver,
         discover: catalog ? createDiscoverService({ catalog, resolver }) : undefined,
         // Routes answer 502 for these instead of 500, without importing adapters.
