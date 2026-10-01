@@ -26,8 +26,10 @@ const focusSiblingRow = (current, step) => {
 }
 
 // `onPlay` lets the list decide what a click queues (its visible results, a
-// playlist); without it the row plays on its own.
-const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => {
+// playlist); without it the row plays on its own. `number` is the row's
+// formatted track number (core/format/trackNumber.js), chosen by the list
+// because it knows the order.
+const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = null }) => {
 
     const dispatch = useDispatchContext()
     const { item: nowPlaying, open, playNext, enqueue, startRadio, radio, like } = useNowPlaying()
@@ -158,36 +160,33 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
         menuOpen ? styles.rowMenuOpen : '',
     ].filter(Boolean).join(' ')
 
+    const play = () => {
+        closeMenu()
+        ;(onPlay ?? (() => open(item)))()
+    }
+
     const statClass = (key) => (highlightStat === key ? `${styles.row__stat} ${styles.row__statActive}` : styles.row__stat)
 
     return (
         <li className={rowClass} aria-current={isCurrent ? 'true' : undefined}>
+            {/* Lets the mouse play from anywhere on the row; keyboard and screen
+                readers use the ▶ button, so this is hidden from both. The action
+                buttons sit above it (z-index). */}
+            <div className={styles.row__hit} onClick={play} aria-hidden="true" />
+
+            <span className={styles.row__num} aria-hidden="true">{number}</span>
+
             <div className={styles.row__thumb} aria-hidden="true">
                 {showThumb ? (
                     <img src={item.thumbnail} alt="" loading="lazy" onError={() => setThumbFailed(true)} />
                 ) : (
                     <span className={styles.row__thumbFallback}>No signal</span>
                 )}
-                {isCurrent
-                    ? <FaVolumeUp className={styles.row__thumbIcon} />
-                    : <FaPlay className={styles.row__thumbIcon} />}
-                <span className={styles.row__thumbDuration}>{durationText}</span>
+                {isCurrent && <FaVolumeUp className={styles.row__thumbIcon} />}
             </div>
 
             <div className={styles.row__info}>
-                {/* Stretched over the whole row (::after), so the entire row opens
-                    the player; the action buttons sit above it (z-index). */}
-                <button
-                    type="button"
-                    data-row-primary
-                    className={styles.row__primary}
-                    onClick={onPlay ?? (() => open(item))}
-                    onKeyDown={handleRowKeys}
-                    aria-label={isCurrent ? `Now playing: ${title}. Open player` : `Play ${title}`}
-                    title={title}
-                >
-                    <span className={styles.row__title}>{title}</span>
-                </button>
+                <span className={styles.row__title} title={title}>{title}</span>
                 <span className={styles.row__meta}>
                     {isCurrent && <span className={styles.row__nowTag}>Now playing</span>}
                     <span className={styles.row__channel}>{channelName}</span>
@@ -200,12 +199,27 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
             {showStats && <span className={statClass('views')}>{views}</span>}
             {showStats && <span className={statClass('recent')}>{uploaded}</span>}
 
+            <div className={styles.row__end}>
             <span className={styles.row__duration}>{durationText}</span>
 
             <div className={styles.row__actions} ref={actionsRef}>
+                {/* The row's primary action, always visible: its one tab stop and
+                    the target of ↑/↓. On the playing row it opens the player. */}
                 <button
                     type="button"
-                    className={isFavorite ? `${styles.actionBtn} ${styles.favActive}` : styles.actionBtn}
+                    data-row-primary
+                    className={isCurrent ? `${styles.actionBtn} ${styles.playBtn} ${styles.playBtnCurrent}` : `${styles.actionBtn} ${styles.playBtn}`}
+                    onClick={play}
+                    onKeyDown={handleRowKeys}
+                    aria-label={isCurrent ? `Now playing: ${title}. Open player` : `Play ${title}`}
+                    title={isCurrent ? 'Now playing — open player' : 'Play'}
+                >
+                    {isCurrent ? <FaVolumeUp aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+                </button>
+
+                <button
+                    type="button"
+                    className={isFavorite ? `${styles.actionBtn} ${styles.row__fav} ${styles.favActive}` : `${styles.actionBtn} ${styles.row__fav}`}
                     onClick={toggleFavorite}
                     aria-pressed={isFavorite}
                     aria-label="Favorite"
@@ -217,7 +231,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                 <button
                     type="button"
                     ref={toggleRef}
-                    className={menuOpen && !menuClosing ? `${styles.actionBtn} ${styles.actionBtnOpen}` : styles.actionBtn}
+                    className={menuOpen && !menuClosing ? `${styles.actionBtn} ${styles.row__more} ${styles.actionBtnOpen}` : `${styles.actionBtn} ${styles.row__more}`}
                     onClick={toggleMenu}
                     aria-expanded={menuOpen && !menuClosing}
                     aria-controls={menuOpen ? menuId : undefined}
@@ -296,6 +310,7 @@ const SoundItem = ({ item, onPlay, showStats = true, highlightStat = null }) => 
                         </form>
                     </div>
                 )}
+            </div>
             </div>
         </li>
     )

@@ -1646,23 +1646,28 @@
     outline: none;
 }
 
-.queueRow__main:disabled {
-    cursor: progress;
+/* A row whose video is being found: dimmed, and its click does nothing. */
+.queueRowBusy {
     opacity: .6;
+}
+
+.queueRowBusy .queueRow__hit {
+    cursor: progress;
 }
 
 .queueRow__action:disabled {
     cursor: progress;
-    opacity: .4;
 }
 
-.queueRowWaiting .queueRow__main {
-    cursor: default;
+.queueRowWaiting {
     opacity: .55;
 }
 
+.queueRowSkeleton {
+    display: block;
+}
+
 .queueRowSkeleton .queueRow__main {
-    cursor: default;
     gap: .35rem;
     padding: .5rem .3rem;
 }
@@ -1700,32 +1705,66 @@
 }
 
 .queueRow {
-    display: flex;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: 1.6rem 2.5rem minmax(0, 1fr) auto auto;
     align-items: center;
-    gap: .4rem;
+    column-gap: .6rem;
+    padding: .3rem;
     border-bottom: 1px solid rgba(var(--phosphor-primary-rgb), 0.15);
 }
 
-.queueRow__main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .1rem;
-    background: transparent;
-    border: none;
-    color: var(--primarycolor);
-    font-family: var(--font-body);
-    text-align: left;
-    padding: .35rem .3rem;
+.queueRow:hover {
+    background: rgba(var(--phosphor-primary-rgb), 0.08);
+}
+
+/* Row-wide click for the mouse; ▶ is the keyboard control. Under the buttons. */
+.queueRow__hit {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     cursor: pointer;
 }
 
-.queueRow__main:hover,
-.queueRow__main:focus-visible {
-    background: rgba(var(--phosphor-primary-rgb), 0.1);
-    outline: none;
+.queueRow__num {
+    text-align: right;
+    font-size: .7rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    color: var(--lowPrimaryColor);
+}
+
+.queueRow__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid var(--phosphor-secondary);
+    background: var(--phosphor-box-bg);
+}
+
+.queueRow__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(.4) contrast(1.1);
+}
+
+.queueRow__thumbIcon {
+    font-size: .9rem;
+    color: var(--phosphor-secondary-alt);
+}
+
+.queueRow__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    color: var(--primarycolor);
 }
 
 .queueRow__title,
@@ -1747,13 +1786,37 @@
     color: var(--phosphor-secondary-alt);
 }
 
+/* Same 7-segment face as the main rows' duration. */
+.queueRow__duration {
+    font-family: var(--font-digits-7seg);
+    font-size: .72rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: normal;
+    white-space: nowrap;
+    color: var(--accent);
+    text-shadow: var(--glow-text-accent);
+}
+
+/* Not known yet (the video hasn't been found): dim, so it doesn't read as data. */
+.queueRow__durationUnknown {
+    color: var(--phosphor-secondary-alt);
+    text-shadow: none;
+}
+
+.queueRow__actions {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: .3rem;
+}
+
 .queueRow__action {
     flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 2rem;
+    height: 2rem;
     border: var(--border-crt);
     background: transparent;
     color: var(--primarycolor);
@@ -1763,6 +1826,33 @@
 .queueRow__action:hover {
     background: var(--primarycolor);
     color: var(--bg);
+}
+
+/* ▶ — solid, like the main rows' play button. */
+.queueRow__actionPlay {
+    border-color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
+    color: var(--bg);
+}
+
+.queueRow__actionPlay:hover {
+    background: transparent;
+    color: var(--phosphor-primary);
+}
+
+.queueRow__action:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Focus on ▶ is drawn around the whole row, as in the main lists. */
+.queueRow:has(.queueRow__actionPlay:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.queueRow__actionPlay:focus-visible {
+    outline: none;
 }
 
 /* Phones: one scroll (the console's), not a list scrolling inside it; the
@@ -1786,5 +1876,18 @@
 
     .vibeActions {
         justify-content: flex-start;
+    }
+}
+
+/* Phones: a slimmer row so the title keeps its width. */
+@media screen and (max-width: 700px) {
+    .queueRow {
+        grid-template-columns: 1.4rem 2.2rem minmax(0, 1fr) auto auto;
+        column-gap: .5rem;
+    }
+
+    .queueRow__thumb {
+        width: 2.2rem;
+        height: 2.2rem;
     }
 }

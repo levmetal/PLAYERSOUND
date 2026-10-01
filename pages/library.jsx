@@ -7,6 +7,7 @@ import { usePlaylists, useDispatchContext, FAVORITES_ID } from "../context/libra
 import { useNowPlaying } from "../context/nowPlayingContext";
 import { toExport, parseImport, mergePlaylists } from "../core/library/exportFormat";
 import shuffle from "../core/queue/shuffle";
+import { formatTrackNumber } from "../core/format/trackNumber";
 import resolveTrack from "../core/track/resolveTrack";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
@@ -174,6 +175,7 @@ const Library = () => {
                             <SoundItem
                                 key={sound.id}
                                 item={sound}
+                                number={formatTrackNumber(index + 1, selectedPlaylist.tracks.length)}
                                 onPlay={() => playFrom(index)}
                                 showStats={false}
                             />

@@ -4,6 +4,7 @@ import { FaCheck } from "react-icons/fa";
 import styles from "../styles/soundlist.module.css"
 import SoundItem from "./soundItem";
 import { useNowPlaying } from "../context/nowPlayingContext";
+import { formatTrackNumber } from "../core/format/trackNumber";
 import {
   SORT_OPTIONS,
   DURATION_FILTERS,
@@ -53,6 +54,10 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     [grouped, processedResults]
   )
 
+  // Each row's number is its place in that order, so it matches the player's
+  // "TRK 05/20" and keeps counting across channel groups.
+  const positions = useMemo(() => new Map(playOrder.map((video, index) => [video.id, index + 1])), [playOrder])
+
   const playFrom = (item) => {
     playQueue(playOrder, playOrder.indexOf(item), { type: 'search', label: query })
   }
@@ -96,7 +101,13 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
   }
 
   const renderRows = (items) => items.map((item) => (
-    <SoundItem key={item.id} item={item} onPlay={() => playFrom(item)} highlightStat={sortKey} />
+    <SoundItem
+      key={item.id}
+      item={item}
+      number={formatTrackNumber(positions.get(item.id), playOrder.length)}
+      onPlay={() => playFrom(item)}
+      highlightStat={sortKey}
+    />
   ))
 
   let body
@@ -105,6 +116,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
       <div className={styles.skeletonList} aria-hidden="true">
         {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
           <div className={styles.skeletonRow} key={i}>
+            <div className={styles.skeletonNum} />
             <div className={styles.skeletonThumb} />
             <div className={styles.skeletonLines}>
               <div className={styles.skeletonLine} />

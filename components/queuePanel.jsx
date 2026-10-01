@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { FaPlay, FaPlus } from 'react-icons/fa'
+import { FaPlay, FaPlus, FaMusic } from 'react-icons/fa'
 import { MdWaves } from 'react-icons/md'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import resolveTrack from '../core/track/resolveTrack'
+import { formatTrackNumber } from '../core/format/trackNumber'
+import { ConvertSecToMin } from '../utils/convertSecondToMinutes'
 
 // A long queue (a whole search result list) would push everything else off
 // screen, so only the first few of the listener's picks show until asked.
@@ -27,7 +29,7 @@ const QueuePanel = ({ item }) => (
 )
 
 const UpNextBlock = () => {
-    const { upNext, jumpTo, radio, autoplayTarget, setRadio } = useNowPlaying()
+    const { upNext, jumpTo, radio, autoplayTarget, setRadio, position } = useNowPlaying()
     const [showAll, setShowAll] = useState(false)
     const autoplayAvailable = radio.status !== 'unavailable'
     const hidden = showAll ? 0 : Math.max(0, upNext.user.length - QUEUE_PREVIEW)
@@ -46,6 +48,8 @@ const UpNextBlock = () => {
                     {shown.map(({ item: queued, index }) => (
                         <QueueRow
                             key={queued.video.id}
+                            number={formatTrackNumber(index + 1, position?.total)}
+                            video={queued.video}
                             title={queued.video.title}
                             meta={queued.video.channel?.name}
                             onPlay={() => jumpTo(index)}
@@ -78,7 +82,7 @@ const UpNextBlock = () => {
 
 // What Autoplay has lined up (or is fetching, or can't follow).
 const AutoplayList = () => {
-    const { upNext, jumpTo, radio } = useNowPlaying()
+    const { upNext, jumpTo, radio, position } = useNowPlaying()
     const empty = !upNext.radio.length && !upNext.waiting.length
     const retrying = empty && !radio.loading && radio.retryAt !== null
     // Suggestions are only fetched once 2 or fewer of the user's tracks are left.
@@ -108,6 +112,8 @@ const AutoplayList = () => {
                 {upNext.radio.map(({ item: queued, index }) => (
                     <QueueRow
                         key={queued.video.id}
+                        number={formatTrackNumber(index + 1, position?.total)}
+                        video={queued.video}
                         title={queued.video.title}
                         meta={[queued.video.channel?.name, ...(queued.reason?.sharedTags ?? [])].filter(Boolean).join(' · ')}
                         onPlay={() => jumpTo(index)}
@@ -116,6 +122,7 @@ const AutoplayList = () => {
                 {upNext.waiting.map((candidate) => (
                     <QueueRow
                         key={`${candidate.artist}|${candidate.title}`}
+                        number=""
                         title={`${candidate.artist} – ${candidate.title}`}
                         meta={[upNext.waitMinutes ? 'waiting for YouTube' : 'finding a video…', ...(candidate.reason?.sharedTags ?? [])].join(' · ')}
                         waiting
@@ -170,9 +177,11 @@ const VibeBlock = ({ item }) => {
             ) : (
                 <>
                     <ol className={styles.queueList}>
-                        {vibe.candidates.map((candidate) => (
+                        {vibe.candidates.map((candidate, rank) => (
                             <QueueRow
                                 key={candidate.id}
+                                number={formatTrackNumber(rank + 1, vibe.candidates.length)}
+                                video={candidate.video}
                                 title={`${candidate.artist} – ${candidate.title}`}
                                 meta={candidateMeta(candidate)}
                                 busy={candidate.resolving === 'loading'}
@@ -227,32 +236,57 @@ const SkeletonRows = ({ label }) => (
     </div>
 )
 
-// `onAdd` adds the ➕ / ▶ pair (Similar vibe rows); without it the whole row
-// is the play button (Up next rows). `waiting` rows can't be played yet.
-const QueueRow = ({ title, meta, onPlay, onAdd, busy = false, waiting = false }) => (
-    <li className={waiting ? `${styles.queueRow} ${styles.queueRowWaiting}` : styles.queueRow}>
-        {waiting ? (
+// Same anatomy as a search-result row: № · cover · title + meta · duration ·
+// buttons. ▶ is always there and is the row's one tab stop; the rest of the
+// row plays on a click too (an overlay hidden from keyboards and screen
+// readers). `onAdd` adds ➕ (Similar vibe rows). `waiting` rows can't be
+// played yet; `video` is absent for them and for Similar vibe rows until
+// one is found, so those show a placeholder cover and `--:--`.
+const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, waiting = false }) => {
+    const duration = video?.duration > 0 ? ConvertSecToMin(video.duration) : '--:--'
+    const className = [styles.queueRow, waiting && styles.queueRowWaiting, busy && styles.queueRowBusy].filter(Boolean).join(' ')
+    return (
+        <li className={className}>
+            {!waiting && <div className={styles.queueRow__hit} onClick={busy ? undefined : onPlay} aria-hidden="true" />}
+            <span className={styles.queueRow__num} aria-hidden="true">{number}</span>
+            <span className={styles.queueRow__thumb} aria-hidden="true">
+                {video?.thumbnail
+                    ? <img src={video.thumbnail} alt="" loading="lazy" />
+                    : <FaMusic className={styles.queueRow__thumbIcon} />}
+            </span>
             <span className={styles.queueRow__main}>
-                <span className={styles.queueRow__title}>{title}</span>
+                <span className={styles.queueRow__title} title={title}>{title}</span>
                 <span className={styles.queueRow__meta}>{meta}</span>
             </span>
-        ) : (
-            <button type="button" className={styles.queueRow__main} onClick={onPlay} disabled={busy} title={`Play ${title}`}>
-                <span className={styles.queueRow__title}>{title}</span>
-                <span className={styles.queueRow__meta}>{meta}</span>
-            </button>
-        )}
-        {onAdd && (
-            <>
-                <button type="button" className={styles.queueRow__action} onClick={onAdd} disabled={busy} aria-label={`Add ${title} to queue`} title="Add to queue">
-                    <FaPlus aria-hidden="true" />
-                </button>
-                <button type="button" className={styles.queueRow__action} onClick={onPlay} disabled={busy} aria-label={`Play ${title} now`} title="Play now">
-                    <FaPlay aria-hidden="true" />
-                </button>
-            </>
-        )}
-    </li>
-)
+            <span className={video?.duration > 0 ? styles.queueRow__duration : `${styles.queueRow__duration} ${styles.queueRow__durationUnknown}`}>{duration}</span>
+            {!waiting && (
+                <span className={styles.queueRow__actions}>
+                    <button
+                        type="button"
+                        className={`${styles.queueRow__action} ${styles.queueRow__actionPlay}`}
+                        onClick={onPlay}
+                        disabled={busy}
+                        aria-label={`Play ${title}`}
+                        title="Play now"
+                    >
+                        <FaPlay aria-hidden="true" />
+                    </button>
+                    {onAdd && (
+                        <button
+                            type="button"
+                            className={styles.queueRow__action}
+                            onClick={onAdd}
+                            disabled={busy}
+                            aria-label={`Add ${title} to queue`}
+                            title="Add to queue"
+                        >
+                            <FaPlus aria-hidden="true" />
+                        </button>
+                    )}
+                </span>
+            )}
+        </li>
+    )
+}
 
 export default QueuePanel
