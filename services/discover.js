@@ -66,19 +66,22 @@ export function createDiscoverService({ catalog, resolver }) {
         return Object.fromEntries(artists.map((artist, i) => [artist.toLowerCase(), normalizeTags(tags[i], { artists: [artist] })]))
     }
 
-    async function rankAndResolve({ candidates, seedTags, affinity, excludeKeys, excludeVideoIds, limit }) {
+    async function rankAndResolve({ candidates, seedTags, affinity, excludeKeys, excludeVideoIds, limit, resolve }) {
         const candidateTags = await candidateTagsFor(candidates)
         const ranked = rankCandidates({
             candidates, seedTags, candidateTags, affinity, exclude: excludeKeys, limit: limit + RESOLVE_ATTEMPTS,
         })
-        const resolved = await resolver.resolveTop(ranked, { count: RESOLVE_COUNT, excludeVideoIds, maxAttempts: RESOLVE_ATTEMPTS })
+        // resolve: 0 is Last.fm only — no YouTube search at all.
+        const resolved = resolve > 0
+            ? await resolver.resolveTop(ranked, { count: resolve, excludeVideoIds, maxAttempts: RESOLVE_ATTEMPTS })
+            : ranked.map((candidate) => ({ ...candidate, video: null }))
         return resolved.slice(0, limit).map(({ artist, title, score, reason, video }) => ({ artist, title, score, reason, video }))
     }
 
     /**
-     * @param {{ seeds?: any[], tags?: string[], exclude?: string[], affinity?: Record<string, number>, limit?: number }} request
+     * @param {{ seeds?: any[], tags?: string[], exclude?: string[], affinity?: Record<string, number>, limit?: number, resolve?: number }} request
      */
-    async function discover({ seeds = [], tags = [], exclude = [], affinity = {}, limit = 20 }) {
+    async function discover({ seeds = [], tags = [], exclude = [], affinity = {}, limit = 20, resolve = RESOLVE_COUNT }) {
         const excludeKeys = exclude.filter((entry) => entry.includes('|'))
         const excludeVideoIds = exclude.filter((entry) => !entry.includes('|'))
 
@@ -91,7 +94,7 @@ export function createDiscoverService({ catalog, resolver }) {
             }))
             const seedTags = normalizeTags(tagNames.map((name) => ({ name, count: 100 })))
             const candidates = await rankAndResolve({
-                candidates: mergeCandidates(perTag), seedTags, affinity, excludeKeys, excludeVideoIds, limit,
+                candidates: mergeCandidates(perTag), seedTags, affinity, excludeKeys, excludeVideoIds, limit, resolve,
             })
             return { status: 'ok', seedTracks: [], candidates }
         }
@@ -126,6 +129,7 @@ export function createDiscoverService({ catalog, resolver }) {
             excludeKeys: [...excludeKeys, ...[...seedTracks, ...effectiveSeeds].map((s) => trackKey(s.artist, s.title))],
             excludeVideoIds: [...excludeVideoIds, ...seedVideoIds],
             limit,
+            resolve,
         })
 
         return {

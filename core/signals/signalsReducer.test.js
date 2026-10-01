@@ -105,6 +105,14 @@ test('discoverSignals excludes skipped tracks and everything in history, once ea
     assert.deepEqual(discoverSignals(state).exclude, ['kavinsky|nightcall', A.id, SET.id])
 })
 
+test('discoverSignals sends at most the newest 500 exclusions (the API rejects more)', () => {
+    const history = Array.from({ length: 400 }, (_, i) => ({ id: `id${i}`, key: `artist|title ${i}`, at: i }))
+    const { exclude } = discoverSignals({ ...initialSignals, history })
+    assert.equal(exclude.length, 500)
+    assert.equal(exclude[499], 'artist|title 399')
+    assert.ok(!exclude.includes('id0'))
+})
+
 test('discoverSignals sends the 100 strongest non-zero affinities', () => {
     const affinity = Object.fromEntries(Array.from({ length: 150 }, (_, i) => [`tag${i}`, i % 2 ? i / 200 : -i / 200]))
     const sent = discoverSignals({ ...initialSignals, affinity }).affinity

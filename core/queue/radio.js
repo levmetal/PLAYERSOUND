@@ -2,6 +2,7 @@
 // caller passes `now` and does the requests (hooks/useRadio.js).
 
 import { trackKey } from '../discovery/rankCandidates.js'
+import resolveTrack from '../track/resolveTrack.js'
 
 /** @typedef {import('../types.js').Video} Video */
 /** @typedef {import('../types.js').QueueState} QueueState */
@@ -126,4 +127,19 @@ export function currentTags(state) {
     if (!item) return []
     if (item.origin === 'radio') return item.reason?.sharedTags ?? []
     return state.radio.seedTags[item.video.id] ?? []
+}
+
+/**
+ * What autoplay will follow, for the Up next divider; null with nothing queued.
+ * @param {QueueState} state
+ * @returns {string | null}
+ */
+export function autoplayTarget(state) {
+    if (state.index < 0) return null
+    const { radio } = state
+    if (radio.tags.length) return `Vibe: ${radio.tags[0]}`
+    if (radio.seeds.length > 1) return `Like the playlist "${state.source?.label ?? ''}"`
+    const seed = radio.seeds[0] ?? lastUserVideo(state)
+    if (!seed) return null
+    return `Like "${resolveTrack(seed)?.title ?? seed.title}"`
 }

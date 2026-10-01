@@ -2,7 +2,7 @@
 // trimmed to what the services use. Everything here is bounded, since every
 // seed and candidate turns into paid-for Last.fm and YouTube lookups.
 
-const LIMITS = { seeds: 10, tags: 3, tagLength: 40, exclude: 500, affinity: 100, limit: 50, candidates: 10, count: 10 }
+const LIMITS = { seeds: 10, tags: 3, tagLength: 40, exclude: 500, affinity: 100, limit: 50, candidates: 10, count: 10, resolve: 10 }
 
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 const isString = (value) => typeof value === 'string'
@@ -30,7 +30,7 @@ function checkExclude(exclude) {
 }
 
 export function parseDiscoverRequest(body) {
-    const { seeds = [], tags = [], exclude, affinity = {}, limit = 20 } = isObject(body) ? body : {}
+    const { seeds = [], tags = [], exclude, affinity = {}, limit = 20, resolve = 3 } = isObject(body) ? body : {}
 
     if (!Array.isArray(seeds) || seeds.length > LIMITS.seeds
         || !seeds.every((seed) => isObject(seed) && isString(seed.id) && isString(seed.title))) {
@@ -51,10 +51,11 @@ export function parseDiscoverRequest(body) {
         return fail(`affinity must map up to ${LIMITS.affinity} tags to numbers between -1 and 1.`)
     }
     if (!isIntIn(limit, 1, LIMITS.limit)) return fail(`limit must be a whole number from 1 to ${LIMITS.limit}.`)
+    if (!isIntIn(resolve, 0, LIMITS.resolve)) return fail(`resolve must be a whole number from 0 to ${LIMITS.resolve}.`)
 
     return {
         ok: true,
-        value: { seeds: seeds.map(toSeed), tags, exclude: excluded.value, affinity, limit },
+        value: { seeds: seeds.map(toSeed), tags, exclude: excluded.value, affinity, limit, resolve },
     }
 }
 

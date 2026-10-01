@@ -15,6 +15,8 @@ const LIKE_WEIGHT = 0.2
 const MAX_HISTORY = 500
 const MAX_EXCLUDED = 200
 const MAX_AFFINITY_SENT = 100
+// /api/discover rejects more than this many exclusions.
+const MAX_EXCLUDE_SENT = 500
 
 /** @type {Signals} */
 export const initialSignals = { affinity: {}, excluded: [], history: [] }
@@ -83,7 +85,7 @@ export default function signalsReducer(state, action) {
  */
 export function discoverSignals(state) {
     const fromHistory = state.history.flatMap(({ id, key }) => (key ? [id, key] : [id]))
-    const exclude = [...new Set([...state.excluded, ...fromHistory])]
+    const exclude = [...new Set([...state.excluded, ...fromHistory])].slice(-MAX_EXCLUDE_SENT)
     const affinity = Object.fromEntries(
         Object.entries(state.affinity)
             .filter(([, value]) => value !== 0)

@@ -18,8 +18,17 @@ test('a real search result is accepted as a seed, with defaults filled in', () =
             id: SEED.id, title: SEED.title, description: SEED.description, duration: SEED.duration,
             channel: { name: SEED.channel.name, verified: SEED.channel.verified },
         }],
-        tags: [], exclude: [], affinity: {}, limit: 20,
+        tags: [], exclude: [], affinity: {}, limit: 20, resolve: 3,
     })
+})
+
+test('resolve is how many candidates get a video up front: 0 to 10, default 3', () => {
+    assert.equal(ok(parseDiscoverRequest({ seeds: [SEED], resolve: 0 })).resolve, 0)
+    assert.equal(ok(parseDiscoverRequest({ seeds: [SEED], resolve: 10 })).resolve, 10)
+    fails(parseDiscoverRequest({ seeds: [SEED], resolve: 11 }), /resolve/)
+    fails(parseDiscoverRequest({ seeds: [SEED], resolve: -1 }), /resolve/)
+    fails(parseDiscoverRequest({ seeds: [SEED], resolve: 2.5 }), /resolve/)
+    fails(parseDiscoverRequest({ seeds: [SEED], resolve: '3' }), /resolve/)
 })
 
 test('unknown seed fields are dropped', () => {

@@ -16,7 +16,8 @@ export default async function discoverHandler(req, res) {
     const result = await container.discover.discover(request.value)
     res.setHeader('Server-Timing', `discover;dur=${Date.now() - started}`)
     // While YouTube rate-limits us, candidates come back without videos; say when to ask again.
-    const blocked = container.youtubeBlockedFor()
+    // A request that asked for no videos (resolve: 0) searched nothing, so there's nothing to wait for.
+    const blocked = request.value.resolve > 0 ? container.youtubeBlockedFor() : 0
     return res.status(200).json(blocked ? { ...result, retryAfter: Math.ceil(blocked / 1000) } : result)
   } catch (error) {
     console.error('discover error:', error)

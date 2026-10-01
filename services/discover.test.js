@@ -102,6 +102,29 @@ test('tries at most 5 YouTube matches per batch, for 3 playable', async () => {
     assert.deepEqual(resolver.calls.map(({ count, maxAttempts }) => ({ count, maxAttempts })), [{ count: 3, maxAttempts: 5 }])
 })
 
+test('resolve: 0 asks Last.fm only — no YouTube match, every candidate without a video', async () => {
+    const { service, resolver } = setup()
+    const result = await service.discover({ seeds: [DIGITAL_LOVE], resolve: 0, limit: 12 })
+    assert.equal(result.status, 'ok')
+    assert.equal(result.candidates.length, 12)
+    assert.ok(result.candidates.every((c) => c.video === null))
+    assert.deepEqual(resolver.calls, [])
+})
+
+test('resolve: 0 also skips YouTube for a tag', async () => {
+    const { service, resolver } = setup()
+    const result = await service.discover({ tags: ['synthwave'], resolve: 0 })
+    assert.ok(result.candidates.length > 0)
+    assert.ok(result.candidates.every((c) => c.video === null))
+    assert.deepEqual(resolver.calls, [])
+})
+
+test('resolve sets how many candidates are matched up front', async () => {
+    const { service, resolver } = setup()
+    await service.discover({ seeds: [DIGITAL_LOVE], resolve: 2 })
+    assert.equal(resolver.calls[0].count, 2)
+})
+
 test('asks for 50 similar tracks and tags for at most 15 distinct candidate artists', async () => {
     const { service, calls } = setup()
     await service.discover({ seeds: [DIGITAL_LOVE] })

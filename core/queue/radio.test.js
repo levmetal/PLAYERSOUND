@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import queueReducer, { initialQueueState, currentVideo, hasNext } from './queueReducer.js'
-import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags } from './radio.js'
+import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags, autoplayTarget } from './radio.js'
 
 const videos = JSON.parse(readFileSync(new URL('../__fixtures__/videos.json', import.meta.url), 'utf8'))
 const [A, B, C, D, E] = videos
@@ -375,4 +375,25 @@ test('while rate-limited, upNext says how many minutes are left', () => {
     assert.equal(upNext(state, NOW).waitMinutes, 10)
     assert.equal(upNext(state, NOW + 540001).waitMinutes, 1)
     assert.equal(upNext(state, NOW + 600000).waitMinutes, null)
+})
+
+// --- autoplayTarget ---
+
+test('autoplayTarget is nothing for an empty queue', () => {
+    assert.equal(autoplayTarget(initialQueueState), null)
+})
+
+test('autoplayTarget follows the last track the user chose, by its song title', () => {
+    assert.equal(autoplayTarget(playList([A, B], 0)), 'Like "Digital Love"')
+})
+
+test('autoplayTarget names the radio seed, a playlist, or a vibe', () => {
+    assert.equal(autoplayTarget(startRadio([A])), 'Like "Digital Love"')
+    assert.equal(autoplayTarget(startRadio([A, B, C], 'Night drive')), 'Like the playlist "Night drive"')
+    assert.equal(autoplayTarget(tagRadio(playList([A]), 'synthwave')), 'Vibe: synthwave')
+})
+
+test('autoplayTarget falls back to the video title when the song is not identifiable', () => {
+    const SET = videos.find((v) => v.title.includes('Boiler Room: London'))
+    assert.equal(autoplayTarget(playList([SET])), `Like "${SET.title}"`)
 })
