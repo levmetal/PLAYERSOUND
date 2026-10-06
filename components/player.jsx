@@ -42,6 +42,10 @@ const VU_FADE_MS = 420;
 // Last.fm gives a seed up to ~10 tags; the strongest few are enough to tap.
 const MAX_TAG_CHIPS = 5;
 
+// requestAnimationFrame stops in a background tab; this keeps the position
+// reported (for resuming long tracks) while the tab is hidden.
+const HIDDEN_REPORT_MS = 5000;
+
 const Player = ({ item }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
@@ -52,7 +56,10 @@ const Player = ({ item }) => {
     const sounds = useSoundContext();
     const dispatch = useDispatchContext();
     const onEndedRef = useRef(() => {});
-    const { next, finished, like, reportTime, prev, nextItem, prevItem, skipUnplayable, current, radio, tags, browseVibe, browseTag } = useNowPlaying();
+    const {
+        next, finished, like, reportTime, savePosition, startOver, startAt, resumedAt, prev, nextItem, prevItem,
+        skipUnplayable, current, radio, tags, browseVibe, browseTag,
+    } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
     // With radio on, say up front when this track can't seed it.
@@ -62,6 +69,7 @@ const Player = ({ item }) => {
     // YouTube reliably from a residential IP.
     const engine = usePlaybackEngine({
         videoId: item.id,
+        startAt,
         onEnded: () => onEndedRef.current(),
         onNext: nextItem ? next : null,
         onPrev: prevItem ? prev : null,
@@ -112,12 +120,12 @@ const Player = ({ item }) => {
         bar.current.style.setProperty('--bar-progress', progress);
     };
 
-    const updateElapsed = (time) => {
+    const updateElapsed = (time, report = {}) => {
         const second = Math.floor(time);
         if (second === lastSecondRef.current) return;
         lastSecondRef.current = second;
         setCurrentTime(second);
-        reportTime(second);
+        reportTime(second, report);
     };
 
     useEffect(() => {
@@ -136,7 +144,7 @@ const Player = ({ item }) => {
                 syncBar(time);
                 // The only on-screen text that depends on time is the mm:ss
                 // readout, so state only changes (→ re-render) once per second.
-                updateElapsed(time);
+                updateElapsed(time, { playing });
                 if (playing) animationRef.current = requestAnimationFrame(tick);
             } catch (error) {
                 cancelAnimationFrame(animationRef.current);
@@ -147,6 +155,22 @@ const Player = ({ item }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [playing, engine.getCurrentTime]);
 
+    const { getCurrentTime } = engine;
+    useEffect(() => {
+        if (!playing) return undefined;
+        const timer = setInterval(() => {
+            if (document.visibilityState === 'hidden') reportTime(Math.floor(getCurrentTime()), { playing: true });
+        }, HIDDEN_REPORT_MS);
+        return () => clearInterval(timer);
+    }, [playing, getCurrentTime, reportTime]);
+
+    // A pause keeps the place in a long track.
+    const wasPlayingRef = useRef(false);
+    useEffect(() => {
+        if (wasPlayingRef.current && !playing) savePosition();
+        wasPlayingRef.current = playing;
+    }, [playing, savePosition]);
+
     const onChangeBar = () => {
         // Read back from bar.current.value (the position we just asked for),
         // not engine.getCurrentTime() — that can lag a requested seek by a
@@ -156,7 +180,14 @@ const Player = ({ item }) => {
         const seekTime = Number(bar.current.value);
         engine.seek(seekTime);
         syncBar(seekTime);
-        updateElapsed(seekTime);
+        updateElapsed(seekTime, { seeked: true });
+    };
+
+    const handleStartOver = () => {
+        startOver();
+        engine.seek(0);
+        syncBar(0);
+        updateElapsed(0);
     };
 
     const HandlePlaying = async () => {
@@ -317,6 +348,14 @@ const Player = ({ item }) => {
                                 </li>
                             ))}
                         </ul>
+                    )}
+                    {resumedAt > 0 && (
+                        <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>
+                            <span className={styles.reasonLine__text}>Resumed at {ConvertSecToMin(resumedAt)} ·</span>
+                            <button type="button" className={styles.reasonLine__action} onClick={handleStartOver}>
+                                Start over
+                            </button>
+                        </p>
                     )}
                     {unidentified && (
                         <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>

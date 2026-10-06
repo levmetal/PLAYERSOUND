@@ -16,6 +16,7 @@ import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
 import { savableTracks, defaultPlaylistName } from "../core/queue/saveQueue";
 import signalsReducer, { initialSignals, discoverSignals } from "../core/signals/signalsReducer";
+import positionsReducer, { initialPositions, isLong, resumeAt, dueForSave, toStored } from "../core/positions/positions";
 
 // How long "Skipped …" stays in the console header.
 const NOTICE_MS = 4000
@@ -28,6 +29,10 @@ const SETTINGS_KEY = 'playersound:settings'
 const DEFAULT_SETTINGS = { version: 1, radio: true }
 const SIGNALS_KEY = 'playersound:signals'
 const HISTORY_KEY = 'playersound:history'
+const POSITIONS_KEY = 'playersound:positions'
+// A resumed track can report where it was before the jump lands; those
+// seconds aren't a position to save.
+const RESUME_SLACK_SECONDS = 3
 
 // App-wide "now playing" state, mounted once in pages/_app.js above every
 // page. The player itself (components/modal.jsx) renders from here, not from
@@ -65,6 +70,19 @@ export function NowPlayingProvider({ children }) {
     const [similar, similarDispatch] = useReducer(similarReducer, initialSimilar)
     // Seconds into the current track, reported by the Player once a second.
     const elapsedRef = useRef(0)
+    // Long tracks pick up where they were left (core/positions). Saved from
+    // what was heard while playing: every 15 s, on pause, on a track change
+    // or stop, and when the page goes away.
+    const [positions, positionsDispatch] = useReducer(positionsReducer, initialPositions)
+    const positionsLoaded = useRef(false)
+    const positionsRef = useRef(positions)
+    positionsRef.current = positions
+    // The last second heard playing, and of which video.
+    const heardRef = useRef(null)
+    const lastSavedRef = useRef(0)
+    // Set while a resumed track hasn't reached its start second yet.
+    const pendingResumeRef = useRef(null)
+    const [startedOverId, setStartedOverId] = useState(null)
     const queueRef = useRef(queue)
     const previousQueue = useRef(queue)
     queueRef.current = queue
@@ -107,6 +125,37 @@ export function NowPlayingProvider({ children }) {
         set(HISTORY_KEY, { version: 1, items: signals.history }).catch(() => {})
     }, [signals])
 
+    useEffect(() => {
+        get(POSITIONS_KEY)
+            .then((stored) => positionsDispatch({ type: 'HYDRATE', payload: { stored, now: Date.now() } }))
+            .catch(() => {})
+            .finally(() => { positionsLoaded.current = true })
+    }, [])
+    useEffect(() => {
+        if (positionsLoaded.current) set(POSITIONS_KEY, toStored(positions)).catch(() => {})
+    }, [positions])
+
+    const savePosition = useCallback(() => {
+        const heard = heardRef.current
+        if (!heard || !isLong(heard.video)) return
+        lastSavedRef.current = heard.seconds
+        positionsDispatch({ type: 'SAVE', payload: { video: heard.video, seconds: heard.seconds, at: Date.now() } })
+    }, [])
+
+    // Closing the tab doesn't wait for an effect: write straight away.
+    useEffect(() => {
+        const onPageHide = () => {
+            const heard = heardRef.current
+            if (!heard || !isLong(heard.video) || !positionsLoaded.current) return
+            const state = positionsReducer(positionsRef.current, {
+                type: 'SAVE', payload: { video: heard.video, seconds: heard.seconds, at: Date.now() },
+            })
+            set(POSITIONS_KEY, toStored(state)).catch(() => {})
+        }
+        window.addEventListener('pagehide', onPageHide)
+        return () => window.removeEventListener('pagehide', onPageHide)
+    }, [])
+
     // Radio: whenever the queue changes (or a wait runs out), ask what to fetch.
     useEffect(() => {
         const request = radioRequest(queue, Date.now(), discoverSignals(signalsRef.current))
@@ -137,6 +186,13 @@ export function NowPlayingProvider({ children }) {
 
     const playing = currentVideo(queue)
     const playingId = playing?.id ?? null
+    // Where the current track starts: read once per track, so the saves made
+    // while it plays don't move it.
+    const startAt = useMemo(
+        () => (playing ? resumeAt(positionsRef.current, playing, Date.now()) : 0),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [playingId]
+    )
     useEffect(() => {
         similarDispatch({ type: 'TRACK_CHANGED', payload: { videoId: playingId } })
     }, [playingId])
@@ -196,8 +252,18 @@ export function NowPlayingProvider({ children }) {
         previousQueue.current = queue
         if (currentItem(before) === currentItem(queue)) return
         elapsedRef.current = 0
+        savePosition()
+        const video = currentVideo(queue)
+        if (currentVideo(before)?.id !== video?.id) {
+            heardRef.current = null
+            lastSavedRef.current = startAt
+            pendingResumeRef.current = startAt > 0 ? { id: video.id, seconds: startAt } : null
+            setStartedOverId(null)
+        }
         const seed = radioHandoff(before, queue)
         setHandoff(seed ? `Your queue ended — autoplay continues: ${seed}.` : null)
+        // startAt changes with the same track change; savePosition is stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queue])
 
     // Starting the track that's already loaded keeps its playback position
@@ -287,7 +353,11 @@ export function NowPlayingProvider({ children }) {
     // The track ended on its own: a mild like, then on to the next one.
     const finished = useCallback(() => {
         const item = currentItem(queueRef.current)
-        if (item) signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: true, at: Date.now() } })
+        if (item) {
+            signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: true, at: Date.now() } })
+            heardRef.current = null
+            positionsDispatch({ type: 'FORGET', payload: { videoId: item.video.id } })
+        }
         dispatch({ type: 'NEXT' })
     }, [])
     // ♥ / add to playlist: counts only for the track that's playing (that's
@@ -296,7 +366,28 @@ export function NowPlayingProvider({ children }) {
         const item = currentItem(queueRef.current)
         if (item?.video.id === videoId) signalsDispatch({ type: 'LIKED', payload: { item } })
     }, [])
-    const reportTime = useCallback((seconds) => { elapsedRef.current = seconds }, [])
+    // From the Player once a second. Only time heard while playing (or a
+    // seek) is a position worth keeping.
+    const reportTime = useCallback((seconds, { playing: isPlaying = false, seeked = false } = {}) => {
+        elapsedRef.current = seconds
+        const video = currentVideo(queueRef.current)
+        if (!video || (!isPlaying && !seeked)) return
+        const pending = pendingResumeRef.current
+        if (pending?.id === video.id && !seeked && seconds < pending.seconds - RESUME_SLACK_SECONDS) return
+        pendingResumeRef.current = null
+        heardRef.current = { video, seconds }
+        if (dueForSave(lastSavedRef.current, seconds)) savePosition()
+    }, [savePosition])
+    // "Start over" on a resumed track: back to 0, nothing kept.
+    const startOver = useCallback(() => {
+        const video = currentVideo(queueRef.current)
+        if (!video) return
+        pendingResumeRef.current = null
+        heardRef.current = { video, seconds: 0 }
+        lastSavedRef.current = 0
+        setStartedOverId(video.id)
+        positionsDispatch({ type: 'FORGET', payload: { videoId: video.id } })
+    }, [])
     const prev = useCallback(() => dispatch({ type: 'PREV' }), [])
     // A track YouTube won't play: move past it, and say so only when there
     // was somewhere to move to (a lone track just shows the player's error).
@@ -310,11 +401,12 @@ export function NowPlayingProvider({ children }) {
     const minimize = useCallback(() => setExpanded(false), [])
     const expand = useCallback(() => setExpanded(true), [])
     const stop = useCallback(() => {
+        savePosition()
         dispatch({ type: 'CLEAR' })
         setExpanded(false)
         setNotice(null)
         setHandoff(null)
-    }, [])
+    }, [savePosition])
 
     const value = useMemo(
         () => ({
@@ -335,6 +427,11 @@ export function NowPlayingProvider({ children }) {
             queueTracks: savableTracks(queue),
             queueName: defaultPlaylistName(queue.source),
             signals: discoverSignals(signals),
+            // Where the current track started (0: from the top); resumedAt goes
+            // back to 0 once the listener picks Start over.
+            startAt,
+            resumedAt: startedOverId === playingId ? 0 : startAt,
+            positions: positions.entries,
             notice,
             handoff,
             expanded,
@@ -357,6 +454,8 @@ export function NowPlayingProvider({ children }) {
             finished,
             like,
             reportTime,
+            savePosition,
+            startOver,
             prev,
             skipUnplayable,
             minimize,
@@ -364,7 +463,8 @@ export function NowPlayingProvider({ children }) {
             stop,
         }),
         [queue, clock, similar, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
-            startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, ensureVideo, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, prev, skipUnplayable, minimize, expand, stop]
+            startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, ensureVideo, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, savePosition, startOver, prev, skipUnplayable, minimize, expand, stop,
+            startAt, startedOverId, playingId, positions]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

@@ -483,6 +483,30 @@
     letter-spacing: 1px;
 }
 
+/* "Resumed at 23:10 · Start over": a text button, read like the Last.fm link. */
+.reasonLine__action {
+    flex: none;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--phosphor-primary);
+    font-family: var(--font-body);
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.reasonLine__action:hover {
+    color: var(--primarycolor);
+}
+
+.reasonLine__action:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 /* Last.fm tags under the title; tapping one starts that tag's radio. */
 .tagChips {
     list-style: none;

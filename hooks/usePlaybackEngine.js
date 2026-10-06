@@ -49,7 +49,9 @@ function loadIframeApi() {
 // loaded with ▶ ready. `onNext`/`onPrev` are null when the queue has nothing
 // in that direction. `onUnplayable` fires when YouTube refuses the video
 // (embedding disabled, removed, private) so the queue can move past it.
-export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onPrev = null, onUnplayable = null, metadata }) {
+// `startAt` is the second a newly loaded track starts at (a long track left
+// part-way); the track that's already loaded is never moved by it.
+export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNext = null, onPrev = null, onUnplayable = null, metadata }) {
     const [fellBackToIframe, setFellBackToIframe] = useState(false);
     const engine = PLAYBACK_MODE === 'iframe' || fellBackToIframe ? 'iframe' : 'native';
 
@@ -77,6 +79,8 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
     // actually been given — they differ while the player is still being built.
     const videoIdRef = useRef(videoId);
     videoIdRef.current = videoId;
+    const startAtRef = useRef(startAt);
+    startAtRef.current = startAt;
     const loadedIdRef = useRef(null);
     // The YouTube player only reports onReady once, when it's built; after
     // that it stays usable for every track it's handed.
@@ -98,6 +102,9 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
         if (!el) return;
 
         const handleCanPlay = () => setReady(true);
+        const handleLoadedMetadata = () => {
+            if (startAtRef.current > 0) el.currentTime = startAtRef.current;
+        };
         const handlePlay = () => setPlaying(true);
         const handlePause = () => setPlaying(false);
         const handleEnded = () => {
@@ -114,12 +121,14 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
             setError("Couldn't load this video's audio.");
         };
 
+        el.addEventListener('loadedmetadata', handleLoadedMetadata);
         el.addEventListener('canplay', handleCanPlay);
         el.addEventListener('play', handlePlay);
         el.addEventListener('pause', handlePause);
         el.addEventListener('ended', handleEnded);
         el.addEventListener('error', handleError);
         return () => {
+            el.removeEventListener('loadedmetadata', handleLoadedMetadata);
             el.removeEventListener('canplay', handleCanPlay);
             el.removeEventListener('play', handlePlay);
             el.removeEventListener('pause', handlePause);
@@ -146,7 +155,10 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
                     // YouTube's controls on just doubled up on controls for the
                     // same video with no benefit. disablekb stops the iframe from
                     // also reacting to space/arrow keys behind our own transport.
-                    playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3 },
+                    playerVars: {
+                        autoplay: 1, playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3,
+                        ...(startAtRef.current > 0 ? { start: Math.floor(startAtRef.current) } : {}),
+                    },
                     host: 'https://www.youtube-nocookie.com',
                     events: {
                         onReady: (event) => {
@@ -155,7 +167,7 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
                             // The track changed while the player was being built.
                             if (videoIdRef.current !== loadedIdRef.current) {
                                 loadedIdRef.current = videoIdRef.current;
-                                event.target.loadVideoById(videoIdRef.current);
+                                event.target.loadVideoById({ videoId: videoIdRef.current, startSeconds: startAtRef.current });
                             }
                         },
                         onError: () => {
@@ -187,7 +199,7 @@ export default function usePlaybackEngine({ videoId, onEnded, onNext = null, onP
     useEffect(() => {
         if (engine !== 'iframe' || !ytReadyRef.current || loadedIdRef.current === videoId) return;
         loadedIdRef.current = videoId;
-        ytPlayerRef.current?.loadVideoById(videoId);
+        ytPlayerRef.current?.loadVideoById({ videoId, startSeconds: startAtRef.current });
     }, [engine, videoId]);
 
     // --- MediaSession: lock-screen/notification controls. Only wired for the
