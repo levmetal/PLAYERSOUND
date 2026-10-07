@@ -708,7 +708,6 @@
 }
 
 .actionBtn {
-    composes: pixel-depth from global;
     position: relative;
     z-index: 2;
     display: flex;
@@ -718,28 +717,32 @@
     height: 2.25rem;
     padding: 0;
     background: transparent;
-    border: var(--border-crt);
-    color: var(--phosphor-primary);
+    /* Icons, not boxes (PLAN §6.16): a box and a shadow on all three, on
+       every row, read as doubled outlines down the whole list. The border is
+       kept transparent so an open menu can show one without moving anything. */
+    border: 1px solid transparent;
+    color: var(--phosphor-secondary-alt);
     font-size: 1rem;
     cursor: pointer;
-    /* Explicit list, not `200ms` shorthand — see .btn__close in
-       player.module.css for why that fights .pixel-depth's own transition. */
-    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+    transition: color 150ms, border-color 150ms, background-color 150ms, filter 150ms;
 }
 
-.actionBtn:hover,
+.actionBtn:hover {
+    color: var(--phosphor-primary);
+    filter: drop-shadow(0 0 4px rgba(var(--phosphor-primary-rgb), .7));
+}
+
+/* ⋯ while its menu is open. */
 .actionBtnOpen {
-    background: var(--phosphor-primary);
-    color: var(--bg);
-    box-shadow: var(--glow-box);
+    border-color: var(--phosphor-secondary);
+    color: var(--phosphor-primary);
 }
 
-/* ▶ — the row's primary action, always visible. Like every button here it
-   rests as a bordered box and inverts on hover; its border is the bright
-   phosphor (♥ and ⋯ use the dim one), which is what ranks it first. On the
-   playing row it's the speaker, inverted — selected = phosphor inversion. */
+/* ▶ — the row's primary action, always visible: the bright icon (♥ and ⋯
+   are dim), which is what ranks it first. On the playing row it's the
+   speaker as the one filled key in the list — selected = phosphor fill. */
 .playBtn {
-    border-color: var(--phosphor-primary);
+    color: var(--phosphor-primary);
 }
 
 .playBtn:focus-visible {
@@ -750,27 +753,23 @@
     background: var(--phosphor-primary);
     color: var(--bg);
     box-shadow: var(--glow-box);
+    filter: none;
 }
 
 .playBtn.playBtnCurrent:hover {
-    background: transparent;
-    color: var(--phosphor-primary);
+    background: var(--phosphor-primary-alt);
+    color: var(--bg);
 }
 
-/* Saved to Favorites: solid cyan fill — the site's one "you saved this"
-   marker, same heart as the player's own favorite button. Compound selector
-   to beat .actionBtn:hover. */
-.actionBtn.favActive {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--bg);
-    box-shadow: var(--glow-accent);
+/* Saved to Favorites: a cyan heart — the site's one "you saved this"
+   marker. Compound selector to beat .actionBtn:hover. */
+.actionBtn.favActive,
+.actionBtn.favActive:hover {
+    color: var(--accent);
 }
 
 .actionBtn.favActive:hover {
-    background: transparent;
-    color: var(--accent);
-    box-shadow: none;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 255, .7));
 }
 
 .playlistMenu {
