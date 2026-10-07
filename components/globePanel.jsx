@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import styles from '../styles/globePanel.module.css'
+import { stepSpin, globePulse } from '../core/visual/globeMotion'
 
 // A 2D-canvas Bayer-dithered rotating globe: procedural continents + a
 // lat/long grid + Lambertian shading, ordered-dithered into flat color bands
@@ -42,9 +43,18 @@ function prefersReducedMotion() {
     )
 }
 
-export default function GlobePanel() {
+// Turns only while a track plays, coasts to a stop on pause like a deck's
+// reels, and pulses (spin and glow) with the VU meter's rhythm.
+export default function GlobePanel({ playing = false }) {
     const containerRef = useRef(null)
     const canvasRef = useRef(null)
+    const playingRef = useRef(playing)
+    const wakeRef = useRef(() => {})
+
+    useEffect(() => {
+        playingRef.current = playing
+        wakeRef.current()
+    }, [playing])
 
     useEffect(() => {
         const container = containerRef.current
@@ -70,12 +80,14 @@ export default function GlobePanel() {
         const lz = 0.70
 
         let angle = 0
+        let speed = 0
+        let glow = 1
         let frameId = null
         let inView = true
+        let lastTime = null
         const motionEnabled = !prefersReducedMotion()
 
         const render = () => {
-            if (motionEnabled) angle += 0.02
 
             for (let y = 0; y < RENDER_SIZE; y++) {
                 for (let x = 0; x < RENDER_SIZE; x++) {
@@ -115,7 +127,7 @@ export default function GlobePanel() {
 
                     // Lambertian diffuse lighting — land reflects more than ocean.
                     const diffuse = Math.max(0, nx * lx + ny * ly + nz * lz)
-                    let illumination = diffuse * (isLand ? 0.95 : 0.45)
+                    let illumination = diffuse * (isLand ? 0.95 : 0.45) * glow
                     if (isGrid) illumination += 0.25
 
                     // Ordered dither against the Bayer threshold at this pixel.
@@ -147,9 +159,25 @@ export default function GlobePanel() {
             ctx.putImageData(imageData, 0, 0)
         }
 
-        const loop = () => {
+        // Steps the spin each frame; once the globe has coasted to a stop it
+        // draws that last frame and stops asking for more until play resumes.
+        const loop = (now) => {
+            const dt = lastTime === null ? 0 : Math.min(0.1, (now - lastTime) / 1000)
+            lastTime = now
+            speed = stepSpin(speed, playingRef.current, dt)
+            const pulse = globePulse(speed, now / 1000)
+            angle += pulse.spin * dt * 60
+            glow = pulse.glow
             if (inView) render()
+            if (speed === 0 && !playingRef.current) {
+                frameId = null
+                lastTime = null
+                return
+            }
             frameId = requestAnimationFrame(loop)
+        }
+        wakeRef.current = () => {
+            if (motionEnabled && frameId === null && playingRef.current) frameId = requestAnimationFrame(loop)
         }
 
         // Square canvas centered in a not-necessarily-square container — a
@@ -164,7 +192,7 @@ export default function GlobePanel() {
 
         resize()
         render()
-        if (motionEnabled) frameId = requestAnimationFrame(loop)
+        wakeRef.current()
 
         const resizeObserver = new ResizeObserver(resize)
         resizeObserver.observe(container)
@@ -175,6 +203,7 @@ export default function GlobePanel() {
         intersectionObserver.observe(container)
 
         return () => {
+            wakeRef.current = () => {}
             if (frameId) cancelAnimationFrame(frameId)
             resizeObserver.disconnect()
             intersectionObserver.disconnect()

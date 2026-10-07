@@ -36,6 +36,8 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
         source, position, notice, handoff, current, radio, setRadio, dismissHandoff,
     } = useNowPlaying()
     const [closing, setClosing] = useState(false)
+    // Whether the track is playing, for the globe (it spins with the music).
+    const [deckPlaying, setDeckPlaying] = useState(false)
     const closingRef = useRef(false)
     const dialogRef = useRef(null)
     const toggleButtonRef = useRef(null)
@@ -184,10 +186,10 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                             <audio>) for the whole listening session, so the next track
                             starts even while the tab is in the background. It resets
                             its own per-track state when `item` changes. */}
-                        <Player item={item} />
+                        <Player item={item} onPlayingChange={setDeckPlaying} />
 
                         <div className={styles.globeWindow}>
-                            <GlobePanel />
+                            <GlobePanel playing={deckPlaying} />
                         </div>
 
                         {description && (

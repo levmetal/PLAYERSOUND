@@ -45,7 +45,7 @@ const HIDDEN_REPORT_MS = 5000;
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
-const Player = ({ item }) => {
+const Player = ({ item, onPlayingChange }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
     const bar = useRef();
@@ -76,6 +76,8 @@ const Player = ({ item }) => {
         metadata: { title: item.title, artist: item.channel?.name, artworkUrl: item.thumbnail },
     });
     const { playing } = engine;
+    // The console's globe turns with the music (components/globePanel.jsx).
+    useEffect(() => { onPlayingChange?.(playing); }, [playing, onPlayingChange]);
 
     // Keeps the VU meter's bounce/peak animation alive for VU_FADE_MS after
     // pause, instead of stopping it the instant `playing` goes false. Tried
