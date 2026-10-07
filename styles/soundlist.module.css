@@ -116,6 +116,34 @@
     box-shadow: var(--glow-box);
 }
 
+/* Phones only (shown in the 768px block below): folds the filter row. A
+   secondary button: dim border at rest, bright while the filters are open. */
+.filtersToggle {
+    composes: pixel-depth from global;
+    display: none;
+    flex: none;
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--phosphor-secondary);
+    color: var(--primarycolor);
+    font-family: var(--font-body);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    padding: .45rem .6rem;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms, transform 80ms, box-shadow 80ms;
+}
+
+.filtersToggleOpen {
+    border-color: var(--phosphor-primary);
+    box-shadow: var(--glow-box);
+}
+
+.filtersToggle__count {
+    white-space: pre;
+}
+
 .resultCount {
     flex: none;
     margin: 0;
@@ -620,6 +648,23 @@
     margin-right: .5rem;
 }
 
+/* Narrow phones show these (see the 480px block): the duration in the meta
+   line, and Favorites as the first entry of the ⋯ menu. */
+.row__metaDuration,
+.rowMenu__fav {
+    display: none;
+}
+
+.row__metaDuration {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.row__metaDuration::before {
+    content: '·';
+    margin-right: .5rem;
+}
+
 .row__stat {
     overflow: hidden;
     white-space: nowrap;
@@ -1006,31 +1051,58 @@
         gap: .5rem;
     }
 
-    .searchBtn {
+    /* 44px touch targets in the one sticky row. */
+    .searchBtn,
+    .filtersToggle {
+        min-height: 2.75rem;
         padding: .45rem .6rem;
     }
 
+    .searchInput {
+        min-height: 2.75rem;
+        /* 16px: iOS zooms the page into any smaller field on focus. */
+        font-size: 1rem;
+    }
+
+    /* The count still updates for screen readers (role="status"); on screen
+       the list's own end line says how many there are. */
     .resultCount {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
         min-width: 0;
-        font-size: .65rem;
     }
 
-    /* One swipeable strip instead of wrapping into three rows of chips; the
-       right-edge fade hints there's more, and the end padding lets the last
-       chip scroll clear of it. */
+    /* Folded behind the Filters toggle, so the sticky bar is one row. Open,
+       every group wraps onto its own lines: no sideways strip hiding Length
+       and Group by channel past the edge. */
     .filterRow {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-        gap: 1.25rem;
-        padding-bottom: .15rem;
-        padding-right: 2rem;
-        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
-        mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+        display: none;
     }
 
-    .filterRow::-webkit-scrollbar {
-        display: none;
+    .filterRowOpen {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .8rem 1.25rem;
+    }
+
+    /* Each group takes the row and its segments wrap inside it (Sort's five
+       didn't fit 390px in one line). */
+    .filterRowOpen .segmentGroup {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .filterRowOpen .segments {
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .filtersToggle {
+        display: inline-flex;
     }
 
     .segmentGroup,
@@ -1064,10 +1136,10 @@
     }
 }
 
-/* Narrow phones: the number goes, and the right side becomes a 2×2 block —
-   ▶ over the duration, ♥ over ⋯ — so the title keeps enough width; the stats
-   wrap under the channel instead of truncating to "438… · 3 YE…" (the row is
-   already as tall as that block). The actions group dissolves into the block;
+/* Narrow phones: the number goes and the right side is one column, ▶ over ⋯,
+   so the title gets the width. The duration joins the meta line and ♥ moves
+   into the ⋯ menu (.rowMenu__fav). The stats wrap under the channel instead of
+   truncating to "438… · 3 YE…". The actions group dissolves into the column;
    the playlist menu then hangs off the row instead of the group. */
 @media screen and (max-width: 480px) {
     .row,
@@ -1082,10 +1154,10 @@
 
     .row__end {
         display: grid;
-        grid-template-columns: 2.75rem 2.75rem;
+        grid-template-columns: 2.75rem;
         grid-template-areas:
-            "play fav"
-            "dur  more";
+            "play"
+            "more";
         gap: .4rem;
         align-items: center;
     }
@@ -1094,18 +1166,18 @@
         display: contents;
     }
 
-    .row__duration {
-        grid-area: dur;
-        justify-self: center;
-        padding: 0;
+    .row__end > .row__duration,
+    .row__fav {
+        display: none;
+    }
+
+    .row__metaDuration,
+    .rowMenu__fav {
+        display: revert;
     }
 
     .playBtn {
         grid-area: play;
-    }
-
-    .row__fav {
-        grid-area: fav;
     }
 
     .row__more {

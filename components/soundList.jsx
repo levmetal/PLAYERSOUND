@@ -35,6 +35,9 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
   const [sortKey, setSortKey] = useState(DEFAULT_SORT)
   const [durationKey, setDurationKey] = useState(DEFAULT_DURATION)
   const [groupByChannelOn, setGroupByChannelOn] = useState(false)
+  // Phones only (CSS): the filters fold behind a toggle so the sticky bar is
+  // just the search field. Wider screens always show them.
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Keeps the field in sync when the query changes from outside it (back/
   // forward navigation, the router resolving the URL on first load).
@@ -65,7 +68,8 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
   }
 
   const done = status === 'done'
-  const filtersActive = sortKey !== DEFAULT_SORT || durationKey !== DEFAULT_DURATION || groupByChannelOn
+  const activeFilters = [sortKey !== DEFAULT_SORT, durationKey !== DEFAULT_DURATION, groupByChannelOn].filter(Boolean).length
+  const filtersActive = activeFilters > 0
 
   const resetFilters = () => {
     setSortKey(DEFAULT_SORT)
@@ -211,13 +215,22 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
           <button type="submit" className={styles.searchBtn} aria-disabled={link.pending}>
             {link.pending ? 'Loading…' : 'Search'}
           </button>
+          <button
+            type="button"
+            className={filtersOpen ? `${styles.filtersToggle} ${styles.filtersToggleOpen}` : styles.filtersToggle}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            aria-expanded={filtersOpen}
+            aria-controls="search-filters"
+          >
+            Filters{activeFilters > 0 && <span className={styles.filtersToggle__count}> · {activeFilters}</span>}
+          </button>
           <p className={styles.resultCount} role="status" aria-live="polite">{countText}</p>
         </form>
         <p id="results-link-message" className={styles.linkMessage} role="status">
           {link.pending ? 'Loading link…' : link.error}
         </p>
 
-        <div className={styles.filterRow}>
+        <div id="search-filters" className={filtersOpen ? `${styles.filterRow} ${styles.filterRowOpen}` : styles.filterRow}>
           <div className={styles.segmentGroup} role="radiogroup" aria-labelledby="sort-label">
             <span id="sort-label" className={styles.groupLabel}>Sort</span>
             <div className={styles.segments}>

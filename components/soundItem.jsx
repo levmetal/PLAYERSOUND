@@ -173,6 +173,8 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                     {views && <span className={styles.row__metaStat}>{views}</span>}
                     {uploaded && <span className={styles.row__metaStat}>{uploaded}</span>}
                     {resumeAt > 0 && <span className={styles.row__resumeAt}>left at {ConvertSecToMin(resumeAt)}</span>}
+                    {/* Narrow phones only: the duration column gives its width to the title. */}
+                    <span className={styles.row__metaDuration}>{durationText}</span>
                 </span>
             </div>
 
@@ -235,6 +237,12 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                         ].filter(Boolean).join(' ')}
                     >
                         <ul className={styles.rowMenu__actions}>
+                            {/* Narrow phones only: ♥ leaves the row for this menu. */}
+                            <li className={styles.rowMenu__fav}>
+                                <button type="button" onClick={toggleFavorite} aria-pressed={isFavorite}>
+                                    {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                                </button>
+                            </li>
                             {!isCurrent && (
                                 <>
                                     <li>
