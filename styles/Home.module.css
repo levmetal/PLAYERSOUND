@@ -12,7 +12,10 @@
     position: relative;
     justify-content: center;
     align-items: center;
-    height: calc(100dvh - var(--home-peek));
+    /* A floor, not a fixed height: on a short window the hero grows to fit its
+       content instead of spilling past its own top and bottom (which clipped
+       the eyebrow and pushed the first block up against the hint). */
+    min-height: calc(100dvh - var(--home-peek));
     width: 100%;
     /* .heroFrame below shifts upward past this container's own top edge —
        clip that instead of letting it read as extra (empty) scrollable
@@ -109,8 +112,11 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    gap: 2.5rem;
-    height: calc(100dvh - var(--home-peek));
+    gap: clamp(2rem, 5dvh, 3rem);
+    min-height: calc(100dvh - var(--home-peek));
+    /* Room above the eyebrow and below the hint at every window height. */
+    padding-block: clamp(2.5rem, 9dvh, 6rem) clamp(2rem, 6dvh, 4rem);
+    box-sizing: border-box;
     width: 75%;
 
     position: relative;
@@ -118,7 +124,8 @@
 }
 
 .mainTitle {
-    width: 65%;
+    /* Keeps the headline clear of the cassette art on the right. */
+    width: 58%;
     max-width: 100%;
 }
 
@@ -131,7 +138,8 @@
 }
 
 .container__title {
-    font-size: 5vw;
+    font-size: clamp(2.25rem, min(5vw, 8.5dvh), 6rem);
+    line-height: 1.05;
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -152,7 +160,7 @@
     line-height: 140%;
     /* Reset the browser's default h2 margins, which stacked on top of
        .infoHero's gap and left a hole above the search form. */
-    margin: 1.25rem 0 0;
+    margin: clamp(1.25rem, 3dvh, 2rem) 0 0;
     max-width: 46ch;
     text-wrap: pretty;
 }
@@ -270,6 +278,8 @@
 
     .infoHero {
         height: auto;
+        min-height: 0;
+        padding-block: 0;
         width: 100%;
         /* Spacing here still comes from .container__form's own margin-top
            below, same as before .infoHero had a gap of its own — without
@@ -283,6 +293,7 @@
 
     .container__title {
         font-size: clamp(1.9rem, 8vw, 2.6rem);
+        line-height: 1.15;
     }
 
     .container__subtitle {
@@ -341,10 +352,18 @@
     display: none;
 }
 
+/* The field, its message and its hint, kept together as one group. */
+.searchGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
 /* Under the search field: says it takes links too, in full, where the
    placeholder is too short to. */
 .linkHint {
-    margin: .75rem 0 0;
+    margin: .6rem 0 0;
     max-width: 35rem;
     font-family: var(--font-body);
     font-size: .8rem;
@@ -364,7 +383,7 @@
     gap: 2.5rem 3rem;
     width: 75%;
     margin: 0 auto;
-    padding: 1rem 0 3rem;
+    padding: clamp(1.5rem, 4dvh, 3rem) 0 3rem;
     box-sizing: border-box;
 }
 

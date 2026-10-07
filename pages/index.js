@@ -57,6 +57,7 @@ export default function Home() {
                 </h2>
               </div>
 
+              <div className={styles.searchGroup}>
               <form className={styles.container__form} onSubmit={handleSubmit} >
 
                 <label htmlFor="home-search" className="sr-only">Search for a sound, or paste a YouTube video or playlist link</label>
@@ -83,6 +84,7 @@ export default function Home() {
               {!link.pending && !link.error && (
                 <p className={styles.linkHint}>Paste a YouTube video or playlist link to play it or save it.</p>
               )}
+              </div>
             </div>
             <div className={styles.heroFrame}>
               <DataPixelArc className={styles.heroArc} />
