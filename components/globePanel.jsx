@@ -59,10 +59,9 @@ export default function GlobePanel() {
 
         const cx = RENDER_SIZE / 2
         const cy = RENDER_SIZE / 2
-        // Leaves room for the dotted orbital ring outside the sphere itself,
-        // same proportions as the reference (radius 44 in a 112px canvas).
-        const radius = RENDER_SIZE * 0.39
-        const ringRadius = radius * 1.16
+        // No orbital ring any more (it read as a frame around the sphere), so
+        // the sphere takes most of the canvas, with room left for its glow.
+        const radius = RENDER_SIZE * 0.45
         const tilt = 0.28 // ~16 degrees axial tilt, matches the reference
 
         // Fixed directional light (upper-right-front), matches the reference.
@@ -86,17 +85,7 @@ export default function GlobePanel() {
                     const distSq = dx * dx + dy * dy
 
                     if (distSq > radius * radius) {
-                        // Dotted orbital ring — the one "radar" accent outside the
-                        // sphere proper, same dim tone as the grid's resting state.
-                        const ringDist = Math.abs(Math.sqrt(distSq) - ringRadius)
-                        if (ringDist < 1 && (x + y) % 4 === 0) {
-                            data[idx] = C_DIM[0]
-                            data[idx + 1] = C_DIM[1]
-                            data[idx + 2] = C_DIM[2]
-                            data[idx + 3] = 255
-                        } else {
-                            data[idx + 3] = 0
-                        }
+                        data[idx + 3] = 0
                         continue
                     }
 

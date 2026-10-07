@@ -5,7 +5,8 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: var(--crt-black-tint);
+    /* No panel of its own: the sphere floats on the console's background. */
+    background: transparent;
 }
 
 /* Sized imperatively in components/globePanel.jsx (kept square, centered) —

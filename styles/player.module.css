@@ -822,6 +822,47 @@
     mix-blend-mode: multiply;
 }
 
+/* Expanded: the two side windows lose their green frame and melt into the
+   console (owner, 2026-10-07: the frames were noise). The cover art fades out
+   at its edges; YouTube's frame keeps its full picture and only gets a soft
+   edge shade on the overlay it already has, so nothing of the player is hidden.
+   The mini's PiP window keeps its frame: it floats over the page. */
+.console:not(.consoleMini) .player__img,
+.console:not(.consoleMini) .iframeEngineMount {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.console:not(.consoleMini) .player__img {
+    -webkit-mask-image: radial-gradient(ellipse 72% 72% at 50% 50%, #000 58%, transparent 100%);
+    mask-image: radial-gradient(ellipse 72% 72% at 50% 50%, #000 58%, transparent 100%);
+}
+
+.console:not(.consoleMini) .iframeEngineMount::after {
+    background:
+        radial-gradient(ellipse 72% 72% at 50% 50%, transparent 62%, rgba(0, 34, 10, .85) 100%),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.35) 0px,
+            rgba(0, 0, 0, 0.35) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+}
+
+/* Screen blend: the picture's black becomes the console's own background,
+   so the window has no edge of its own; light parts stay as they are. */
+.console:not(.consoleMini) .iframeEngineMount iframe,
+.console:not(.consoleMini) .player__img img {
+    mix-blend-mode: screen;
+}
+
+.console:not(.consoleMini) .globeWindow {
+    border: 0;
+    background: transparent;
+}
+
 .iframeEngineMount iframe {
     width: 100%;
     height: 100%;
