@@ -16,6 +16,7 @@
     flex-direction: column;
     border-right: var(--border-crt);
     width: 17rem;
+    --icon-center: 1.6rem;
     height: 100dvh;
     transform: translateX(0%);
     z-index: 150;
@@ -34,6 +35,10 @@
     flex-direction: column;
     border-right: var(--border-crt);
     width: 17rem;
+    /* Centre of the icon column, measured from the rail's right edge: the
+       toggle and every nav icon hang off it so they line up in both states.
+       Collapsed centres it in the 5rem that stays visible. */
+    --icon-center: 2.5rem;
     height: 100dvh;
 
     z-index: 150;
@@ -83,7 +88,7 @@
     border: none;
     cursor: pointer;
     margin-left: auto;
-    margin-right: 1.2rem;
+    margin-right: calc(var(--icon-center) - 1.375rem);
     width: 2.75rem;
     height: 2.75rem;
     color: var(--primarycolor);
@@ -107,16 +112,11 @@
 
 .sideIcon {
     margin-left: auto;
-    margin-right: 1rem;
+    /* Half the icon (0.6rem) plus the row's 1px border sit inside the centre. */
+    margin-right: calc(var(--icon-center) - 0.6rem - 1px);
+    flex: none;
     width: 1.2rem;
     height: 1.2rem;
-}
-
-/* Collapsed rail only: extra clearance so the active-row dither band above
-   (1.75rem, anchored to the row's right edge) fades out before it reaches
-   the icon instead of speckling over it. */
-.sidebar__collapsed .sideIcon {
-    margin-right: 2.1rem;
 }
 
 .logo {
@@ -200,7 +200,7 @@
     box-sizing: border-box;
     height: 3rem;
     width: 100%;
-    padding-left: .5rem;
+    padding: 0 0 0 .5rem;
     align-items: center;
     color: var(--primarycolor);
     text-decoration: none;
@@ -255,6 +255,7 @@
         border-right: none;
         border-bottom: var(--border-crt);
         transform: none;
+        --icon-center: 2.7rem;
     }
 
     .sideHeader {
@@ -321,6 +322,8 @@
     .sideIcon {
         width: 1.4rem;
         height: 1.4rem;
+        /* Rows sit inside the list's 1rem side padding, icon is 1.4rem wide. */
+        margin-right: calc(var(--icon-center) - 1rem - 0.7rem - 1px);
     }
 }
 

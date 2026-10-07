@@ -114,6 +114,8 @@ function MyApp({ Component, pageProps }) {
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       <meta name="keywords" content="music, podcasts, youtube audio, playlists, no login"></meta>
       <meta name="theme-color" content="#050B05" />
+      <link rel="icon" href="/favicon.ico" sizes="48x48" />
+      <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" sizes="any" />
       <link rel="manifest" href="/manifest.webmanifest" />
       <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     </Head>
