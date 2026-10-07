@@ -16,12 +16,12 @@ const About = () => {
                     </p>
 
                     <ul className={styles.specList}>
-                        <li><span>SEARCH</span>Find music, podcasts and live sets, sorted by length, with verified channels marked.</li>
-                        <li><span>NON-STOP</span>Playback follows you across pages in a docked mini-player.</li>
-                        <li><span>PLAYLISTS</span>Favorites and custom playlists are stored locally in this browser.</li>
+                        <li><span>SEARCH</span>Find music, podcasts and live sets, sorted by length, with verified channels marked</li>
+                        <li><span>NON-STOP</span>Playback follows you across pages in a docked mini-player</li>
+                        <li><span>PLAYLISTS</span>Favorites and custom playlists are stored locally in this browser</li>
                         <li><span>SIMILAR VIBE</span>Every track comes with a list of similar ones, picked from Last.fm listener data. Autoplay continues with them when your queue ends, and you can switch it off.</li>
                         <li><span>ANONYMOUS</span>No login, no account and no feed. Playlists and listening signals stay in this browser.</li>
-                        <li><span>LOCAL MODE</span>Run the repo on your own machine for a direct audio stream with no ads and lock-screen controls.</li>
+                        <li><span>LOCAL MODE</span>Run the repo on your own machine for a direct audio stream with no ads and lock-screen controls</li>
                     </ul>
 
                     <footer className={styles.footer}>

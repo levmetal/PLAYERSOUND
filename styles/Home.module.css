@@ -227,7 +227,8 @@
     background: transparent;
     color: var(--primarycolor);
     padding-left: 1rem;
-    text-transform: uppercase;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
     letter-spacing: 1px;
 }
 

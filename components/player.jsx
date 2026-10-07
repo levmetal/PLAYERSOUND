@@ -334,7 +334,7 @@ const Player = ({ item }) => {
                     )}
                     {tags.length > 0 && (
                         <ul className={styles.tagChips} aria-label="More like these tags, from Last.fm">
-                            <li className={styles.tagChips__label} aria-hidden="true">More like:</li>
+                            <li className={styles.tagChips__label} aria-hidden="true">More like</li>
                             {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
                                 <li key={tag}>
                                     <button
@@ -359,7 +359,7 @@ const Player = ({ item }) => {
                     )}
                     {unidentified && (
                         <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>
-                            <span className={styles.reasonLine__text}>We couldn&apos;t identify this song</span>
+                            <span className={styles.reasonLine__text}>This song couldn&apos;t be identified</span>
                         </p>
                     )}
                 </div>

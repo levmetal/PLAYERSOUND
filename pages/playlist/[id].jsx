@@ -90,12 +90,12 @@ const PlaylistPreview = () => {
                         </div>
                     </div>
                     <p className={styles.backupStatus} role="status" aria-live="polite">
-                        {saved ? `Saved as "${name}".` : ''}
+                        {saved ? `Saved as "${name}"` : ''}
                     </p>
 
                     <ul className={styles.list__container}>
                         {videos.length === 0 ? (
-                            <p className={styles.emptyState}>This playlist has no playable tracks.</p>
+                            <p className={styles.emptyState}>This playlist has no playable tracks</p>
                         ) : (
                             videos.map((video, index) => (
                                 <SoundItem

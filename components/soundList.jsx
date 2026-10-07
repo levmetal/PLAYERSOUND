@@ -147,7 +147,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     body = (
       <div className={styles.statusPanel}>
         <p className={styles.statusTitle}>No results for &ldquo;{query}&rdquo;</p>
-        <p className={styles.statusHint}>Try fewer or different words.</p>
+        <p className={styles.statusHint}>Try fewer or different words</p>
         <button type="button" className={styles.statusBtn} onClick={focusSearch}>Edit search</button>
       </div>
     )
@@ -155,7 +155,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     body = (
       <div className={styles.statusPanel}>
         <p className={styles.statusTitle}>Nothing matches &ldquo;{DURATION_FILTERS[durationKey].label}&rdquo;</p>
-        <p className={styles.statusHint}>{plural(results.length, 'result')} hidden by the length filter.</p>
+        <p className={styles.statusHint}>{plural(results.length, 'result')} hidden by the length filter</p>
         <button type="button" className={styles.statusBtn} onClick={resetFilters}>Clear filters</button>
       </div>
     )

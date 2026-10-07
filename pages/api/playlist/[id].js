@@ -2,9 +2,9 @@ import container from "../../../services/container";
 
 // What each failure says to the person who pasted the link.
 const FAILURES = {
-  'invalid-id': { status: 400, error: "That isn't a readable YouTube playlist link." },
-  'not-found': { status: 404, error: "That playlist doesn't exist or is private." },
-  unavailable: { status: 502, error: "YouTube didn't answer for this playlist from here." },
+  'invalid-id': { status: 400, error: "That isn't a readable YouTube playlist link" },
+  'not-found': { status: 404, error: "That playlist doesn't exist or is private" },
+  unavailable: { status: 502, error: "YouTube didn't answer for this playlist from here" },
 }
 
 export default async function playlistHandler(req, res) {

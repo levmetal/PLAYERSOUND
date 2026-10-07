@@ -231,7 +231,8 @@
 
 .emptyState {
     color: var(--lowPrimaryColor);
-    text-transform: uppercase;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
     letter-spacing: 1px;
     padding: 2rem 0;
 }
@@ -296,7 +297,8 @@
     gap: .5rem;
     margin: 0;
     font-size: .8rem;
-    text-transform: uppercase;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
     letter-spacing: 1px;
     color: var(--primarycolor);
 }

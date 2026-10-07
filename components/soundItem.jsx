@@ -192,7 +192,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                     onClick={play}
                     onKeyDown={handleRowKeys}
                     aria-label={isCurrent ? `Now playing: ${title}. Open player` : `Play ${title}`}
-                    title={isCurrent ? 'Now playing — open player' : 'Play'}
+                    title={isCurrent ? 'Open the player' : 'Play'}
                 >
                     {isCurrent ? <FaVolumeUp aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
                 </button>
@@ -257,7 +257,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                                     </button>
                                     {!identified && (
                                         <p id={`${menuId}-unidentified`} className={styles.rowMenu__note}>
-                                            We couldn&apos;t identify this song
+                                            This song couldn&apos;t be identified
                                         </p>
                                     )}
                                 </li>

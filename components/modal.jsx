@@ -203,7 +203,7 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                             // point people at the real, ad-free experience instead of
                             // silently degrading. See README.md's "Two ways to run this".
                             <span>
-                                DEMO // via YouTube —{' '}
+                                DEMO // via YouTube ·{' '}
                                 <a href="https://github.com/levmetal/PLAYERSOUND" target="_blank" rel="noreferrer">
                                     run the repo locally for no ads
                                 </a>

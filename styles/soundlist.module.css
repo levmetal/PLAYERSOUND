@@ -86,7 +86,8 @@
 .searchInput::placeholder {
     color: var(--lowPrimaryColor);
     opacity: 1;
-    text-transform: uppercase;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
 }
 
 .searchInput:hover,
@@ -291,6 +292,8 @@
 .statusHint {
     margin: 0;
     font-size: .75rem;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
 }
 
 .statusBtn {

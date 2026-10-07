@@ -273,7 +273,7 @@ export function NowPlayingProvider({ children }) {
             setStartedOverId(null)
         }
         const seed = radioHandoff(before, queue)
-        setHandoff(seed ? `Your queue ended — autoplay continues: ${seed}.` : null)
+        setHandoff(seed ? `Your queue ended. Autoplay continues with ${seed}.` : null)
         // startAt changes with the same track change; savePosition is stable.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queue])
@@ -423,7 +423,7 @@ export function NowPlayingProvider({ children }) {
     const skipUnplayable = useCallback((video) => {
         const current = queueRef.current
         if (currentVideo(current)?.id === video.id && (hasNext(current) || hasPrev(current))) {
-            setNotice(`Skipped "${video.title}" — can't be played here`)
+            setNotice(`Skipped "${video.title}" because it can't be played here`)
         }
         dispatch({ type: 'SKIP_UNPLAYABLE', payload: { videoId: video.id } })
     }, [])

@@ -82,7 +82,7 @@ export default function Home() {
                 {link.pending ? 'Loading link…' : link.error}
               </p>
               {!link.pending && !link.error && (
-                <p className={styles.linkHint}>Paste a YouTube video or playlist link to play it or save it.</p>
+                <p className={styles.linkHint}>Paste a YouTube video or playlist link to play it or save it</p>
               )}
               </div>
             </div>

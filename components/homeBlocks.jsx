@@ -75,9 +75,9 @@ const HomeBlocks = () => {
                     {because.status === 'loading' ? (
                         <p className={listStyles.listBlock__note} role="status">Finding tracks with a similar vibe…</p>
                     ) : because.status === 'error' ? (
-                        <p className={listStyles.listBlock__note} role="status">Couldn&apos;t load suggestions right now.</p>
+                        <p className={listStyles.listBlock__note} role="status">Couldn&apos;t load suggestions right now</p>
                     ) : because.candidates.length === 0 ? (
-                        <p className={listStyles.listBlock__note} role="status">No tracks with a similar vibe found.</p>
+                        <p className={listStyles.listBlock__note} role="status">No tracks with a similar vibe found</p>
                     ) : (
                         <>
                             <ol className={listStyles.queueList}>
@@ -123,12 +123,12 @@ const HomeBlocks = () => {
                 {vibeStart && vibeStart.status !== 'idle' && (
                     <p className={listStyles.listBlock__note} role="status">
                         {vibeStart.status === 'unavailable'
-                            ? 'Vibes aren’t available on this server.'
-                            : `Couldn't find music for "${vibeStart.tag}".`}
+                            ? 'Vibes aren’t available on this server'
+                            : `Couldn't find music for "${vibeStart.tag}"`}
                     </p>
                 )}
                 {vibeStart?.waiting && vibeStart.status === 'idle' && (
-                    <p className={listStyles.listBlock__note} role="status">Couldn&apos;t reach Last.fm — trying again shortly.</p>
+                    <p className={listStyles.listBlock__note} role="status">Couldn&apos;t reach Last.fm. Trying again shortly.</p>
                 )}
             </section>
         </div>

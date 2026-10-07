@@ -59,7 +59,7 @@ const History = () => {
                             </button>
                         ) : (
                             <p className={styles.historyConfirm} role="alert">
-                                Clear all listening history?{' '}
+                                Clear your listening history? Playlists and resume points stay. This can&apos;t be undone.{' '}
                                 <button type="button" className={styles.playAll} onClick={clear}>Yes</button>{' '}
                                 <button type="button" className={styles.playAll} onClick={() => setConfirming(false)}>Cancel</button>
                             </p>
@@ -69,7 +69,7 @@ const History = () => {
 
                 {!videos.length ? (
                     <p className={styles.emptyState}>
-                        Nothing here yet — what you listen to for 30 seconds or more shows up here.
+                        Nothing here yet. Tracks you listen to for 30 seconds or more show up here.
                     </p>
                 ) : days.map((day) => (
                     <section key={day.daysAgo} className={styles.historyDay} aria-label={dayLabel(day.daysAgo, day.items[0].at)}>

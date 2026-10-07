@@ -2,9 +2,9 @@ import container from "../../../services/container";
 
 // What each failure says to the person who pasted the link.
 const FAILURES = {
-  'invalid-id': { status: 400, error: "That isn't a YouTube video link." },
-  unplayable: { status: 422, error: "This video can't be played here." },
-  'not-found': { status: 404, error: "That video doesn't exist." },
+  'invalid-id': { status: 400, error: "That isn't a YouTube video link" },
+  unplayable: { status: 422, error: "This video can't be played here" },
+  'not-found': { status: 404, error: "That video doesn't exist" },
   unavailable: { status: 502, error: "YouTube didn't answer. Try again in a moment." },
 }
 

@@ -16,18 +16,18 @@ const localDate = (date) =>
     [date.getFullYear(), date.getMonth() + 1, date.getDate()].map((n) => String(n).padStart(2, '0')).join('-')
 
 const IMPORT_ERRORS = {
-    'not-json': "That file is damaged or incomplete.",
-    'invalid-playlists': "That file is damaged or incomplete.",
-    'not-playersound': "That file isn't a PlayerSound backup.",
-    'unsupported-version': "That backup was made by a newer version of PlayerSound.",
+    'not-json': "That file is damaged or incomplete",
+    'invalid-playlists': "That file is damaged or incomplete",
+    'not-playersound': "That file isn't a PlayerSound backup",
+    'unsupported-version': "That backup was made by a newer version of PlayerSound",
 }
 
 function importSummary({ playlists, tracks }) {
-    if (!playlists && !tracks) return 'Already up to date — nothing new in that file.'
+    if (!playlists && !tracks) return 'Already up to date. Nothing new in that file.'
     const parts = []
     if (playlists) parts.push(plural(playlists, 'playlist'))
     if (tracks) parts.push(plural(tracks, 'track'))
-    return `Imported ${parts.join(' and ')}.`
+    return `Imported ${parts.join(' and ')}`
 }
 
 const Library = () => {
@@ -69,7 +69,7 @@ const Library = () => {
         link.download = `playersound-playlists-${localDate(now)}.json`
         link.click()
         URL.revokeObjectURL(url)
-        setBackupStatus(`Exported ${plural(playlists.length, 'playlist')}.`)
+        setBackupStatus(`Exported ${plural(playlists.length, 'playlist')}`)
     }
 
     const importPlaylists = async (e) => {
@@ -158,7 +158,7 @@ const Library = () => {
                                 disabled={!canSeedRadio}
                                 title={isEmpty || canSeedRadio
                                     ? 'Play tracks with a similar vibe to this playlist'
-                                    : "We couldn't identify any song in this playlist"}
+                                    : "No song in this playlist could be identified"}
                             >
                                 Similar vibe
                             </button>
@@ -168,7 +168,7 @@ const Library = () => {
 
                 <ul className={styles.list__container}>
                     {selectedPlaylist.tracks.length === 0 ? (
-                        <p className={styles.emptyState}>No tracks saved here yet.</p>
+                        <p className={styles.emptyState}>No tracks saved here yet</p>
                     ) : (
                         selectedPlaylist.tracks.map((sound, index) => (
                             <SoundItem

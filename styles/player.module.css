@@ -1554,7 +1554,8 @@
 .listBlock__credit {
     margin: .5rem 0 0;
     font-size: .65rem;
-    text-transform: uppercase;
+    /* A sentence, so sentence case (DESIGN_SYSTEM.md, "Caps"). */
+    text-transform: none;
     letter-spacing: 1px;
     color: var(--phosphor-secondary-alt);
 }

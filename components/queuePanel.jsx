@@ -71,7 +71,7 @@ const SaveQueue = () => {
         const clean = name.trim()
         if (!clean) return
         dispatch({ type: 'CREATE_PLAYLIST', payload: { name: clean, tracks: queueTracks } })
-        setSaved(`Saved "${clean}" — ${queueTracks.length} ${queueTracks.length === 1 ? 'track' : 'tracks'}.`)
+        setSaved(`Saved "${clean}" with ${queueTracks.length} ${queueTracks.length === 1 ? 'track' : 'tracks'}`)
         setOpen(false)
     }
 
@@ -151,7 +151,7 @@ const UpNextBlock = () => {
                         <p className={styles.autoplayRow__text}>
                             {radio.enabled
                                 ? <>Then, autoplay: <strong>{autoplayTarget ?? 'similar vibe'}</strong></>
-                                : 'Autoplay is off — playback stops when your queue ends.'}
+                                : 'Autoplay is off. Playback stops when your queue ends.'}
                         </p>
                         <AutoplaySwitch on={radio.enabled} onChange={setRadio} />
                     </div>
@@ -172,19 +172,19 @@ const AutoplayList = () => {
     const fetching = empty && !retrying && !queuedAhead && radio.status === 'idle'
 
     if (radio.status === 'unidentified') {
-        return <p className={styles.listBlock__note}>We couldn&apos;t identify this song, so there&apos;s nothing to follow.</p>
+        return <p className={styles.listBlock__note}>This song couldn&apos;t be identified, so there&apos;s nothing to follow</p>
     }
     if (queuedAhead) {
-        return <p className={styles.listBlock__note}>After your {queuedAhead} queued tracks, similar-vibe tracks will play.</p>
+        return <p className={styles.listBlock__note}>After your {queuedAhead} queued tracks, similar-vibe tracks will play</p>
     }
     if (retrying) {
-        return <p className={styles.listBlock__note} role="status">Couldn&apos;t load tracks right now — trying again shortly.</p>
+        return <p className={styles.listBlock__note} role="status">Couldn&apos;t load tracks right now. Trying again shortly.</p>
     }
     if (fetching) return <SkeletonRows label="Finding tracks with a similar vibe…" />
     if (empty) {
         return (
             <p className={styles.listBlock__note}>
-                {radio.status === 'exhausted' ? 'No more tracks with this vibe right now.' : 'Nothing lined up yet.'}
+                {radio.status === 'exhausted' ? 'No more tracks with this vibe right now' : 'Nothing lined up yet'}
             </p>
         )
     }
@@ -213,7 +213,7 @@ const AutoplayList = () => {
             </ol>
             {upNext.waitMinutes && (
                 <p className={styles.listBlock__note} role="status">
-                    YouTube is limiting searches right now — these become playable in about {upNext.waitMinutes} min.
+                    YouTube is limiting searches right now. These become playable in about {upNext.waitMinutes} {upNext.waitMinutes === 1 ? 'minute' : 'minutes'}.
                 </p>
             )}
             {CREDIT}
@@ -248,14 +248,14 @@ const VibeBlock = ({ item }) => {
             {vibe.status === 'loading' ? (
                 <SkeletonRows label="Finding tracks with a similar vibe…" />
             ) : vibe.status === 'unidentified' ? (
-                <p className={styles.listBlock__note}>We couldn&apos;t identify this song, so there&apos;s no vibe to follow.</p>
+                <p className={styles.listBlock__note}>This song couldn&apos;t be identified, so there&apos;s no vibe to follow</p>
             ) : vibe.status === 'error' ? (
                 <p className={styles.listBlock__note} role="status">
                     Couldn&apos;t load tracks with a similar vibe.{' '}
                     <button type="button" className={styles.listBlock__button} onClick={retryVibe}>Retry</button>
                 </p>
             ) : vibe.candidates.length === 0 ? (
-                <p className={styles.listBlock__note} role="status">No tracks with a similar vibe found.</p>
+                <p className={styles.listBlock__note} role="status">No tracks with a similar vibe found</p>
             ) : (
                 <>
                     <ol className={styles.queueList}>
@@ -283,7 +283,7 @@ const VibeBlock = ({ item }) => {
 export function candidateMeta({ resolving, reason }) {
     if (resolving === 'loading') return 'finding video…'
     if (resolving === 'none') return 'no playable video found'
-    if (resolving === 'limited') return 'YouTube is limiting searches — try again in a few minutes'
+    if (resolving === 'limited') return 'YouTube is limiting searches. Try again in a few minutes.'
     return (reason?.sharedTags ?? []).join(' · ')
 }
 

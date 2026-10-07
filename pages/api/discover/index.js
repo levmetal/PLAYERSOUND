@@ -21,7 +21,7 @@ export default async function discoverHandler(req, res) {
     return res.status(200).json(blocked ? { ...result, retryAfter: Math.ceil(blocked / 1000) } : result)
   } catch (error) {
     console.error('discover error:', error)
-    if (container.isSourceError(error)) return res.status(502).json({ error: 'Music data is unavailable right now.' })
+    if (container.isSourceError(error)) return res.status(502).json({ error: 'Music data is unavailable right now' })
     return res.status(500).json({ error: 'Discovery failed.' })
   }
 }

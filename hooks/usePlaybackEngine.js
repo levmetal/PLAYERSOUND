@@ -118,7 +118,7 @@ export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNex
                 setFellBackToIframe(true);
                 return;
             }
-            setError("Couldn't load this video's audio.");
+            setError("Couldn't load this video's audio");
         };
 
         el.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -171,7 +171,7 @@ export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNex
                             }
                         },
                         onError: () => {
-                            setError("This video can't be played embedded.");
+                            setError("This video can't be played here");
                             onUnplayableRef.current?.();
                         },
                         onStateChange: (event) => {
@@ -184,7 +184,7 @@ export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNex
                     },
                 });
             })
-            .catch(() => setError("Couldn't load the YouTube player."));
+            .catch(() => setError("Couldn't load the YouTube player"));
 
         return () => {
             cancelled = true;
