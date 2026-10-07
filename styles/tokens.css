@@ -1,14 +1,23 @@
 /* Retro-Cyberpunk CRT / Terminal design tokens. */
 
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Press+Start+2P&family=Doto:wght@700&display=swap');
+/* Self-hosted, so no request to another server blocks the first paint (a
+   Google Fonts @import used to). Share Tech Mono, SIL Open Font License, see
+   public/fonts/share-tech-mono/OFL.txt; the latin file Google serves, with
+   its unicode-range. Preloaded in pages/_document.js. */
+@font-face {
+  font-family: 'Share Tech Mono';
+  src: url('/fonts/share-tech-mono/ShareTechMono-Regular-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 /* Self-hosted (not on Google Fonts) — DSEG7-Classic, SIL Open Font License,
    see public/fonts/dseg7-classic/LICENSE.txt. True 7-segment glyph shapes
    (angled segment cuts, dim "ghost" segments behind the lit ones, like a
-   real LED clock) for the player's master timer — see .masterTimer in
-   player.module.css. --font-digits (Doto) below is unrelated and
-   stays as-is for smaller inline numbers (list-row duration badges) that
-   don't need true segment shapes. */
+   real LED clock) for the player's master timer and the list-row duration
+   badges — see .masterTimer in player.module.css. */
 @font-face {
   font-family: 'DSEG7Classic';
   src: url('/fonts/dseg7-classic/DSEG7Classic-Bold.woff2') format('woff2');
@@ -36,18 +45,14 @@
   --rgb-magenta: #FF0055;
 
   /* type */
-  --font-body: 'Share Tech Mono', 'VT323', monospace;
-  --font-display: 'Press Start 2P', 'Share Tech Mono', monospace;
-  /* Dot-matrix LED look for standalone numeric readouts (timers, duration
-     badges) — not for prose/labels. */
-  --font-digits: 'Doto', 'Share Tech Mono', monospace;
+  /* The one text face. Press Start 2P, VT323 and Doto were dropped
+     2026-10-07: none of them rendered anywhere (unused or fallback only). */
+  --font-body: 'Share Tech Mono', monospace;
   /* True 7-segment display face — see the @font-face above. Used by the
      player's master timer and every list-row duration badge (SoundItem's shared
-     .row__duration, styles/soundlist.module.css) — not a full replacement
-     for --font-digits, which still backs this font's own fallback and any
-     other standalone numeric readout that doesn't need true segment
-     shapes. */
-  --font-digits-7seg: 'DSEG7Classic', var(--font-digits);
+     .row__duration, styles/soundlist.module.css); any glyph it lacks falls
+     back to the body face. */
+  --font-digits-7seg: 'DSEG7Classic', var(--font-body);
   --letter-spacing-wide: 1.5px;
 
   /* borders */

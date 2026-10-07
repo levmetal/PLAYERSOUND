@@ -8,6 +8,7 @@ import { ConvertSecToMin } from "../utils/convertSecondToMinutes";
 import { formatViews } from "../utils/formatViews";
 import { formatUploaded } from "../utils/sortSearchResults";
 import resolveTrack from "../core/track/resolveTrack";
+import { smallThumbnail } from "../core/format/thumbnail";
 
 // A context menu shouldn't animate on entrance, only on exit — this just
 // keeps it mounted long enough to play playlistMenuClosing's ease-in fade
@@ -157,7 +158,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
 
             <div className={styles.row__thumb} aria-hidden="true">
                 {showThumb ? (
-                    <img src={item.thumbnail} alt="" loading="lazy" onError={() => setThumbFailed(true)} />
+                    <img src={smallThumbnail(item.thumbnail)} alt="" loading="lazy" decoding="async" onError={() => setThumbFailed(true)} />
                 ) : (
                     <span className={styles.row__thumbFallback}>No signal</span>
                 )}

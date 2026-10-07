@@ -7,7 +7,7 @@ import Head from 'next/head'
 import useLinkSubmit from '../hooks/useLinkSubmit'
 import HomeBlocks from '../components/homeBlocks'
 
-const HERO_SRCSET = '/cassetteHero-480.webp 480w, /cassetteHero-853.webp 853w'
+const HERO_SRCSET = '/cassetteHero-320.webp 320w, /cassetteHero-480.webp 480w, /cassetteHero-853.webp 853w'
 // Its rendered width: .heroFrame in Home.module.css.
 const HERO_SIZES = '(max-width: 768px) min(40vw, 10rem), 35vw'
 

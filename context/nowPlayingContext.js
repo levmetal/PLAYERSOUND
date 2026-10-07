@@ -502,6 +502,10 @@ export function NowPlayingProvider({ children }) {
             expand,
             stop,
         }),
+        // `clock` is needed even though the body never names it: `upNext` reads
+        // Date.now(), and the retry timer bumps `clock` so the list is recomputed
+        // when a waiting batch becomes due. The lint can't see that link.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [queue, clock, similar, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
             startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, ensureVideo, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, savePosition, startOver, prev, skipUnplayable, minimize, expand, stop,
             startAt, startedOverId, playingId, positions, startVibe, clearHistory, forgetPosition, loadSimilarFor]

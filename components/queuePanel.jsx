@@ -6,6 +6,7 @@ import { useDispatchContext } from '../context/libraryContext/libraryContext'
 import PlaylistPicker from './playlistPicker'
 import resolveTrack from '../core/track/resolveTrack'
 import { formatTrackNumber } from '../core/format/trackNumber'
+import { smallThumbnail } from '../core/format/thumbnail'
 import { ConvertSecToMin } from '../utils/convertSecondToMinutes'
 
 // A long queue (a whole search result list) would push everything else off
@@ -390,7 +391,7 @@ export const QueueRow = ({
             <span className={styles.queueRow__num} aria-hidden="true">{number}</span>
             <span className={styles.queueRow__thumb} aria-hidden="true">
                 {video?.thumbnail
-                    ? <img src={video.thumbnail} alt="" loading="lazy" />
+                    ? <img src={smallThumbnail(video.thumbnail)} alt="" loading="lazy" decoding="async" />
                     : <FaMusic className={styles.queueRow__thumbIcon} />}
                 {current && <FaVolumeUp className={styles.queueRow__playingIcon} />}
             </span>
