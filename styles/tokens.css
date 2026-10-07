@@ -78,6 +78,10 @@
      rather than introducing another breakpoint. */
   --mobile-nav-height: 3.5rem;
 
+  /* The "You're offline" line (components/offlineNotice.jsx): fixed at the top
+     of the content area, and the page moves down by this much while it shows. */
+  --offline-notice-height: 2rem;
+
   /* Above 768px, the rail (components/sideBar.jsx, styles/sidebar.module.css)
      defaults to its collapsed, icon-only width — this must match that exact
      value (17rem aside width - 12rem translateX = 5rem visible) or full-

@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+
+# generated before each build (scripts/build-sw.mjs)
+/public/sw.js

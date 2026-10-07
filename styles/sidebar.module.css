@@ -58,7 +58,8 @@
    every subsequent click, making the button look like it never closes.
    :focus-visible additionally limits this to actual keyboard navigation,
    not the mouse click that already opens/closes it via React state. */
-.sidebar__collapsed:has(.listbar__option a:focus-visible) {
+.sidebar__collapsed:has(.listbar__option a:focus-visible),
+.sidebar__collapsed:has(.listbar__option button:focus-visible) {
     transform: translateX(0%);
 }
 
@@ -191,7 +192,8 @@
     mask-image: linear-gradient(to left, black, transparent);
 }
 
-.listbar__option a {
+.listbar__option a,
+.listbar__option button {
 
     display: flex;
     position: relative;
@@ -212,8 +214,19 @@
 /* Nav items are <a> tags, not <button>s, so the global
    `:where(button:not(:disabled)):active` press feedback (globals.css)
    doesn't reach them — without this they had no press state at all. */
-.listbar__option a:active {
+.listbar__option a:active,
+.listbar__option button:active {
     transform: scale(0.97);
+}
+
+/* "Install app" is an action, not a page: a button dressed as the links. */
+.listbar__option button {
+    background: transparent;
+    border: none;
+    font: inherit;
+    font-size: .85rem;
+    text-align: left;
+    cursor: pointer;
 }
 
 /* Mobile-only dim scrim behind the open dropdown — tap it to close. Kept
@@ -291,14 +304,15 @@
     }
 
     .listbarOpen {
-        max-height: 18rem;
+        max-height: 22rem;
         opacity: 1;
         padding: .5rem 1rem 1rem;
         visibility: visible;
         transition: max-height 240ms ease-out, opacity 200ms ease-out, visibility 0s;
     }
 
-    .listbar__option a {
+    .listbar__option a,
+    .listbar__option button {
         width: 100%;
         height: 3.2rem;
         font-size: .95rem;
@@ -334,7 +348,8 @@
     .sidebar__expanded,
     .sidebar__collapsed,
     .navToggle:active,
-    .listbar__option a:active {
+    .listbar__option a:active,
+    .listbar__option button:active {
         transition: none;
     }
 }

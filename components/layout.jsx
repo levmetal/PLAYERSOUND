@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import SideBar from '../components/sideBar'
+import OfflineNotice from '../components/offlineNotice'
 
 // Page content is keyed by route, so each page change remounts this wrapper
 // and replays the "tuning in" transition (.route-tune in styles/globals.css).
@@ -24,6 +25,7 @@ export default function Layout({ children }) {
   return (
     <>
       <SideBar />
+      <OfflineNotice />
       <div key={router.pathname} className={tune ? 'route-tune' : undefined}>
         {tune && <span className="route-tune__scan" aria-hidden="true" />}
         {children}

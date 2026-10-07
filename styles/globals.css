@@ -590,3 +590,9 @@ template {
 [hidden] {
   display: none;
 }
+
+/* While the offline line shows (components/offlineNotice.jsx), the page moves
+   down by its height instead of sliding under it. */
+html[data-offline] body {
+  padding-top: var(--offline-notice-height);
+}

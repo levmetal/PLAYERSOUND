@@ -1,0 +1,34 @@
+/* Fixed over the top of the content area (right of the rail; under the top
+   bar on phones), above the page and the mini-player, below the nav (150). */
+.notice {
+    position: fixed;
+    top: 0;
+    left: var(--rail-width);
+    right: 0;
+    z-index: 140;
+    box-sizing: border-box;
+    height: var(--offline-notice-height);
+    margin: 0;
+    padding: 0 1rem;
+    line-height: var(--offline-notice-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: var(--crt-black);
+    border-bottom: var(--border-crt);
+    color: var(--lowPrimaryColor);
+    font-size: .85rem;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.notice[hidden] {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    .notice {
+        top: var(--mobile-nav-height);
+        left: 0;
+    }
+}

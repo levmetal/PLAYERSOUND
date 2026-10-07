@@ -7,6 +7,7 @@ import { SoundProvider } from '../context/libraryContext/libraryContext'
 import { NowPlayingProvider, useNowPlaying } from '../context/nowPlayingContext'
 import Loader from '../components/loader';
 import Layout from '../components/layout';
+import useServiceWorker from '../hooks/useServiceWorker';
 
 // Code-split: the player (and its globe/marquee/engine code) only downloads
 // once something is actually played.
@@ -105,12 +106,16 @@ function NowPlayingHost() {
 }
 
 function MyApp({ Component, pageProps }) {
+  useServiceWorker()
+
   return (<>
     <Head>
       <title>PlayerSound</title>
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       <meta name="keywords" content="music, podcasts, youtube audio, playlists, no login"></meta>
       <meta name="theme-color" content="#050B05" />
+      <link rel="manifest" href="/manifest.webmanifest" />
+      <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     </Head>
     <SoundProvider >
       <NowPlayingProvider>

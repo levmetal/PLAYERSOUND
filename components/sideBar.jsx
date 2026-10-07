@@ -2,8 +2,9 @@
 import styles from "../styles/sidebar.module.css"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { FaBars, FaTimes, FaHome, FaBook, FaHistory, FaInfoCircle } from "react-icons/fa"
+import { FaBars, FaTimes, FaHome, FaBook, FaHistory, FaInfoCircle, FaDownload } from "react-icons/fa"
 import { useEffect, useState } from "react"
+import useInstallPrompt from "../hooks/useInstallPrompt"
 
 const NAV_ITEMS = [
     { href: "/", label: "Home", Icon: FaHome },
@@ -16,6 +17,7 @@ const SideBar = () => {
     const [menuOpen, setMenuOpen] = useState(false)
 
     const router = useRouter()
+    const { canInstall, install } = useInstallPrompt()
 
     const handleOpenMenu = () => {
         setMenuOpen((open) => !open)
@@ -98,6 +100,16 @@ const SideBar = () => {
                                 </Link>
                             </li>
                         ))}
+                        {/* Only while the browser can install the app (Chrome, Edge,
+                            Android) and it isn't installed yet. */}
+                        {canInstall && (
+                            <li className={styles.listbar__option}>
+                                <button type="button" onClick={() => { handleNavClick(); install() }} title="Install app">
+                                    Install app
+                                    <FaDownload className={styles.sideIcon} aria-hidden="true" />
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </nav>
             </aside>
