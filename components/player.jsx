@@ -39,9 +39,6 @@ const VU_BARS = Array.from({ length: 64 }, (_, i) => {
 // below for why a CSS-only version of this doesn't work).
 const VU_FADE_MS = 420;
 
-// Last.fm gives a seed up to ~10 tags; the strongest few are enough to tap.
-const MAX_TAG_CHIPS = 5;
-
 // requestAnimationFrame stops in a background tab; this keeps the position
 // reported (for resuming long tracks) while the tab is hidden.
 const HIDDEN_REPORT_MS = 5000;
@@ -58,7 +55,7 @@ const Player = ({ item }) => {
     const onEndedRef = useRef(() => {});
     const {
         next, finished, like, reportTime, savePosition, startOver, startAt, resumedAt, prev, nextItem, prevItem,
-        skipUnplayable, current, radio, tags, browseVibe, browseTag,
+        skipUnplayable, current, radio,
     } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
@@ -331,23 +328,6 @@ const Player = ({ item }) => {
                             </span>
                             <a href="https://www.last.fm" target="_blank" rel="noreferrer">Last.fm</a>
                         </p>
-                    )}
-                    {tags.length > 0 && (
-                        <ul className={styles.tagChips} aria-label="More like these tags, from Last.fm">
-                            <li className={styles.tagChips__label} aria-hidden="true">More like</li>
-                            {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
-                                <li key={tag}>
-                                    <button
-                                        type="button"
-                                        onClick={() => browseVibe(tag)}
-                                        aria-pressed={browseTag === tag || radio.tags[0] === tag}
-                                        title={`Show more like ${tag}`}
-                                    >
-                                        {tag}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
                     )}
                     {resumedAt > 0 && (
                         <p className={`${styles.reasonLine} ${styles.reasonLineDim}`}>

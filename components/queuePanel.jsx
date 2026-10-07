@@ -50,16 +50,18 @@ const QueuePanel = ({ item }) => {
     )
 }
 
-// "Save queue as playlist": the tracks you chose, under a name you can change.
-// Opens inline under the header; hidden while there's nothing of yours.
-const SaveQueue = () => {
+// Up next's header actions: "Save queue as playlist" (the tracks you chose,
+// under a name you can change; hidden while there's nothing of yours) and,
+// passed in as children so it shows even with nothing queued, the Autoplay
+// switch. The name field opens inline under the header.
+const SaveQueue = ({ children }) => {
     const { queueTracks, queueName } = useNowPlaying()
     const dispatch = useDispatchContext()
     const [open, setOpen] = useState(false)
     const [name, setName] = useState('')
     const [saved, setSaved] = useState('')
 
-    if (!queueTracks.length) return null
+    if (!queueTracks.length) return children ? <div className={styles.vibeActions}>{children}</div> : null
 
     const toggle = () => {
         setSaved('')
@@ -81,6 +83,7 @@ const SaveQueue = () => {
                 <button type="button" className={styles.listBlock__button} onClick={toggle} aria-expanded={open}>
                     Save queue as playlist
                 </button>
+                {children}
             </div>
             {open && (
                 <form className={styles.saveQueue} onSubmit={save}>
@@ -115,7 +118,11 @@ const UpNextBlock = () => {
                 <p className={styles.listBlock__subtitle}>
                     {upNext.user.length ? 'Your picks, in order' : 'Nothing of yours is queued'}
                 </p>
-                <SaveQueue />
+                {/* Autoplay sits up here, in sight at any window height: it decides
+                    what plays when your picks run out. */}
+                <SaveQueue>
+                    {autoplayAvailable && <AutoplaySwitch on={radio.enabled} onChange={setRadio} />}
+                </SaveQueue>
             </header>
 
             <ol className={styles.queueList}>
@@ -153,7 +160,6 @@ const UpNextBlock = () => {
                                 ? <>Then, autoplay: <strong>{autoplayTarget ?? 'similar vibe'}</strong></>
                                 : 'Autoplay is off. Playback stops when your queue ends.'}
                         </p>
-                        <AutoplaySwitch on={radio.enabled} onChange={setRadio} />
                     </div>
                     {radio.enabled && <AutoplayList />}
                 </>
@@ -221,8 +227,11 @@ const AutoplayList = () => {
     )
 }
 
+// Last.fm gives a seed up to ~10 tags; the strongest few are enough to pick from.
+const MAX_TAG_CHIPS = 5
+
 const VibeBlock = ({ item }) => {
-    const { vibe, playCandidate, ensureVideo, retryVibe, browseVibe, autoplayVibe } = useNowPlaying()
+    const { vibe, playCandidate, ensureVideo, retryVibe, browseVibe, autoplayVibe, tags, browseTag, radio } = useNowPlaying()
     if (vibe.status === 'unavailable') return null
 
     const trackTitle = resolveTrack(item)?.title ?? item.title
@@ -244,6 +253,26 @@ const VibeBlock = ({ item }) => {
                     </div>
                 )}
             </header>
+
+            {/* The playing track's tags: picking one swaps this list to that vibe,
+                so they sit with the list they change. */}
+            {tags.length > 0 && (
+                <ul className={`${styles.tagChips} ${styles.vibeChips}`} aria-label="More like these tags, from Last.fm">
+                    <li className={styles.tagChips__label} aria-hidden="true">More like</li>
+                    {tags.slice(0, MAX_TAG_CHIPS).map((tag) => (
+                        <li key={tag}>
+                            <button
+                                type="button"
+                                onClick={() => browseVibe(tag)}
+                                aria-pressed={browseTag === tag || radio.tags[0] === tag}
+                                title={`Show more like ${tag}`}
+                            >
+                                {tag}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             {vibe.status === 'loading' ? (
                 <SkeletonRows label="Finding tracks with a similar vibe…" />

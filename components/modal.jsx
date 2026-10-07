@@ -4,7 +4,7 @@ import Player from '../components/player'
 import GlobePanel from '../components/globePanel'
 import QueuePanel from '../components/queuePanel'
 import { useNowPlaying } from '../context/nowPlayingContext'
-import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
+import { FaTimes, FaChevronDown, FaChevronUp, FaStop } from 'react-icons/fa'
 
 // Matches the console-out/backdrop-out keyframe durations in player.module.css —
 // keeps the expanded console on screen long enough to play its own ease-in
@@ -152,12 +152,13 @@ const Modal = ({ item, expanded, onMinimize, onExpand, onStop }) => {
                                 {expanded ? <FaChevronDown aria-hidden="true" /> : <FaChevronUp aria-hidden="true" />}
                             </button>
                             <button
-                                className={styles.btn__close}
+                                className={`${styles.btn__close} ${styles.btn__stop}`}
                                 onClick={requestStop}
                                 aria-label="Stop and close player"
-                                title="Stop"
+                                title="Stop and close player"
                             >
-                                <FaTimes aria-hidden="true" />
+                                <FaStop aria-hidden="true" />
+                                <span className={styles.btn__stopText} aria-hidden="true">Stop</span>
                             </button>
                         </div>
                     </div>
