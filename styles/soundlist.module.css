@@ -607,6 +607,16 @@
     margin-right: .5rem;
 }
 
+/* History: where a long track was left — shown at every width. */
+.row__resumeAt {
+    flex: none;
+}
+
+.row__resumeAt::before {
+    content: '·';
+    margin-right: .5rem;
+}
+
 .row__stat {
     overflow: hidden;
     white-space: nowrap;

@@ -29,7 +29,8 @@ const focusSiblingRow = (current, step) => {
 // playlist); without it the row plays on its own. `number` is the row's
 // formatted track number (core/format/trackNumber.js), chosen by the list
 // because it knows the order.
-const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = null }) => {
+// `resumeAt` (seconds): a long track left part-way says where it picks up.
+const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = null, resumeAt = 0 }) => {
 
     const dispatch = useDispatchContext()
     const { item: nowPlaying, open, playNext, enqueue, startRadio, radio, like } = useNowPlaying()
@@ -171,6 +172,7 @@ const SoundItem = ({ item, number, onPlay, showStats = true, highlightStat = nul
                     {verified && <FaCheck className={styles.row__verified} role="img" aria-label="Verified channel" />}
                     {views && <span className={styles.row__metaStat}>{views}</span>}
                     {uploaded && <span className={styles.row__metaStat}>{uploaded}</span>}
+                    {resumeAt > 0 && <span className={styles.row__resumeAt}>left at {ConvertSecToMin(resumeAt)}</span>}
                 </span>
             </div>
 

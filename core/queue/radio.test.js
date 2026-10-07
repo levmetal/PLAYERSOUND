@@ -418,3 +418,53 @@ test('autoplayTarget falls back to the video title when the song is not identifi
     const SET = videos.find((v) => v.title.includes('Boiler Room: London'))
     assert.equal(autoplayTarget(playList([SET])), `tracks like "${SET.title}"`)
 })
+
+// --- start from a vibe (Home chips) ---
+
+const startVibe = (state, tag) => queueReducer(state, { type: 'START_VIBE', payload: { tag } })
+
+test('starting a vibe empties the queue and follows that tag', () => {
+    const state = startVibe(playList([A, B]), 'house')
+    assert.deepEqual(state.items, [])
+    assert.equal(state.index, -1)
+    assert.deepEqual(state.source, { type: 'vibe', label: 'house' })
+    assert.equal(state.radio.enabled, true)
+    assert.deepEqual(state.radio.tags, ['house'])
+})
+
+test('starting a vibe turns autoplay on even when it was off', () => {
+    const off = queueReducer(initialQueueState, { type: 'SET_RADIO', payload: { enabled: false } })
+    assert.equal(startVibe(off, 'house').radio.enabled, true)
+})
+
+test('a vibe start asks for tracks by tag although nothing is queued yet', () => {
+    const request = radioRequest(startVibe(initialQueueState, 'house'), NOW)
+    assert.equal(request.kind, 'discover')
+    assert.deepEqual(request.tags, ['house'])
+    assert.deepEqual(request.seeds, [])
+})
+
+test('an empty queue that is not a vibe start asks for nothing', () => {
+    assert.equal(radioRequest(queueReducer(playList([A]), { type: 'CLEAR' }), NOW), null)
+})
+
+test('the first tracks found for a vibe start playing', () => {
+    const state = batch(startVibe(initialQueueState, 'house'), { candidates: [c(B), c(C)] })
+    assert.deepEqual(ids(state), [B.id, C.id])
+    assert.equal(state.index, 0)
+    assert.equal(currentVideo(state).id, B.id)
+})
+
+test('tracks resolved later for a vibe start also start playing', () => {
+    const waiting = batch(startVibe(initialQueueState, 'house'), { candidates: [c(null)] })
+    assert.equal(waiting.index, -1)
+    const state = resolved(waiting, { requested: waiting.radio.pending, candidates: [c(D, 'Pending Track')] })
+    assert.equal(state.index, 0)
+    assert.equal(currentVideo(state).id, D.id)
+})
+
+test('a vibe with nothing playable stays empty and says it ran out', () => {
+    const state = batch(startVibe(initialQueueState, 'house'), { candidates: [] })
+    assert.equal(state.index, -1)
+    assert.equal(state.radio.status, 'exhausted')
+})

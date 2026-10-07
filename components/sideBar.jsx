@@ -2,12 +2,13 @@
 import styles from "../styles/sidebar.module.css"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { FaBars, FaTimes, FaHome, FaBook, FaInfoCircle } from "react-icons/fa"
+import { FaBars, FaTimes, FaHome, FaBook, FaHistory, FaInfoCircle } from "react-icons/fa"
 import { useEffect, useState } from "react"
 
 const NAV_ITEMS = [
     { href: "/", label: "Home", Icon: FaHome },
     { href: "/library", label: "Playlists", Icon: FaBook },
+    { href: "/history", label: "History", Icon: FaHistory },
     { href: "/about", label: "About", Icon: FaInfoCircle },
 ]
 

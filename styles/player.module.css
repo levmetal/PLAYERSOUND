@@ -1858,6 +1858,20 @@
     text-shadow: none;
 }
 
+/* How far into a half-heard track (Home's Continue listening). */
+.queueRow__progress {
+    display: block;
+    height: 2px;
+    margin-top: .2rem;
+    background: rgba(var(--phosphor-primary-rgb), 0.2);
+}
+
+.queueRow__progress span {
+    display: block;
+    height: 100%;
+    background: var(--phosphor-primary);
+}
+
 .queueRow__actions {
     position: relative;
     z-index: 2;

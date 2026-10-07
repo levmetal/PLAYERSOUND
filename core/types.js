@@ -53,7 +53,7 @@
 /**
  * Where the queue came from, for the player's header readout.
  * @typedef {Object} QueueSource
- * @property {'track' | 'search' | 'playlist' | 'radio'} type
+ * @property {'track' | 'search' | 'playlist' | 'radio' | 'vibe' | 'history'} type
  * @property {string} label
  */
 

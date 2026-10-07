@@ -6,7 +6,8 @@ import resolveTrack from '../track/resolveTrack.js'
 import { trackKey } from '../discovery/rankCandidates.js'
 
 /** @typedef {import('../types.js').QueueItem} QueueItem */
-/** @typedef {{ affinity: Record<string, number>, excluded: string[], history: { id: string, key: string | null, at: number }[] }} Signals */
+/** @typedef {{ id: string, key: string | null, at: number, video?: object, listened?: boolean }} HistoryEntry */
+/** @typedef {{ affinity: Record<string, number>, excluded: string[], history: HistoryEntry[] }} Signals */
 
 const SKIP_SECONDS = 30
 const SKIP_WEIGHT = -0.2
@@ -41,11 +42,30 @@ function nudge(affinity, tags, weight) {
     return next
 }
 
+// What history keeps of a video: enough to show it again and to seed Last.fm.
+const slimVideo = (video) => ({
+    id: video.id,
+    title: video.title,
+    thumbnail: video.thumbnail,
+    duration: video.duration,
+    description: video.description,
+    channel: { name: video.channel?.name, verified: video.channel?.verified },
+})
+
+function withHistory(state, item, at, listened) {
+    const entry = { id: item.video.id, key: keyOf(item), at, video: slimVideo(item.video), listened }
+    return [...state.history, entry].slice(-MAX_HISTORY)
+}
+
 const appendCapped = (list, entries, max) => [...list.filter((e) => !entries.includes(e)), ...entries].slice(-max)
 
 /**
  * @param {Signals} state
+ * Tracks left by ⏭ or by ending are LISTENED (a judgement on the track); left
+ * any other way (⏮, another row, stop) they're PLAYED: history only.
  * @param {{ type: 'LISTENED', payload: { item: QueueItem, seconds: number, finished: boolean, at: number } }
+ *   | { type: 'PLAYED', payload: { item: QueueItem, seconds: number, at: number } }
+ *   | { type: 'CLEAR_HISTORY' }
  *   | { type: 'LIKED', payload: { item: QueueItem } }
  *   | { type: 'HYDRATE', payload: Partial<Signals> }} action
  * @returns {Signals}
@@ -55,7 +75,7 @@ export default function signalsReducer(state, action) {
         case 'LISTENED': {
             const { item, seconds, finished, at } = action.payload
             const key = keyOf(item)
-            const history = [...state.history, { id: item.video.id, key, at }].slice(-MAX_HISTORY)
+            const history = withHistory(state, item, at, finished || seconds >= SKIP_SECONDS)
             if (finished) return { ...state, affinity: nudge(state.affinity, tagsOf(item), FINISH_WEIGHT), history }
             if (seconds >= SKIP_SECONDS) return { ...state, history }
             return {
@@ -64,6 +84,15 @@ export default function signalsReducer(state, action) {
                 history,
             }
         }
+
+        case 'PLAYED': {
+            const { item, seconds, at } = action.payload
+            if (seconds < SKIP_SECONDS) return state
+            return { ...state, history: withHistory(state, item, at, true) }
+        }
+
+        case 'CLEAR_HISTORY':
+            return { ...state, history: [] }
 
         case 'LIKED': {
             const affinity = nudge(state.affinity, tagsOf(action.payload.item), LIKE_WEIGHT)

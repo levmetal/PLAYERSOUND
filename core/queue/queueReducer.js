@@ -107,8 +107,14 @@ function splitCandidates(state, candidates) {
 
 const retryAtFor = (retryAfter, now) => (retryAfter ? now + retryAfter * 1000 : null)
 
+// A vibe started from Home: nothing queued yet, radio fills it.
+export const isVibeStart = (state) => state.index < 0 && state.source?.type === 'vibe'
+
 // Radio results only apply to the queue they were asked for.
-const isStale = (state, payload) => state.index < 0 || payload.generation !== state.generation
+const isStale = (state, payload) => (state.index < 0 && !isVibeStart(state)) || payload.generation !== state.generation
+
+// The first tracks found for a vibe start play at once.
+const startIfWaiting = (state, items) => (state.index < 0 && items.length ? 0 : state.index)
 
 const nextIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.index, 1))
 const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.index, -1))
@@ -120,7 +126,7 @@ const prevIndex = (state) => (state.index < 0 ? -1 : playableFrom(state, state.i
  *   | { type: 'SKIP_UNPLAYABLE', payload: { videoId: string } }
  *   | { type: 'PLAY_NEXT' | 'ENQUEUE', payload: { video: Video } }
  *   | { type: 'START_RADIO', payload: { seeds: Video[], label: string } }
- *   | { type: 'AUTOPLAY_VIBE', payload: { tag: string } }
+ *   | { type: 'AUTOPLAY_VIBE' | 'START_VIBE', payload: { tag: string } }
  *   | { type: 'JUMP_TO', payload: { index: number } }
  *   | { type: 'SET_RADIO', payload: { enabled: boolean } }
  *   | { type: 'RADIO_REQUESTED', payload: { generation: number } }
@@ -185,6 +191,15 @@ export default function queueReducer(state, action) {
             })
         }
 
+        // Play a vibe from nothing: an empty queue that radio fills by tag.
+        case 'START_VIBE': {
+            const { tag } = action.payload
+            return freshQueue(state, {
+                source: { type: 'vibe', label: tag },
+                radio: { ...initialRadio, enabled: true, tags: [tag] },
+            })
+        }
+
         // Autoplay follows a vibe from now on. The listener's own queue stays;
         // only the suggestions ahead (made for the old target) go.
         case 'AUTOPLAY_VIBE': {
@@ -234,6 +249,7 @@ export default function queueReducer(state, action) {
             return {
                 ...state,
                 items: [...state.items, ...items],
+                index: startIfWaiting(state, items),
                 radio: {
                     ...state.radio,
                     pending: [...state.radio.pending, ...waiting],
@@ -256,6 +272,7 @@ export default function queueReducer(state, action) {
             return {
                 ...state,
                 items: [...state.items, ...items],
+                index: startIfWaiting(state, items),
                 radio: {
                     ...state.radio,
                     pending: [...waiting, ...state.radio.pending.filter((c) => !asked.has(trackKey(c.artist, c.title)))],

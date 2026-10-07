@@ -101,14 +101,25 @@ const candidateId = (candidate) => `${candidate.artist}|${candidate.title}`.toLo
  */
 export function viewList(state) {
     const key = onScreenKey(state)
+    return { key, kind: state.browseTag ? 'tag' : 'track', tag: state.browseTag, ...listView(state, key) }
+}
+
+function listView(state, key) {
     const list = key ? state.lists[key] : undefined
     const status = state.unavailable ? 'unavailable' : (list?.status ?? 'loading')
     const candidates = (list?.candidates ?? []).map((candidate) => {
         const id = candidateId(candidate)
         return { ...candidate, id, video: candidate.video ?? state.videos[id] ?? null, resolving: state.resolving[id] ?? null }
     })
-    return { key, kind: state.browseTag ? 'tag' : 'track', tag: state.browseTag, status, candidates }
+    return { status, candidates }
 }
+
+/**
+ * A track's list whether or not it's playing (Home's "Because you listened to …").
+ * @param {typeof initialSimilar} state
+ * @param {string} videoId
+ */
+export const listFor = (state, videoId) => listView(state, trackKey(videoId))
 
 /** @param {typeof initialSimilar} state */
 export const vibeTags = (state) => (state.trackId ? state.tags[state.trackId] ?? [] : [])
@@ -127,8 +138,25 @@ export function similarRequest(state, video, signals) {
     const status = state.lists[key]?.status
     if (status && status !== 'error') return null
 
-    const common = { exclude: signals.exclude.slice(-MAX_EXCLUDE), affinity: signals.affinity, limit: LIST_LIMIT, resolve: 0 }
-    if (state.browseTag) return { kind: 'fetch', key, body: { tags: [state.browseTag], ...common } }
+    if (state.browseTag) return { kind: 'fetch', key, body: { tags: [state.browseTag], ...requestCommon(signals) } }
     if (!video || resolveTrack(video) === null) return { kind: 'unidentified', key }
-    return { kind: 'fetch', key, body: { seeds: [video], ...common } }
+    return { kind: 'fetch', key, body: { seeds: [video], ...requestCommon(signals) } }
+}
+
+const requestCommon = (signals) => ({ exclude: signals.exclude.slice(-MAX_EXCLUDE), affinity: signals.affinity, limit: LIST_LIMIT, resolve: 0 })
+
+/**
+ * What to fetch for a song's list when it isn't the one playing, or null.
+ * The caller checks the song can be named (resolveTrack) before asking.
+ * @param {typeof initialSimilar} state
+ * @param {Video} video
+ * @param {{ exclude: string[], affinity: Record<string, number> }} signals
+ * @returns {null | { kind: 'fetch', key: string, body: Record<string, unknown> }}
+ */
+export function requestFor(state, video, signals) {
+    const key = trackKey(video.id)
+    if (state.unavailable) return null
+    const status = state.lists[key]?.status
+    if (status && status !== 'error') return null
+    return { kind: 'fetch', key, body: { seeds: [video], ...requestCommon(signals) } }
 }

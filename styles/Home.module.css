@@ -1,10 +1,18 @@
-.container {
+/* Hero, then the blocks under it (Continue listening, Because you listened
+   to …, Start from a vibe). The hero stops --home-peek short of the fold so
+   the first block's title shows: there's more below. */
+.page {
+    --home-peek: 5rem;
     background: var(--bg-grid);
+}
+
+.container {
+    /* The grid comes from .page, so it runs on unbroken under the blocks. */
     display: flex;
     position: relative;
     justify-content: center;
     align-items: center;
-    height: 100dvh;
+    height: calc(100dvh - var(--home-peek));
     width: 100%;
     /* .heroFrame below shifts upward past this container's own top edge —
        clip that instead of letting it read as extra (empty) scrollable
@@ -27,6 +35,9 @@
     overflow: hidden;
     pointer-events: none;
     z-index: 0;
+    /* Fades out before the hero ends, so the blocks below don't start at a hard edge. */
+    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
 }
 
 .heroAura__lattice {
@@ -99,7 +110,7 @@
     justify-content: center;
     align-items: flex-start;
     gap: 2.5rem;
-    height: 100dvh;
+    height: calc(100dvh - var(--home-peek));
     width: 75%;
 
     position: relative;
@@ -248,7 +259,7 @@
 @media screen and (max-width: 768px) {
     .container {
         height: auto;
-        min-height: 100dvh;
+        min-height: calc(100dvh - var(--home-peek));
         flex-direction: column;
         justify-content: flex-start;
         padding: calc(var(--mobile-nav-height) + 1.5rem) 1.25rem 3rem;
@@ -339,4 +350,59 @@
     font-size: .8rem;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--lowPrimaryColor);
+}
+
+/* Home's blocks: the same list blocks as the player's (player.module.css),
+   left-aligned with the hero text above. One column on phones; from 769px two,
+   the short blocks (Continue listening, Start from a vibe) stacked on the left
+   and the long suggestion list on the right, so no row leaves a hole. */
+.homeBlocks {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 2.5rem 3rem;
+    width: 75%;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+    box-sizing: border-box;
+}
+
+.homeBlocks .homeChips {
+    justify-content: flex-start;
+    margin-top: .8rem;
+}
+
+.homeLink {
+    color: var(--phosphor-secondary-alt);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.homeLink:hover {
+    color: var(--primarycolor);
+}
+
+@media screen and (max-width: 768px) {
+    .homeBlocks {
+        width: 100%;
+        padding-inline: 1.25rem;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .homeBlocks {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .blockContinue,
+    .blockVibes {
+        grid-column: 1;
+    }
+
+    .blockBecause {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
 }

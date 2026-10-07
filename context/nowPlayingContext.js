@@ -9,9 +9,10 @@ import queueReducer, {
     queuePosition,
     hasNext,
     hasPrev,
+    isVibeStart,
 } from "../core/queue/queueReducer";
 import { radioRequest, radioHandoff, pickSeeds, upNext, currentTags, autoplayTarget } from "../core/queue/radio";
-import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest } from "../core/discovery/similarReducer";
+import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest, listFor, requestFor } from "../core/discovery/similarReducer";
 import { discover, resolveCandidates } from "../utils/discoverClient";
 import resolveTrack from "../core/track/resolveTrack";
 import { savableTracks, defaultPlaylistName } from "../core/queue/saveQueue";
@@ -68,8 +69,13 @@ export function NowPlayingProvider({ children }) {
     // Similar vibe: the list for the playing track (or a browsed tag), whatever
     // Autoplay is set to. Last.fm only — a video is found when a row is clicked.
     const [similar, similarDispatch] = useReducer(similarReducer, initialSimilar)
+    const similarRef = useRef(similar)
+    similarRef.current = similar
     // Seconds into the current track, reported by the Player once a second.
     const elapsedRef = useRef(0)
+    // The queue item ⏭ or its own end already reported to the signals, so
+    // leaving it isn't reported a second time as a plain play.
+    const judgedRef = useRef(null)
     // Long tracks pick up where they were left (core/positions). Saved from
     // what was heard while playing: every 15 s, on pause, on a track change
     // or stop, and when the page goes away.
@@ -251,9 +257,15 @@ export function NowPlayingProvider({ children }) {
         const before = previousQueue.current
         previousQueue.current = queue
         if (currentItem(before) === currentItem(queue)) return
+        const left = currentItem(before)
+        const video = currentVideo(queue)
+        // Left by ⏮, another row, a vibe or stop: history only, no judgement.
+        if (left && left.video.id !== video?.id && judgedRef.current !== left) {
+            signalsDispatch({ type: 'PLAYED', payload: { item: left, seconds: elapsedRef.current, at: Date.now() } })
+        }
+        judgedRef.current = null
         elapsedRef.current = 0
         savePosition()
-        const video = currentVideo(queue)
         if (currentVideo(before)?.id !== video?.id) {
             heardRef.current = null
             lastSavedRef.current = startAt
@@ -300,6 +312,21 @@ export function NowPlayingProvider({ children }) {
         setSettings((current) => (current.radio ? current : { ...current, radio: true }))
         setExpanded(true)
     }, [])
+    // Home's vibe chips: music for that tag from nothing, now. The player
+    // shows up (expanded) once the first track is found.
+    const startVibe = useCallback((tag) => {
+        dispatch({ type: 'START_VIBE', payload: { tag } })
+        setSettings((current) => (current.radio ? current : { ...current, radio: true }))
+        setExpanded(true)
+    }, [])
+    const clearHistory = useCallback(() => signalsDispatch({ type: 'CLEAR_HISTORY' }), [])
+    const forgetPosition = useCallback((videoId) => positionsDispatch({ type: 'FORGET', payload: { videoId } }), [])
+    // Home's "Because you listened to …": the Similar vibe list of a track
+    // that isn't playing — the same list (and cache) the player uses for it.
+    const loadSimilarFor = useCallback((video) => {
+        const request = requestFor(similarRef.current, video, discoverSignals(signalsRef.current))
+        if (request) loadList(request)
+    }, [loadList])
     // Keeps the listener's queue; only what autoplay follows changes.
     const autoplayVibe = useCallback((tag) => {
         dispatch({ type: 'AUTOPLAY_VIBE', payload: { tag } })
@@ -346,6 +373,7 @@ export function NowPlayingProvider({ children }) {
     const next = useCallback(() => {
         const item = currentItem(queueRef.current)
         if (item && hasNext(queueRef.current)) {
+            judgedRef.current = item
             signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: false, at: Date.now() } })
         }
         dispatch({ type: 'NEXT' })
@@ -354,6 +382,7 @@ export function NowPlayingProvider({ children }) {
     const finished = useCallback(() => {
         const item = currentItem(queueRef.current)
         if (item) {
+            judgedRef.current = item
             signalsDispatch({ type: 'LISTENED', payload: { item, seconds: elapsedRef.current, finished: true, at: Date.now() } })
             heardRef.current = null
             positionsDispatch({ type: 'FORGET', payload: { videoId: item.video.id } })
@@ -432,6 +461,17 @@ export function NowPlayingProvider({ children }) {
             startAt,
             resumedAt: startedOverId === playingId ? 0 : startAt,
             positions: positions.entries,
+            history: signals.history,
+            affinity: signals.affinity,
+            similarListFor: (videoId) => listFor(similar, videoId),
+            // A vibe started from Home that hasn't found its first track yet.
+            vibeStart: isVibeStart(queue)
+                ? { tag: queue.source.label, status: queue.radio.status, waiting: queue.radio.retryAt !== null }
+                : null,
+            startVibe,
+            clearHistory,
+            forgetPosition,
+            loadSimilarFor,
             notice,
             handoff,
             expanded,
@@ -464,7 +504,7 @@ export function NowPlayingProvider({ children }) {
         }),
         [queue, clock, similar, signals, notice, handoff, expanded, playQueue, open, playNext, enqueue, startRadio,
             startPlaylistRadio, autoplayVibe, jumpTo, playNow, playCandidate, ensureVideo, browseVibe, retryVibe, setRadio, dismissHandoff, next, finished, like, reportTime, savePosition, startOver, prev, skipUnplayable, minimize, expand, stop,
-            startAt, startedOverId, playingId, positions]
+            startAt, startedOverId, playingId, positions, startVibe, clearHistory, forgetPosition, loadSimilarFor]
     )
 
     return <NowPlayingContext.Provider value={value}>{children}</NowPlayingContext.Provider>

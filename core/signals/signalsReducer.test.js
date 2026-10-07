@@ -17,6 +17,12 @@ const userItem = (video) => ({ video, origin: 'user' })
 const listened = (state, item, seconds, finished = false) =>
     signalsReducer(state, { type: 'LISTENED', payload: { item, seconds, finished, at: AT } })
 const liked = (state, item) => signalsReducer(state, { type: 'LIKED', payload: { item } })
+const played = (state, item, seconds) => signalsReducer(state, { type: 'PLAYED', payload: { item, seconds, at: AT } })
+// What a history entry keeps of a video: enough for a row and for resolveTrack.
+const slim = (video) => ({
+    id: video.id, title: video.title, thumbnail: video.thumbnail, duration: video.duration, description: video.description,
+    channel: { name: video.channel.name, verified: video.channel.verified },
+})
 
 test('initial signals are empty', () => {
     assert.deepEqual(initialSignals, { affinity: {}, excluded: [], history: [] })
@@ -26,7 +32,7 @@ test('a skip within 30 seconds lowers its tags and excludes the track', () => {
     const state = listened(initialSignals, radioItem(A), 12)
     assert.deepEqual(state.affinity, { night: -0.2, synthwave: -0.2 })
     assert.deepEqual(state.excluded, ['kavinsky|nightcall', A.id])
-    assert.deepEqual(state.history, [{ id: A.id, key: 'kavinsky|nightcall', at: AT }])
+    assert.deepEqual(state.history, [{ id: A.id, key: 'kavinsky|nightcall', at: AT, video: slim(A), listened: false }])
 })
 
 test('a user pick is keyed by what resolveTrack finds', () => {
@@ -38,7 +44,7 @@ test('a user pick is keyed by what resolveTrack finds', () => {
 test('a track that cannot be identified is excluded by its video id', () => {
     const state = listened(initialSignals, userItem(SET), 5)
     assert.deepEqual(state.excluded, [SET.id])
-    assert.deepEqual(state.history, [{ id: SET.id, key: null, at: AT }])
+    assert.deepEqual(state.history, [{ id: SET.id, key: null, at: AT, video: slim(SET), listened: false }])
 })
 
 test('a track played to the end nudges its tags up', () => {
@@ -53,6 +59,32 @@ test('a skip after 30 seconds only goes into history', () => {
     assert.deepEqual(state.affinity, {})
     assert.deepEqual(state.excluded, [])
     assert.equal(state.history.length, 1)
+})
+
+test('a track listened 30 seconds or more, or to the end, counts as listened', () => {
+    assert.equal(listened(initialSignals, radioItem(A), 45).history[0].listened, true)
+    assert.equal(listened(initialSignals, radioItem(A), 30).history[0].listened, true)
+    assert.equal(listened(initialSignals, radioItem(A), 10, true).history[0].listened, true)
+})
+
+test('a play left some other way after 30 seconds goes into history as listened, with no judgement', () => {
+    const start = { ...initialSignals, affinity: { night: 0.4 }, excluded: ['x'] }
+    const state = played(start, radioItem(A), 95)
+    assert.deepEqual(state.history, [{ id: A.id, key: 'kavinsky|nightcall', at: AT, video: slim(A), listened: true }])
+    assert.deepEqual(state.affinity, { night: 0.4 })
+    assert.deepEqual(state.excluded, ['x'])
+})
+
+test('a play left some other way before 30 seconds changes nothing', () => {
+    assert.equal(played(initialSignals, radioItem(A), 20), initialSignals)
+})
+
+test('clearing history keeps affinities and exclusions', () => {
+    const start = listened({ ...initialSignals, affinity: { night: 0.4 } }, radioItem(A), 3)
+    const state = signalsReducer(start, { type: 'CLEAR_HISTORY' })
+    assert.deepEqual(state.history, [])
+    assert.deepEqual(state.affinity, start.affinity)
+    assert.deepEqual(state.excluded, start.excluded)
 })
 
 test('a like raises its tags strongly', () => {

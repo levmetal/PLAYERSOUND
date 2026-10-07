@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { FaPlay, FaPlus, FaMusic, FaListUl, FaVolumeUp } from 'react-icons/fa'
+import { FaPlay, FaPlus, FaMusic, FaListUl, FaVolumeUp, FaTimes } from 'react-icons/fa'
 import styles from '../styles/player.module.css'
 import { useNowPlaying } from '../context/nowPlayingContext'
 import { useDispatchContext } from '../context/libraryContext/libraryContext'
@@ -280,7 +280,7 @@ const VibeBlock = ({ item }) => {
     )
 }
 
-function candidateMeta({ resolving, reason }) {
+export function candidateMeta({ resolving, reason }) {
     if (resolving === 'loading') return 'finding video…'
     if (resolving === 'none') return 'no playable video found'
     if (resolving === 'limited') return 'YouTube is limiting searches — try again in a few minutes'
@@ -328,8 +328,14 @@ const SkeletonRows = ({ label }) => (
 // The list button (Add to playlist) opens the same picker as a search row's
 // ⋯ menu, inline under the row; a row with no video yet asks `findVideo`
 // for it first. `current` is the track that's playing: marked like the
-// playing row in search, with nothing to play or add.
-const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, waiting = false, current = false, findVideo }) => {
+// playing row in search, with nothing to play or add. Home's Continue
+// listening adds `progress` (0–1, a thin bar under the meta) and `onRemove`
+// (✕, labelled by `removeLabel`), and drops Add to playlist (`pickable`) to
+// leave the title room on phones.
+export const QueueRow = ({
+    number, video, title, meta, onPlay, onAdd, busy = false, waiting = false, current = false, findVideo,
+    progress = null, onRemove = null, removeLabel = '', pickable = true,
+}) => {
     const [picking, setPicking] = useState(false)
     const duration = video?.duration > 0 ? ConvertSecToMin(video.duration) : '--:--'
     const className = [
@@ -338,7 +344,7 @@ const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, wai
         busy && styles.queueRowBusy,
         current && styles.queueRowCurrent,
     ].filter(Boolean).join(' ')
-    const canPick = !waiting && (Boolean(video) || Boolean(findVideo))
+    const canPick = pickable && !waiting && (Boolean(video) || Boolean(findVideo))
 
     const togglePicker = async () => {
         if (picking) {
@@ -365,6 +371,11 @@ const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, wai
                     {current && <span className={styles.queueRow__nowTag}>Now playing</span>}
                     {meta}
                 </span>
+                {progress !== null && (
+                    <span className={styles.queueRow__progress} aria-hidden="true">
+                        <span style={{ width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }} />
+                    </span>
+                )}
             </span>
             <span className={video?.duration > 0 ? styles.queueRow__duration : `${styles.queueRow__duration} ${styles.queueRow__durationUnknown}`}>{duration}</span>
             {!waiting && (
@@ -391,6 +402,17 @@ const QueueRow = ({ number, video, title, meta, onPlay, onAdd, busy = false, wai
                             title="Add to queue"
                         >
                             <FaPlus aria-hidden="true" />
+                        </button>
+                    )}
+                    {onRemove && (
+                        <button
+                            type="button"
+                            className={styles.queueRow__action}
+                            onClick={onRemove}
+                            aria-label={removeLabel}
+                            title={removeLabel}
+                        >
+                            <FaTimes aria-hidden="true" />
                         </button>
                     )}
                     {canPick && (

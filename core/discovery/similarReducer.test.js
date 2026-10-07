@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest } from './similarReducer.js'
+import similarReducer, { initialSimilar, viewList, vibeTags, similarRequest, listFor, requestFor } from './similarReducer.js'
 
 const videos = JSON.parse(readFileSync(new URL('../__fixtures__/videos.json', import.meta.url), 'utf8'))
 // A: "Daft Punk - Digital Love (Official Video)" — identifiable. SET: a Boiler Room set — not.
@@ -194,4 +194,41 @@ test('the request keeps the newest 500 exclusions', () => {
     const { body } = similarRequest(onTrack(), A, { exclude, affinity: {} })
     assert.equal(body.exclude.length, 500)
     assert.equal(body.exclude[499], 'id599')
+})
+
+// --- a list for a track that isn't playing (Home: "Because you listened to …") ---
+
+test("requestFor asks for a song's own list, the same one the player would use", () => {
+    assert.deepEqual(requestFor(initialSimilar, A, NO_SIGNALS), {
+        kind: 'fetch',
+        key: `track:${A.id}`,
+        body: { seeds: [A], exclude: [], affinity: {}, limit: 12, resolve: 0 },
+    })
+})
+
+test('requestFor asks for nothing when the list is there or loading, or discovery is off', () => {
+    const asked = reduce(initialSimilar, { type: 'LIST_REQUESTED', payload: { key: `track:${A.id}` } })
+    assert.equal(requestFor(asked, A, NO_SIGNALS), null)
+    assert.equal(requestFor(loaded(initialSimilar, `track:${A.id}`, [KAVINSKY]), A, NO_SIGNALS), null)
+    assert.equal(requestFor({ ...initialSimilar, unavailable: true }, A, NO_SIGNALS), null)
+})
+
+test('requestFor asks again for a list that failed', () => {
+    const failed = reduce(initialSimilar,
+        { type: 'LIST_REQUESTED', payload: { key: `track:${A.id}` } },
+        { type: 'LIST_FAILED', payload: { key: `track:${A.id}` } })
+    assert.equal(requestFor(failed, A, NO_SIGNALS).kind, 'fetch')
+})
+
+test("listFor shows a track's list with row ids and found videos, loading until asked", () => {
+    assert.deepEqual(listFor(initialSimilar, A.id), { status: 'loading', candidates: [] })
+    const state = reduce(loaded(initialSimilar, `track:${A.id}`, [KAVINSKY, AIR]),
+        { type: 'CANDIDATE_RESOLVED', payload: { id: ID_KAV, video: B } })
+    const list = listFor(state, A.id)
+    assert.equal(list.status, 'done')
+    assert.deepEqual(list.candidates.map((c) => [c.id, c.video?.id ?? null]), [[ID_KAV, B.id], ["air|la femme d'argent", null]])
+})
+
+test('listFor says when discovery is off', () => {
+    assert.equal(listFor({ ...initialSimilar, unavailable: true }, A.id).status, 'unavailable')
 })

@@ -11,7 +11,7 @@ import { FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa'
 // exit before it collapses into the mini-player (or goes away on stop).
 const CLOSE_ANIMATION_MS = 200
 
-const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'SIMILAR VIBE' }
+const SOURCE_PREFIX = { search: 'SEARCH', playlist: 'PLAYLIST', radio: 'SIMILAR VIBE', vibe: 'VIBE', history: 'HISTORY' }
 const pad2 = (n) => String(n).padStart(2, '0')
 
 // "NOW PLAYING // PLAYLIST: FAVORITES // TRK 03/12" for a queue, the plain

@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import DataPixelArc from '../components/dataPixelArc'
 import Head from 'next/head'
 import useLinkSubmit from '../hooks/useLinkSubmit'
+import HomeBlocks from '../components/homeBlocks'
 
 export default function Home() {
 
@@ -35,7 +36,8 @@ export default function Home() {
        <meta name="description" content="PlayerSound is a no-login audio deck for YouTube. Search music or podcasts, keep the signal playing while you browse, and save playlists right in your browser."/>
        <meta name="google-site-verification" content="_Y-WmLWOjBhsxYjfH08TLdnHZ0-SoiKZmeJ9IelQI0g" />
       </Head>
-        <main className={styles.container}>
+        <main className={styles.page}>
+        <section className={styles.container}>
 
           <>
 
@@ -88,6 +90,8 @@ export default function Home() {
             </div>
 
           </>
+        </section>
+        <HomeBlocks />
         </main>
     </>
   )

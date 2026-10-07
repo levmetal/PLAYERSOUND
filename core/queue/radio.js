@@ -3,6 +3,7 @@
 
 import { trackKey } from '../discovery/rankCandidates.js'
 import resolveTrack from '../track/resolveTrack.js'
+import { isVibeStart } from './queueReducer.js'
 
 /** @typedef {import('../types.js').Video} Video */
 /** @typedef {import('../types.js').QueueState} QueueState */
@@ -51,7 +52,7 @@ function lastUserVideo(state) {
  */
 export function radioRequest(state, now, signals = { exclude: [], affinity: {} }) {
     const { radio } = state
-    if (state.index < 0 || !radio.enabled || radio.loading || radio.status !== 'idle') return null
+    if ((state.index < 0 && !isVibeStart(state)) || !radio.enabled || radio.loading || radio.status !== 'idle') return null
     if (radio.retryAt !== null && now < radio.retryAt) return null
     if (playableAhead(state) > REFILL_AT) return null
 
