@@ -81,6 +81,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
   const handleSubmit = async (e) => {
     e.preventDefault()
     const term = draft.trim()
+    if (link.pending) return
     if (!term) {
       focusSearch()
       return
@@ -189,7 +190,7 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
     <div className={styles.soundlist__container}>
 
       <div className={`${styles.controls} hud-frame`}>
-        <form className={styles.searchRow} role="search" onSubmit={handleSubmit}>
+        <form className={styles.searchRow} role="search" onSubmit={handleSubmit} aria-busy={link.pending}>
           <label htmlFor="results-search" className="sr-only">Search, or paste a YouTube video or playlist link</label>
           <span className={styles.prompt} aria-hidden="true">&gt;</span>
           <input
@@ -203,16 +204,16 @@ const SoundList = ({ query = '', status = 'done', results = [], error = null, on
             spellCheck="false"
             placeholder="Search or paste a YouTube link"
             value={draft}
-            disabled={link.pending}
+            readOnly={link.pending}
             aria-describedby="results-link-message"
             onChange={(e) => { setDraft(e.target.value); link.clearError() }}
           />
-          <button type="submit" className={styles.searchBtn} disabled={link.pending}>
+          <button type="submit" className={styles.searchBtn} aria-disabled={link.pending}>
             {link.pending ? 'Loading…' : 'Search'}
           </button>
           <p className={styles.resultCount} role="status" aria-live="polite">{countText}</p>
         </form>
-        <p id="results-link-message" className={styles.linkMessage} role="alert">
+        <p id="results-link-message" className={styles.linkMessage} role="status">
           {link.pending ? 'Loading link…' : link.error}
         </p>
 

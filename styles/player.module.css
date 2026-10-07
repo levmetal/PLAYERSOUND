@@ -540,7 +540,8 @@
     background: transparent;
     color: var(--primarycolor);
     font-family: var(--font-body);
-    font-size: .68rem;
+    /* 12px, the floor for readable text. */
+    font-size: .75rem;
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -556,12 +557,17 @@
     box-shadow: var(--glow-box);
 }
 
-.tagChips button:hover,
-.tagChips button:focus-visible {
+.tagChips button:hover {
     border-color: var(--primarycolor);
     background: var(--primarycolor);
     color: var(--bg);
-    outline: none;
+}
+
+/* Keyboard focus is the app's cyan ring, not the hover fill: the fill also
+   means "selected" here, so it couldn't tell the two apart. */
+.tagChips button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .metaText h2 {
@@ -1948,8 +1954,14 @@
    chips otherwise leave it stranded beside the first one, which then looks
    shifted against the rows below. */
 @media screen and (max-width: 700px) {
+    /* 8px between targets, so a finger doesn't catch the neighbour. */
+    .tagChips {
+        gap: .5rem;
+    }
+
     .tagChips button {
-        min-height: 2.2rem;
+        /* 44px, a finger-sized target. */
+        min-height: 2.75rem;
         padding: .5rem .85rem;
     }
 

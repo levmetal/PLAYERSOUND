@@ -279,7 +279,10 @@
         margin: 0;
         padding: 0 1rem;
         overflow: hidden;
-        transition: max-height 220ms ease-in, opacity 160ms ease-in;
+        /* Hidden, not only invisible: closed links must not take keyboard focus
+           behind the top bar. visibility flips after the exit animation. */
+        visibility: hidden;
+        transition: max-height 220ms ease-in, opacity 160ms ease-in, visibility 0s linear 220ms;
         box-sizing: border-box;
     }
 
@@ -291,7 +294,8 @@
         max-height: 18rem;
         opacity: 1;
         padding: .5rem 1rem 1rem;
-        transition: max-height 240ms ease-out, opacity 200ms ease-out;
+        visibility: visible;
+        transition: max-height 240ms ease-out, opacity 200ms ease-out, visibility 0s;
     }
 
     .listbar__option a {
