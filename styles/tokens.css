@@ -129,6 +129,9 @@
      anchored (like the box lifting away from a fixed surface) — mouse-only,
      see the `(hover: hover)` guard in globals.css. */
   --depth-lift: 2px;
+  /* Piano-key travel (the expanded player's transport): straight down, not
+     the diagonal --depth-offset, the way a tape deck's keys move. */
+  --key-depth: 3px;
   --pixel-shadow-hover: calc(var(--depth-offset) + var(--depth-lift)) calc(var(--depth-offset) + var(--depth-lift)) 0 0 var(--phosphor-secondary);
 }
 

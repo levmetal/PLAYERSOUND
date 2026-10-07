@@ -43,6 +43,8 @@ const VU_FADE_MS = 420;
 // reported (for resuming long tracks) while the tab is hidden.
 const HIDDEN_REPORT_MS = 5000;
 
+const pad2 = (n) => String(n).padStart(2, '0');
+
 const Player = ({ item }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [volVisible, setVisible] = useState(false);
@@ -55,7 +57,7 @@ const Player = ({ item }) => {
     const onEndedRef = useRef(() => {});
     const {
         next, finished, like, reportTime, savePosition, startOver, startAt, resumedAt, prev, nextItem, prevItem,
-        skipUnplayable, current, radio,
+        skipUnplayable, current, radio, position,
     } = useNowPlaying();
     // Every suggested track says why it's playing (Last.fm data, hence the link).
     const reason = current?.video.id === item.id && current.origin === 'radio' ? current.reason : null;
@@ -272,6 +274,19 @@ const Player = ({ item }) => {
         <>
         {windowContent}
         <div className={`${styles.player__panel} hud-frame`}>
+            {/* The deck's indicator row (expanded only). Hidden from screen
+                readers: the keys below already say each state. */}
+            <div className={styles.lamps} aria-hidden="true">
+                <span className={playing ? `${styles.lamp} ${styles.lampOn}` : styles.lamp}>Play</span>
+                <span className={!playing ? `${styles.lamp} ${styles.lampOn}` : styles.lamp}>Pause</span>
+                {radio.status !== 'unavailable' && (
+                    <span className={radio.enabled ? `${styles.lamp} ${styles.lampOn}` : styles.lamp}>Autoplay</span>
+                )}
+                <span className={verificationSaved ? `${styles.lamp} ${styles.lampFav}` : styles.lamp}>Fav</span>
+                {position && (
+                    <span className={`${styles.lamp} ${styles.lampOn}`}>Trk {pad2(position.current)}/{pad2(position.total)}</span>
+                )}
+            </div>
             <div
                 className={[
                     styles.vuMeter,
@@ -381,7 +396,7 @@ const Player = ({ item }) => {
                         <span className={styles.controlLabel}>Rew</span>
                     </div>
 
-                    <div className={playing ? `${styles.controlUnit} ${styles.controlUnitActive}` : styles.controlUnit}>
+                    <div className={playing ? `${styles.controlUnit} ${styles.playUnit} ${styles.controlUnitActive}` : `${styles.controlUnit} ${styles.playUnit}`}>
                         <button
                             className={styles.button}
                             onClick={HandlePlaying}

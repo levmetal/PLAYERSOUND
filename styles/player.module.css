@@ -606,6 +606,159 @@
     text-shadow: var(--glow-text-accent);
 }
 
+/* Status lamps on top of the transport panel: a deck's indicator row. Lit =
+   filled square + glow; off = an empty square. FAV lights cyan (saved is a
+   cyan state everywhere). Expanded only. */
+.lamps {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .4rem 1.1rem;
+    font-size: .58rem;
+    letter-spacing: 1px;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--phosphor-secondary);
+}
+
+.lamp {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    transition: color 150ms;
+}
+
+.lamp::before {
+    content: '';
+    width: .45rem;
+    height: .45rem;
+    border: 1px solid var(--phosphor-secondary);
+    transition: background-color 150ms, box-shadow 150ms;
+}
+
+.lampOn {
+    color: var(--phosphor-primary);
+}
+
+.lampOn::before {
+    border-color: var(--phosphor-primary);
+    background: var(--phosphor-primary);
+    box-shadow: 0 0 6px rgba(var(--phosphor-primary-rgb), .9);
+}
+
+.lampFav {
+    color: var(--accent);
+}
+
+.lampFav::before {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(0, 255, 255, .8);
+}
+
+.consoleMini .lamps {
+    display: none;
+}
+
+/* ---- Piano keys (expanded player only; the mini keeps its buttons) ----
+   The transport keys join edge to edge, each with a bright top edge and a
+   straight-down key depth; the labels sit above them, printed on the panel.
+   Hover brightens the icon (no lift); a press travels down; Play while
+   playing stays held down and lit. Fav and Vol are the same key, narrower. */
+.console:not(.consoleMini) .controlLabel {
+    order: -1;
+}
+
+.console:not(.consoleMini) .button__group {
+    gap: 0;
+}
+
+.console:not(.consoleMini) .button__group > .controlUnit + .controlUnit .button {
+    margin-left: -1px;
+}
+
+.console:not(.consoleMini) .button,
+.console:not(.consoleMini) .btn__vol {
+    width: 2.9rem;
+    height: 2.3rem;
+    border: 1px solid var(--phosphor-secondary);
+    border-top: 2px solid var(--phosphor-primary);
+    background: var(--phosphor-box-bg);
+    color: var(--phosphor-primary);
+    box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
+    transition: background-color 120ms, color 120ms, transform 70ms, box-shadow 70ms;
+}
+
+.console:not(.consoleMini) .favUnit .button,
+.console:not(.consoleMini) .btn__vol {
+    width: 2.4rem;
+}
+
+.console:not(.consoleMini) .button:hover,
+.console:not(.consoleMini) .btn__vol:hover {
+    transform: none;
+    background: rgba(var(--phosphor-primary-rgb), .08);
+    color: var(--phosphor-primary-alt);
+    box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
+}
+
+.console:not(.consoleMini) .button:active,
+.console:not(.consoleMini) .btn__vol:active,
+.console:not(.consoleMini) .controlUnitActive .button {
+    transform: translateY(calc(var(--key-depth) - 1px));
+    box-shadow: 0 1px 0 0 var(--phosphor-secondary);
+}
+
+/* Play is the wide key, playing or not, so the row never shifts. */
+.console:not(.consoleMini) .playUnit .button {
+    width: 3.4rem;
+}
+
+/* Play while playing: held down and lit. */
+.console:not(.consoleMini) .controlUnitActive .button {
+    border-top-color: var(--phosphor-primary-alt);
+    background: var(--phosphor-primary);
+    color: var(--bg);
+    box-shadow: 0 1px 0 0 var(--phosphor-secondary), var(--glow-box);
+}
+
+/* Saved: cyan icon and top edge, no cyan fill. */
+.console:not(.consoleMini) .button.buttonAccent,
+.console:not(.consoleMini) .button.buttonAccent:hover {
+    border-top-color: var(--accent);
+    background: var(--phosphor-box-bg);
+    color: var(--accent);
+    box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
+}
+
+.console:not(.consoleMini) .trackUnit .button:disabled,
+.console:not(.consoleMini) .trackUnit .button:disabled:hover {
+    opacity: .45;
+    transform: none;
+    border-top-color: var(--phosphor-secondary);
+    background: var(--phosphor-box-bg);
+    color: var(--phosphor-primary);
+    box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
+}
+
+@media screen and (max-width: 700px) {
+    .console:not(.consoleMini) .button,
+    .console:not(.consoleMini) .btn__vol,
+    .console:not(.consoleMini) .favUnit .button {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .console:not(.consoleMini) .playUnit .button {
+        width: 3.2rem;
+    }
+
+    .lamps {
+        gap: .4rem .8rem;
+        font-size: .55rem;
+    }
+}
+
 /* The "cassette body" — the transport bar (VU meter, seek bar, buttons)
    reads as its own deck unit inset into the console, not just loose controls
    floating in the faceplate. Add the "hud-frame" utility class alongside
