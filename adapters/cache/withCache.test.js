@@ -72,3 +72,31 @@ test('methods without cache settings pass straight through', async () => {
     await cached.other()
     assert.equal(calls.other, 2)
 })
+
+test('a method with cacheIf caches only the values it accepts', async () => {
+    let answer = []
+    let runs = 0
+    const target = { search: async () => { runs += 1; return answer } }
+    const cached = withCache(target, {
+        cache: createMemoryCache(),
+        prefix: 'yt',
+        methods: { search: { ttl: 60, key: (term) => term, cacheIf: (videos) => videos.length > 0 } },
+    })
+    assert.deepEqual(await cached.search('joji'), [])
+    assert.deepEqual(await cached.search('joji'), [])
+    assert.equal(runs, 2, 'an empty answer is asked again')
+    answer = ['video']
+    assert.deepEqual(await cached.search('joji'), ['video'])
+    assert.deepEqual(await cached.search('joji'), ['video'])
+    assert.equal(runs, 3, 'a non-empty answer is cached')
+})
+
+test('a cached value that cacheIf rejects (stored before the rule existed) is asked again', async () => {
+    const cache = createMemoryCache()
+    await cache.set('yt:search:joji', [], 60)
+    let runs = 0
+    const target = { search: async () => { runs += 1; return ['video'] } }
+    const cached = withCache(target, { cache, prefix: 'yt', methods: { search: { ttl: 60, key: (term) => term, cacheIf: (videos) => videos.length > 0 } } })
+    assert.deepEqual(await cached.search('joji'), ['video'])
+    assert.equal(runs, 1)
+})

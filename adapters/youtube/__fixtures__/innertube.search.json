@@ -1,0 +1,203 @@
+{
+  "query": "joji",
+  "recorded": "2026-10-08",
+  "note": "youtubei.js search(term, { type: \"video\" }).videos, first 8, pruned to the fields the mapper reads; plus one non-video node",
+  "videos": [
+    {
+      "type": "Video",
+      "video_id": "K3Qzzggn--s",
+      "title": {
+        "text": "Joji - SLOW DANCING IN THE DARK"
+      },
+      "author": {
+        "id": "UCZW5lIUz93q_aZIkJPAC0IQ",
+        "name": "88rising",
+        "url": "https://www.youtube.com/@88rising",
+        "is_verified": true,
+        "is_verified_artist": false
+      },
+      "duration": {
+        "text": "3:38",
+        "seconds": 218
+      },
+      "view_count": {
+        "text": "498,019,646 views"
+      },
+      "published": {
+        "text": "8y ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "FvOpPeKSf_4",
+      "title": {
+        "text": "Joji -  Glimpse of Us"
+      },
+      "author": {
+        "id": "UCZW5lIUz93q_aZIkJPAC0IQ",
+        "name": "88rising",
+        "url": "https://www.youtube.com/@88rising",
+        "is_verified": true,
+        "is_verified_artist": false
+      },
+      "duration": {
+        "text": "3:54",
+        "seconds": 234
+      },
+      "view_count": {
+        "text": "222,062,300 views"
+      },
+      "published": {
+        "text": "4y ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "acA8Rr3gEco",
+      "title": {
+        "text": "Joji - Past Won't Leave My Bed (Official Video)"
+      },
+      "author": {
+        "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "name": "Joji",
+        "url": "https://www.youtube.com/channel/UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "is_verified": false,
+        "is_verified_artist": true
+      },
+      "duration": {
+        "text": "2:47",
+        "seconds": 167
+      },
+      "view_count": {
+        "text": "17,816,398 views"
+      },
+      "published": {
+        "text": "11mo ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "kIEWJ1ljEro",
+      "title": {
+        "text": "Joji - Die For You"
+      },
+      "author": {
+        "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "name": "Joji",
+        "url": "https://www.youtube.com/channel/UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "is_verified": false,
+        "is_verified_artist": true
+      },
+      "duration": {
+        "text": "3:32",
+        "seconds": 212
+      },
+      "view_count": {
+        "text": "108,791,710 views"
+      },
+      "published": {
+        "text": "3y ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "YWN81V7ojOE",
+      "title": {
+        "text": "Joji - Sanctuary (Official Video)"
+      },
+      "author": {
+        "id": "UCZW5lIUz93q_aZIkJPAC0IQ",
+        "name": "88rising",
+        "url": "https://www.youtube.com/@88rising",
+        "is_verified": true,
+        "is_verified_artist": false
+      },
+      "duration": {
+        "text": "3:12",
+        "seconds": 192
+      },
+      "view_count": {
+        "text": "122,396,365 views"
+      },
+      "published": {
+        "text": "7y ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "AeO81mfRook",
+      "title": {
+        "text": "Joji - PIXELATED KISSES"
+      },
+      "author": {
+        "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "name": "Joji",
+        "url": "https://www.youtube.com/channel/UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "is_verified": false,
+        "is_verified_artist": true
+      },
+      "duration": {
+        "text": "1:51",
+        "seconds": 111
+      },
+      "view_count": {
+        "text": "8,824,743 views"
+      },
+      "published": {
+        "text": "11mo ago"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "LUXu4aTnK7E",
+      "title": {
+        "text": "SLOW DANCING IN THE DARK"
+      },
+      "author": {
+        "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "name": "Joji",
+        "url": "https://www.youtube.com/channel/UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "is_verified": false,
+        "is_verified_artist": true
+      },
+      "duration": {
+        "text": "3:30",
+        "seconds": 210
+      },
+      "view_count": {
+        "text": "47,897,459 views"
+      }
+    },
+    {
+      "type": "Video",
+      "video_id": "Bv-1BnoB75k",
+      "title": {
+        "text": "Joji - Like You Do"
+      },
+      "author": {
+        "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "name": "Joji",
+        "url": "https://www.youtube.com/channel/UCFl7yKfcRcFmIUbKeCA-SJQ",
+        "is_verified": false,
+        "is_verified_artist": true
+      },
+      "duration": {
+        "text": "4:01",
+        "seconds": 241
+      },
+      "view_count": {
+        "text": "82,059,206 views"
+      },
+      "published": {
+        "text": "6y ago"
+      }
+    },
+    {
+      "type": "Channel",
+      "id": "UCFl7yKfcRcFmIUbKeCA-SJQ",
+      "author": {
+        "name": "Joji"
+      }
+    }
+  ]
+}

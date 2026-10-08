@@ -2,6 +2,8 @@
 // edition is running. Everything else asks `can('x')` instead of reading
 // env vars.
 import { createScrapeSearch } from '../adapters/youtube/scrapeSearch.js'
+import { createInnertubeSearch } from '../adapters/youtube/innertubeSearch.js'
+import { createFallbackSearch } from '../adapters/youtube/fallbackSearch.js'
 import { createMemoryCache } from '../adapters/cache/memoryCache.js'
 import { createRuntimeCache } from '../adapters/cache/runtimeCache.js'
 import { withCache } from '../adapters/cache/withCache.js'
@@ -51,11 +53,14 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
     const cacheKind = vercel ? 'runtime' : 'memory'
     const cache = vercel ? createRuntimeCache() : sharedMemoryCache()
 
+    // The results-page scraper first; youtubei.js when it comes back empty or fails (artist
+    // searches from Vercel's IPs come back as shelves the scraper can't read). Empty answers
+    // aren't cached, so a miss is asked again instead of sticking for an hour.
     const youtubeSearch = createScrapeSearch()
-    const videoSearch = withCache(youtubeSearch, {
+    const videoSearch = withCache(createFallbackSearch(youtubeSearch, createInnertubeSearch()), {
         cache,
         prefix: 'yt',
-        methods: { search: { ttl: HOUR, key: (term) => term.toLowerCase() } },
+        methods: { search: { ttl: HOUR, key: (term) => term.toLowerCase(), cacheIf: (videos) => videos.length > 0 } },
     })
 
     // Only successful lookups are cached (withCache skips throws), for as long as search matches.
