@@ -266,6 +266,19 @@ export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNex
         }
     }, [engine]);
 
+    // Stopped and back at 0:00, ready for ▶. YouTube starts playing again if an
+    // ended video is merely seeked, so it's cued instead (same player, same video).
+    const stopAtStart = useCallback(() => {
+        if (engine === 'native') {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        } else if (loadedIdRef.current) {
+            ytPlayerRef.current?.cueVideoById({ videoId: loadedIdRef.current, startSeconds: 0 });
+        }
+    }, [engine]);
+
     const getCurrentTime = useCallback(() => {
         if (engine === 'native') return audioRef.current?.currentTime ?? 0;
         return ytPlayerRef.current?.getCurrentTime?.() ?? 0;
@@ -291,6 +304,7 @@ export default function usePlaybackEngine({ videoId, startAt = 0, onEnded, onNex
         play,
         pause,
         seek,
+        stopAtStart,
         getCurrentTime,
         setVolume,
         audioRef,

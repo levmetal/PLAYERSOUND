@@ -222,7 +222,7 @@ const Player = ({ item, onPlayingChange }) => {
     onEndedRef.current = () => {
         finished();
         if (nextItem) return;
-        engine.seek(0);
+        engine.stopAtStart();
         updateElapsed(0);
         syncBar(0);
     };
