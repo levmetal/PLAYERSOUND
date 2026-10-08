@@ -175,10 +175,10 @@ export default async function handler(req, res) {
     }
     res.end()
   } catch (err) {
-    console.error(`soundplayer error for ${videoId}:`, err.message)
+    console.error(`soundplayer error for ${JSON.stringify(videoId)}:`, err.message)
     if (!res.headersSent) {
       res.writeHead(err.message?.includes('unavailable') ? 404 : 500)
-      res.end(`could not resolve audio for this video: ${err.message}`)
+      res.end('could not resolve audio for this video')
     } else {
       res.end()
     }

@@ -7,6 +7,8 @@ const FAILURES = {
   'not-found': { status: 404, error: "That video doesn't exist" },
   unavailable: { status: 502, error: "YouTube didn't answer. Try again in a moment." },
 }
+// Anything else: internal details stay in the server log, never in the response.
+const FAILED = "Couldn't open that video. Try again in a moment."
 
 export default async function videoHandler(req, res) {
   const { id } = req.query
@@ -16,7 +18,7 @@ export default async function videoHandler(req, res) {
   } catch (error) {
     const failure = FAILURES[container.lookupFailure(error)]
     if (failure) return res.status(failure.status).json({ error: failure.error })
-    console.error(`video lookup error for "${id}":`, error)
-    res.status(500).json({ error: error.message })
+    console.error(`video lookup error for ${JSON.stringify(id)}:`, error)
+    res.status(500).json({ error: FAILED })
   }
 }

@@ -40,6 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+# the template is tracked on purpose (it has no values)
+!.env.local.example
 
 # generated before each build (scripts/build-sw.mjs)
 /public/sw.js
