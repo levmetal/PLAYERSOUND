@@ -43,3 +43,21 @@ test('other methods of the primary port stay available', () => {
     const primary = { search: async () => [], blockedFor: () => 42 }
     assert.equal(createFallbackSearch(primary, port([])).blockedFor(), 42)
 })
+
+test('a thin primary answer (under 10) is topped up from the fallback, primary first, without duplicates', async () => {
+    const four = TWENTY.slice(0, 4)
+    const overlapping = [TWENTY[1], TWENTY[3], ...EIGHTEEN.slice(0, 16)]
+    const videos = await createFallbackSearch(port(four), port(overlapping)).search('joji')
+    assert.deepEqual(videos.map((video) => video.id), [...four, ...EIGHTEEN.slice(0, 16)].map((video) => video.id))
+})
+
+test('a thin primary answer is kept when the fallback fails', async () => {
+    const four = TWENTY.slice(0, 4)
+    assert.deepEqual(await createFallbackSearch(port(four), port(new Error('refused'))).search('joji'), four)
+})
+
+test('ten or more primary videos are enough', async () => {
+    const ten = TWENTY.slice(0, 10); const fallback = port(EIGHTEEN)
+    assert.deepEqual(await createFallbackSearch(port(ten), fallback).search('joji'), ten)
+    assert.deepEqual(fallback.calls, [])
+})

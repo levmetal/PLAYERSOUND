@@ -60,7 +60,8 @@ export function createContainer({ edition, vercel = false, lastfmApiKey } = {}) 
     const videoSearch = withCache(createFallbackSearch(youtubeSearch, createInnertubeSearch()), {
         cache,
         prefix: 'yt',
-        methods: { search: { ttl: HOUR, key: (term) => term.toLowerCase(), cacheIf: (videos) => videos.length > 0 } },
+        // `v2:` drops answers cached before the fallback existed (they could be thin or empty).
+        methods: { search: { ttl: HOUR, key: (term) => `v2:${term.toLowerCase()}`, cacheIf: (videos) => videos.length > 0 } },
     })
 
     // Only successful lookups are cached (withCache skips throws), for as long as search matches.
