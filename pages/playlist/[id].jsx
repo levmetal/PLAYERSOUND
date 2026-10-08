@@ -63,7 +63,7 @@ const PlaylistPreview = () => {
                 <>
                     <h1 className={styles.library__title}>Playlist</h1>
                     <p className={styles.emptyState} role="alert">{error}</p>
-                    <Link href="/"><a className={styles.playAll}>Back to search</a></Link>
+                    <Link href="/" className={styles.playAll}>Back to search</Link>
                 </>
             )}
 

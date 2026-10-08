@@ -61,7 +61,7 @@ const HomeBlocks = () => {
                         ))}
                     </ol>
                     <p className={listStyles.listBlock__note}>
-                        <Link href="/history"><a className={styles.homeLink}>See all history</a></Link>
+                        <Link href="/history" className={styles.homeLink}>See all history</Link>
                     </p>
                 </section>
             )}

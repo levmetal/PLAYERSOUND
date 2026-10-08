@@ -26,11 +26,9 @@ const About = () => {
                     </ul>
 
                     <footer className={styles.footer}>
-                        <Link href='/'>
-                            <a className={styles.button}>
-                                Home
-                                <FaHome className={styles.buttonIcon} aria-hidden="true" />
-                            </a>
+                        <Link href='/' className={styles.button}>
+                            Home
+                            <FaHome className={styles.buttonIcon} aria-hidden="true" />
                         </Link>
                     </footer>
                 </article>

@@ -88,15 +88,14 @@ const SideBar = () => {
                                         : styles.listbar__option
                                 }
                             >
-                                <Link href={href}>
-                                    <a
-                                        onClick={handleNavClick}
-                                        aria-current={isActive(href) ? "page" : undefined}
-                                        title={label}
-                                    >
-                                        {label}
-                                        <Icon className={styles.sideIcon} aria-hidden="true" />
-                                    </a>
+                                <Link
+                                    href={href}
+                                    onClick={handleNavClick}
+                                    aria-current={isActive(href) ? "page" : undefined}
+                                    title={label}
+                                >
+                                    {label}
+                                    <Icon className={styles.sideIcon} aria-hidden="true" />
                                 </Link>
                             </li>
                         ))}

@@ -25,11 +25,9 @@ const Offline = () => (
                         Try again
                         <FaRedo className={styles.buttonIcon} aria-hidden="true" />
                     </button>
-                    <Link href="/library">
-                        <a className={styles.button}>
-                            Playlists
-                            <FaBook className={styles.buttonIcon} aria-hidden="true" />
-                        </a>
+                    <Link href="/library" className={styles.button}>
+                        Playlists
+                        <FaBook className={styles.buttonIcon} aria-hidden="true" />
                     </Link>
                 </footer>
             </article>
