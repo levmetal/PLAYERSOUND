@@ -660,25 +660,25 @@
     display: none;
 }
 
-/* ---- Piano keys (expanded player only; the mini keeps its buttons) ----
+/* ---- Piano keys (both states; the mini's sizes are further down) ----
    The transport keys join edge to edge, each with a bright top edge and a
    straight-down key depth; the labels sit above them, printed on the panel.
    Hover brightens the icon (no lift); a press travels down; Play while
    playing stays held down and lit. Fav and Vol are the same key, narrower. */
-.console:not(.consoleMini) .controlLabel {
+.console .controlLabel {
     order: -1;
 }
 
-.console:not(.consoleMini) .button__group {
+.console .button__group {
     gap: 0;
 }
 
-.console:not(.consoleMini) .button__group > .controlUnit + .controlUnit .button {
+.console .button__group > .controlUnit + .controlUnit .button {
     margin-left: -1px;
 }
 
-.console:not(.consoleMini) .button,
-.console:not(.consoleMini) .btn__vol {
+.console .button,
+.console .btn__vol {
     width: 2.9rem;
     height: 2.3rem;
     border: 1px solid var(--phosphor-secondary);
@@ -689,33 +689,33 @@
     transition: background-color 120ms, color 120ms, transform 70ms, box-shadow 70ms;
 }
 
-.console:not(.consoleMini) .favUnit .button,
-.console:not(.consoleMini) .btn__vol {
+.console .favUnit .button,
+.console .btn__vol {
     width: 2.4rem;
 }
 
-.console:not(.consoleMini) .button:hover,
-.console:not(.consoleMini) .btn__vol:hover {
+.console .button:hover,
+.console .btn__vol:hover {
     transform: none;
     background: rgba(var(--phosphor-primary-rgb), .08);
     color: var(--phosphor-primary-alt);
     box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
 }
 
-.console:not(.consoleMini) .button:active,
-.console:not(.consoleMini) .btn__vol:active,
-.console:not(.consoleMini) .controlUnitActive .button {
+.console .button:active,
+.console .btn__vol:active,
+.console .controlUnitActive .button {
     transform: translateY(calc(var(--key-depth) - 1px));
     box-shadow: 0 1px 0 0 var(--phosphor-secondary);
 }
 
 /* Play is the wide key, playing or not, so the row never shifts. */
-.console:not(.consoleMini) .playUnit .button {
+.console .playUnit .button {
     width: 3.4rem;
 }
 
 /* Play while playing: held down and lit. */
-.console:not(.consoleMini) .controlUnitActive .button {
+.console .controlUnitActive .button {
     border-top-color: var(--phosphor-primary-alt);
     background: var(--phosphor-primary);
     color: var(--bg);
@@ -723,16 +723,16 @@
 }
 
 /* Saved: cyan icon and top edge, no cyan fill. */
-.console:not(.consoleMini) .button.buttonAccent,
-.console:not(.consoleMini) .button.buttonAccent:hover {
+.console .button.buttonAccent,
+.console .button.buttonAccent:hover {
     border-top-color: var(--accent);
     background: var(--phosphor-box-bg);
     color: var(--accent);
     box-shadow: 0 var(--key-depth) 0 0 var(--phosphor-secondary);
 }
 
-.console:not(.consoleMini) .trackUnit .button:disabled,
-.console:not(.consoleMini) .trackUnit .button:disabled:hover {
+.console .trackUnit .button:disabled,
+.console .trackUnit .button:disabled:hover {
     opacity: .45;
     transform: none;
     border-top-color: var(--phosphor-secondary);
@@ -742,14 +742,14 @@
 }
 
 @media screen and (max-width: 700px) {
-    .console:not(.consoleMini) .button,
-    .console:not(.consoleMini) .btn__vol,
-    .console:not(.consoleMini) .favUnit .button {
+    .console .button,
+    .console .btn__vol,
+    .console .favUnit .button {
         width: 2.75rem;
         height: 2.75rem;
     }
 
-    .console:not(.consoleMini) .playUnit .button {
+    .console .playUnit .button {
         width: 3.2rem;
     }
 
@@ -1649,7 +1649,18 @@
 
 .consoleMini .button__group {
     width: auto;
-    gap: .5rem;
+}
+
+/* The same piano keys, sized to the bar. */
+.consoleMini .button,
+.consoleMini .btn__vol,
+.consoleMini .favUnit .button {
+    width: 2.3rem;
+    height: 2.1rem;
+}
+
+.consoleMini .playUnit .button {
+    width: 2.9rem;
 }
 
 /* In-flow spacer rendered after the page (components/modal.jsx), so the
@@ -1692,6 +1703,15 @@
         width: 200px;
         height: 200px;
         right: .5rem;
+    }
+
+    .consoleMini .button {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .consoleMini .playUnit .button {
+        width: 3.2rem;
     }
 }
 
